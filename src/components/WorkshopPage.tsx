@@ -125,7 +125,7 @@ export default function WorkshopPage({ locale }: { locale: Locale }) {
             <div
               key={dc.id}
               onClick={() => !isPlanned && setSelectedId(dc.id)}
-              className={`bg-surface rounded-2xl p-5 transition-all duration-300 border-2 ${
+              className={`bg-surface rounded-2xl transition-all duration-300 border-2 overflow-hidden ${
                 isPlanned
                   ? 'border-transparent shadow-sm'
                   : isSelected
@@ -133,68 +133,91 @@ export default function WorkshopPage({ locale }: { locale: Locale }) {
                     : 'border-transparent shadow-sm hover:shadow-md hover:-translate-y-0.5 cursor-pointer'
               }`}
             >
-              <div className="flex justify-between items-start mb-2">
-                <div>
-                  {dc.dance && <span className="text-xs font-semibold uppercase tracking-wider text-accent-dark">{dc.dance}</span>}
-                  <h3 className="font-display text-xl font-bold text-primary">{title}</h3>
-                  {dc.teachers && <p className="text-sm text-text-muted">mit {dc.teachers}</p>}
-                </div>
-                <div className="flex gap-2 items-center">
-                  {dc.level && (
-                    <span className="text-xs bg-teal/10 text-teal-dark font-semibold px-3 py-1 rounded-full">{dc.level}</span>
-                  )}
-                  {isSelected && !isPlanned && (
-                    <span className="text-xs bg-teal text-white font-semibold px-3 py-1 rounded-full">✓</span>
-                  )}
-                </div>
-              </div>
-
-              {description && <div className="border-l-2 border-teal/30 pl-3 text-text-muted text-sm mb-3 leading-relaxed [&_strong]:text-text" dangerouslySetInnerHTML={{ __html: simpleMarkdown(description) }} />}
-
-              <div className="space-y-2 text-sm text-text-muted mb-3">
-                {sessions.length > 0 && (
-                  <div>
-                    <div className="font-medium text-text mb-1">📅 {sessions.length} {sessions.length === 1 ? i18n.workshops.session : i18n.workshops.sessions}:</div>
-                    <div className="space-y-0.5 ml-5">
-                      {sessions.map((s) => (
-                        <div key={s.id}>
-                          {new Date(s.session_date).toLocaleDateString(dtLocale, { weekday: 'short', day: 'numeric', month: 'short' })},{' '}
-                          {s.start_time.slice(0, 5)}–{s.end_time.slice(0, 5)}
-                          {s.note && <span className="text-accent-dark ml-1">({s.note})</span>}
-                        </div>
-                      ))}
+              {/* Header */}
+              <div className="px-5 pt-5 pb-3">
+                <div className="flex justify-between items-start gap-3">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      {dc.dance && <span className="text-[11px] font-bold uppercase tracking-widest text-accent-dark">{dc.dance}</span>}
+                      {dc.dance && dc.teachers && <span className="text-text-muted/30">·</span>}
+                      {dc.teachers && <span className="text-[11px] font-medium text-text-muted tracking-wide">{dc.teachers}</span>}
                     </div>
+                    <h3 className="font-display text-xl font-bold text-primary leading-tight">{title}</h3>
                   </div>
-                )}
-                {(dc.location || dc.price_eur != null) && (
-                  <div className="flex items-center gap-3">
-                    {dc.location && (
-                      <span>
-                        📍{' '}
-                        {dc.location_url ? (
-                          <a href={dc.location_url} target="_blank" rel="noopener noreferrer" className="underline hover:text-teal transition-colors">
-                            {dc.location}
-                          </a>
-                        ) : (
-                          dc.location
-                        )}
-                      </span>
+                  <div className="flex gap-2 items-center shrink-0">
+                    {dc.level && (
+                      <span className="text-xs bg-teal/10 text-teal-dark font-semibold px-3 py-1 rounded-full">{dc.level}</span>
                     )}
-                    {dc.location && dc.price_eur != null && <span className="text-text-muted/40">·</span>}
-                    {dc.price_eur != null && <span>{fmtCurrency(Number(dc.price_eur))}</span>}
+                    {isSelected && !isPlanned && (
+                      <span className="w-7 h-7 bg-teal text-white rounded-full flex items-center justify-center text-sm">✓</span>
+                    )}
                   </div>
-                )}
+                </div>
               </div>
 
-              {isPlanned && dc.registration_opens_at && (
-                <p className="text-sm text-accent-dark font-medium">
-                  {i18n.workshops.registration_opens} {new Date(dc.registration_opens_at).toLocaleString(dtLocale, { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false })}
-                </p>
+              {/* Description */}
+              {description && (
+                <div className="px-5 pb-3">
+                  <div className="border-l-2 border-teal/30 pl-3 text-text-muted text-sm leading-relaxed [&_strong]:text-text" dangerouslySetInnerHTML={{ __html: simpleMarkdown(description) }} />
+                </div>
               )}
-              {isOpen && dc.registration_closes_at && (
-                <p className="text-sm text-text-muted">
-                  {i18n.workshops.registration_closes} {new Date(dc.registration_closes_at).toLocaleString(dtLocale, { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false })}
-                </p>
+
+              {/* Details grid */}
+              <div className="px-5 pb-4">
+                <div className="bg-bg-warm/50 rounded-xl px-4 py-3 space-y-3">
+                  {sessions.length > 0 && (
+                    <div className="flex gap-3">
+                      <span className="text-base leading-5 shrink-0">📅</span>
+                      <div className="text-sm">
+                        <span className="font-semibold text-text">{sessions.length} {sessions.length === 1 ? i18n.workshops.session : i18n.workshops.sessions}:</span>
+                        <div className="mt-1 space-y-0.5 text-text-muted">
+                          {sessions.map((s) => (
+                            <div key={s.id} className="flex items-baseline gap-1 tabular-nums">
+                              <span>{new Date(s.session_date).toLocaleDateString(dtLocale, { weekday: 'short', day: 'numeric', month: 'short' })},</span>
+                              <span className="font-medium text-text">{s.start_time.slice(0, 5)}–{s.end_time.slice(0, 5)}</span>
+                              {s.note && <span className="text-xs text-accent-dark italic ml-1">{s.note}</span>}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {(dc.location || dc.price_eur != null) && (
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-text-muted">
+                      {dc.location && (
+                        <span className="inline-flex items-center gap-1.5">
+                          <span>📍</span>
+                          {dc.location_url ? (
+                            <a href={dc.location_url} target="_blank" rel="noopener noreferrer" className="font-medium text-primary underline decoration-primary/30 hover:decoration-primary transition-colors" onClick={(e) => e.stopPropagation()}>
+                              {dc.location}
+                            </a>
+                          ) : (
+                            <span className="font-medium">{dc.location}</span>
+                          )}
+                        </span>
+                      )}
+                      {dc.price_eur != null && (
+                        <span className="inline-flex items-center gap-1.5">
+                          <span>💰</span>
+                          <span className="font-semibold text-text">{fmtCurrency(Number(dc.price_eur))}</span>
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Registration status */}
+              {(isPlanned || isOpen) && (dc.registration_opens_at || dc.registration_closes_at) && (
+                <div className={`px-5 py-2.5 text-sm font-medium ${isPlanned ? 'bg-amber-50/80 text-amber-700 border-t border-amber-100' : 'bg-gray-50 text-text-muted border-t border-gray-100'}`}>
+                  {isPlanned && dc.registration_opens_at && (
+                    <span>🔜 {i18n.workshops.registration_opens} {new Date(dc.registration_opens_at).toLocaleString(dtLocale, { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false })}</span>
+                  )}
+                  {isOpen && dc.registration_closes_at && (
+                    <span>⏳ {i18n.workshops.registration_closes} {new Date(dc.registration_closes_at).toLocaleString(dtLocale, { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false })}</span>
+                  )}
+                </div>
               )}
             </div>
           );
@@ -233,62 +256,74 @@ export default function WorkshopPage({ locale }: { locale: Locale }) {
               <div
                 key={dc.id}
                 onClick={() => setSelectedId(isExpanded ? null : dc.id)}
-                className="bg-surface/60 rounded-2xl p-4 border border-bg-warm opacity-70 cursor-pointer hover:opacity-90 transition-all duration-300"
+                className="bg-surface/60 rounded-2xl border border-bg-warm opacity-70 cursor-pointer hover:opacity-90 transition-all duration-300 overflow-hidden"
               >
-                <div className="flex justify-between items-center">
-                  <div>
-                    {dc.dance && <span className="text-xs font-semibold uppercase tracking-wider text-accent-dark">{dc.dance}</span>}
-                    <h4 className="font-display font-semibold text-text">{title}</h4>
-                    {dc.teachers && <p className="text-sm text-text-muted">mit {dc.teachers}</p>}
+                <div className="p-4">
+                  <div className="flex justify-between items-center">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 mb-0.5">
+                        {dc.dance && <span className="text-[11px] font-bold uppercase tracking-widest text-accent-dark">{dc.dance}</span>}
+                        {dc.dance && dc.teachers && <span className="text-text-muted/30">·</span>}
+                        {dc.teachers && <span className="text-[11px] font-medium text-text-muted tracking-wide">{dc.teachers}</span>}
+                      </div>
+                      <h4 className="font-display font-semibold text-text">{title}</h4>
+                    </div>
+                    <div className="flex gap-2 items-center shrink-0">
+                      {dc.level && (
+                        <span className="text-xs bg-gray-100 text-text-muted font-medium px-3 py-1 rounded-full">{dc.level}</span>
+                      )}
+                      <span className="text-text-muted text-sm transition-transform duration-200" style={{ transform: isExpanded ? 'rotate(180deg)' : 'none' }}>▼</span>
+                    </div>
                   </div>
-                  <div className="flex gap-2 items-center">
-                    {dc.level && (
-                      <span className="text-xs bg-gray-100 text-text-muted font-medium px-3 py-1 rounded-full">{dc.level}</span>
-                    )}
-                    <span className="text-text-muted text-sm transition-transform duration-200" style={{ transform: isExpanded ? 'rotate(180deg)' : 'none' }}>▼</span>
-                  </div>
+                  {!isExpanded && sessions.length > 0 && (
+                    <p className="text-sm text-text-muted mt-1.5">
+                      📅 {new Date(sessions[0].session_date).toLocaleDateString(dtLocale, { month: 'short', year: 'numeric' })}
+                      {sessions.length > 1 && ` – ${new Date(sessions[sessions.length - 1].session_date).toLocaleDateString(dtLocale, { month: 'short', year: 'numeric' })}`}
+                      {' '}({sessions.length}x)
+                    </p>
+                  )}
                 </div>
-                {!isExpanded && sessions.length > 0 && (
-                  <p className="text-sm text-text-muted mt-1">
-                    📅 {new Date(sessions[0].session_date).toLocaleDateString(dtLocale, { month: 'short', year: 'numeric' })}
-                    {sessions.length > 1 && ` – ${new Date(sessions[sessions.length - 1].session_date).toLocaleDateString(dtLocale, { month: 'short', year: 'numeric' })}`}
-                    {' '}({sessions.length}x)
-                  </p>
-                )}
                 {isExpanded && (
-                  <div className="mt-3 space-y-2">
+                  <div className="px-4 pb-4 space-y-3">
                     {description && <div className="border-l-2 border-teal/30 pl-3 text-text-muted text-sm leading-relaxed [&_strong]:text-text" dangerouslySetInnerHTML={{ __html: simpleMarkdown(description) }} />}
-                    <div className="space-y-1 text-sm text-text-muted">
+                    <div className="bg-bg-warm/40 rounded-xl px-4 py-3 space-y-3">
                       {sessions.length > 0 && (
-                        <div>
-                          <div className="font-medium text-text mb-1">📅 {sessions.length} {sessions.length === 1 ? i18n.workshops.session : i18n.workshops.sessions}:</div>
-                          <div className="space-y-0.5 ml-5">
-                            {sessions.map((s) => (
-                              <div key={s.id}>
-                                {new Date(s.session_date).toLocaleDateString(dtLocale, { weekday: 'short', day: 'numeric', month: 'short' })},{' '}
-                                {s.start_time.slice(0, 5)}–{s.end_time.slice(0, 5)}
-                                {s.note && <span className="text-accent-dark ml-1">({s.note})</span>}
-                              </div>
-                            ))}
+                        <div className="flex gap-3 text-sm">
+                          <span className="text-base leading-5 shrink-0">📅</span>
+                          <div>
+                            <span className="font-semibold text-text">{sessions.length} {sessions.length === 1 ? i18n.workshops.session : i18n.workshops.sessions}:</span>
+                            <div className="mt-1 space-y-0.5 text-text-muted">
+                              {sessions.map((s) => (
+                                <div key={s.id} className="flex items-baseline gap-1 tabular-nums">
+                                  <span>{new Date(s.session_date).toLocaleDateString(dtLocale, { weekday: 'short', day: 'numeric', month: 'short' })},</span>
+                                  <span className="font-medium text-text">{s.start_time.slice(0, 5)}–{s.end_time.slice(0, 5)}</span>
+                                  {s.note && <span className="text-xs text-accent-dark italic ml-1">{s.note}</span>}
+                                </div>
+                              ))}
+                            </div>
                           </div>
                         </div>
                       )}
                       {(dc.location || dc.price_eur != null) && (
-                        <div className="flex items-center gap-3">
+                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-text-muted">
                           {dc.location && (
-                            <span>
-                              📍{' '}
+                            <span className="inline-flex items-center gap-1.5">
+                              <span>📍</span>
                               {dc.location_url ? (
-                                <a href={dc.location_url} target="_blank" rel="noopener noreferrer" className="underline hover:text-teal transition-colors" onClick={(e) => e.stopPropagation()}>
+                                <a href={dc.location_url} target="_blank" rel="noopener noreferrer" className="font-medium text-primary underline decoration-primary/30 hover:decoration-primary transition-colors" onClick={(e) => e.stopPropagation()}>
                                   {dc.location}
                                 </a>
                               ) : (
-                                dc.location
+                                <span className="font-medium">{dc.location}</span>
                               )}
                             </span>
                           )}
-                          {dc.location && dc.price_eur != null && <span className="text-text-muted/40">·</span>}
-                          {dc.price_eur != null && <span>{fmtCurrency(Number(dc.price_eur))}</span>}
+                          {dc.price_eur != null && (
+                            <span className="inline-flex items-center gap-1.5">
+                              <span>💰</span>
+                              <span className="font-semibold text-text">{fmtCurrency(Number(dc.price_eur))}</span>
+                            </span>
+                          )}
                         </div>
                       )}
                     </div>
