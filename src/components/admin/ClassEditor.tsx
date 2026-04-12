@@ -646,8 +646,8 @@ function InlineRegistrations({
           {manualError && <p className="text-error text-xs mt-2">{manualError}</p>}
           <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-100">
             <p className="text-xs text-text-muted">The participant will receive a confirmation email.</p>
-            <button type="submit" disabled={manualSaving} className="bg-teal hover:bg-teal-dark disabled:opacity-50 text-white font-semibold px-6 py-2.5 rounded-lg text-sm transition-colors shadow-sm">
-              {manualSaving ? 'Saving...' : '✉️ Register & Send Email'}
+            <button type="submit" disabled={manualSaving} className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-semibold px-6 py-2.5 rounded-lg text-sm transition-colors shadow-sm">
+              {manualSaving ? 'Saving...' : 'Register & Send Email'}
             </button>
           </div>
         </form>

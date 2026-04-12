@@ -167,7 +167,7 @@ export default function WorkshopPage({ locale }: { locale: Locale }) {
                 <div className="bg-bg-warm/50 rounded-xl px-4 py-3 space-y-3">
                   {sessions.length > 0 && (
                     <div className="flex gap-3">
-                      <span className="text-base leading-5 shrink-0">📅</span>
+                      <svg className="w-4 h-4 text-teal shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" strokeWidth="2" /><path d="M16 2v4M8 2v4M3 10h18" strokeWidth="2" strokeLinecap="round" /></svg>
                       <div className="text-sm">
                         <span className="font-semibold text-text">{sessions.length} {sessions.length === 1 ? i18n.workshops.session : i18n.workshops.sessions}:</span>
                         <div className="mt-1 space-y-0.5 text-text-muted">
@@ -199,7 +199,7 @@ export default function WorkshopPage({ locale }: { locale: Locale }) {
                       )}
                       {dc.price_eur != null && (
                         <span className="inline-flex items-center gap-1.5">
-                          <span>💰</span>
+                          <span className="text-teal font-bold">€</span>
                           <span className="font-semibold text-text">{fmtCurrency(Number(dc.price_eur))}</span>
                         </span>
                       )}
@@ -276,8 +276,9 @@ export default function WorkshopPage({ locale }: { locale: Locale }) {
                     </div>
                   </div>
                   {!isExpanded && sessions.length > 0 && (
-                    <p className="text-sm text-text-muted mt-1.5">
-                      📅 {new Date(sessions[0].session_date).toLocaleDateString(dtLocale, { month: 'short', year: 'numeric' })}
+                    <p className="text-sm text-text-muted mt-1.5 flex items-center gap-1.5">
+                      <svg className="w-3.5 h-3.5 text-teal shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" strokeWidth="2" /><path d="M16 2v4M8 2v4M3 10h18" strokeWidth="2" strokeLinecap="round" /></svg>
+                      {new Date(sessions[0].session_date).toLocaleDateString(dtLocale, { month: 'short', year: 'numeric' })}
                       {sessions.length > 1 && ` – ${new Date(sessions[sessions.length - 1].session_date).toLocaleDateString(dtLocale, { month: 'short', year: 'numeric' })}`}
                       {' '}({sessions.length}x)
                     </p>
@@ -289,7 +290,7 @@ export default function WorkshopPage({ locale }: { locale: Locale }) {
                     <div className="bg-bg-warm/40 rounded-xl px-4 py-3 space-y-3">
                       {sessions.length > 0 && (
                         <div className="flex gap-3 text-sm">
-                          <span className="text-base leading-5 shrink-0">📅</span>
+                          <svg className="w-4 h-4 text-teal shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" strokeWidth="2" /><path d="M16 2v4M8 2v4M3 10h18" strokeWidth="2" strokeLinecap="round" /></svg>
                           <div>
                             <span className="font-semibold text-text">{sessions.length} {sessions.length === 1 ? i18n.workshops.session : i18n.workshops.sessions}:</span>
                             <div className="mt-1 space-y-0.5 text-text-muted">
@@ -320,7 +321,7 @@ export default function WorkshopPage({ locale }: { locale: Locale }) {
                           )}
                           {dc.price_eur != null && (
                             <span className="inline-flex items-center gap-1.5">
-                              <span>💰</span>
+                              <span className="text-teal font-bold">€</span>
                               <span className="font-semibold text-text">{fmtCurrency(Number(dc.price_eur))}</span>
                             </span>
                           )}
