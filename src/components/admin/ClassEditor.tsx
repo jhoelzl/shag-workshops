@@ -57,6 +57,7 @@ export default function ClassEditor({ classes, registrations, onUpdate }: Props)
   const [saving, setSaving] = useState(false);
   const [classSessionsMap, setClassSessionsMap] = useState<Record<string, ClassSession[]>>({});
   const [expandedClassId, setExpandedClassId] = useState<string | null>(null);
+  const [viewClassId, setViewClassId] = useState<string | null>(null);
   const [filterLevel, setFilterLevel] = useState<string>('all');
   const [filterDance, setFilterDance] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<ClassState | 'all'>('all');
@@ -362,7 +363,9 @@ export default function ClassEditor({ classes, registrations, onUpdate }: Props)
           const state = getClassState(classSessionsMap[dc.id] || [], dc.registration_opens_at, dc.registration_closes_at);
           const counts = regCountsMap[dc.id] || { leads: 0, follows: 0, pending: 0, confirmed: 0, waitlisted: 0, cancelled: 0 };
           const isExpanded = expandedClassId === dc.id;
+          const isViewing = viewClassId === dc.id;
           const classRegs = registrations.filter((r) => r.dance_class_id === dc.id);
+          const classSessions = classSessionsMap[dc.id] || [];
 
           return (
             <div key={dc.id}>
@@ -383,7 +386,10 @@ export default function ClassEditor({ classes, registrations, onUpdate }: Props)
                 />
               ) : (
                 <div className={`bg-surface rounded-xl border shadow-sm transition-all ${editing ? 'opacity-40 pointer-events-none' : 'border-gray-100 hover:shadow-md'}`}>
-                  <div className="p-4">
+                  <div
+                    className="p-4 cursor-pointer"
+                    onClick={() => setViewClassId(isViewing ? null : dc.id)}
+                  >
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap mb-1">
@@ -392,6 +398,7 @@ export default function ClassEditor({ classes, registrations, onUpdate }: Props)
                           {!dc.is_public && (
                             <span className="text-[10px] font-semibold uppercase tracking-wider bg-gray-100 text-gray-500 px-2 py-0.5 rounded">Draft</span>
                           )}
+                          <svg className={`w-4 h-4 text-gray-400 transition-transform ${isViewing ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
                         </div>
                         <div className="text-sm text-text-muted flex flex-wrap items-center gap-x-3 gap-y-1">
                           {dc.level && (
@@ -415,7 +422,7 @@ export default function ClassEditor({ classes, registrations, onUpdate }: Props)
                           </div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-1.5 shrink-0">
+                      <div className="flex items-center gap-1.5 shrink-0" onClick={(e) => e.stopPropagation()}>
                         <button
                           onClick={() => setExpandedClassId(isExpanded ? null : dc.id)}
                           className={`text-xs font-medium px-3 py-1.5 rounded-lg transition-colors ${isExpanded ? 'bg-primary text-white' : 'bg-primary/5 hover:bg-primary/10 text-primary'}`}
@@ -429,6 +436,12 @@ export default function ClassEditor({ classes, registrations, onUpdate }: Props)
                       </div>
                     </div>
                   </div>
+
+                  {isViewing && (
+                    <div className="border-t border-gray-100 bg-gray-50/30 px-4 py-4">
+                      <ClassDetailView dc={dc} sessions={classSessions} />
+                    </div>
+                  )}
 
                   {isExpanded && (
                     <div className="border-t border-gray-100 bg-gray-50/50 rounded-b-xl">
@@ -698,6 +711,102 @@ function InlineRegistrations({
         </div>
       ) : (
         <p className="text-text-muted text-sm text-center py-4">No registrations yet.</p>
+      )}
+    </div>
+  );
+}
+
+function ClassDetailView({ dc, sessions }: { dc: DanceClass; sessions: ClassSession[] }) {
+  const fmt = (v: string | null | undefined) => v || '—';
+  const fmtDate = (v: string | null | undefined) => {
+    if (!v) return '—';
+    return new Date(v).toLocaleString('de-DE', { dateStyle: 'medium', timeStyle: 'short' });
+  };
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3 text-sm">
+      <div>
+        <span className="text-text-muted text-xs uppercase tracking-wider">Titel (DE)</span>
+        <p className="font-medium">{fmt(dc.title_de)}</p>
+      </div>
+      <div>
+        <span className="text-text-muted text-xs uppercase tracking-wider">Titel (EN)</span>
+        <p className="font-medium">{fmt(dc.title_en)}</p>
+      </div>
+      <div className="md:col-span-2">
+        <span className="text-text-muted text-xs uppercase tracking-wider">Beschreibung (DE)</span>
+        <p className="whitespace-pre-wrap">{fmt(dc.description_de)}</p>
+      </div>
+      <div className="md:col-span-2">
+        <span className="text-text-muted text-xs uppercase tracking-wider">Beschreibung (EN)</span>
+        <p className="whitespace-pre-wrap">{fmt(dc.description_en)}</p>
+      </div>
+      <div>
+        <span className="text-text-muted text-xs uppercase tracking-wider">Level</span>
+        <p>{fmt(dc.level)}</p>
+      </div>
+      <div>
+        <span className="text-text-muted text-xs uppercase tracking-wider">Tanz</span>
+        <p>{fmt(dc.dance)}</p>
+      </div>
+      <div>
+        <span className="text-text-muted text-xs uppercase tracking-wider">Lehrer</span>
+        <p>{fmt(dc.teachers)}</p>
+      </div>
+      <div>
+        <span className="text-text-muted text-xs uppercase tracking-wider">Ort</span>
+        <p>
+          {dc.location_url ? (
+            <a href={dc.location_url} target="_blank" rel="noopener noreferrer" className="text-primary underline">{dc.location || dc.location_url}</a>
+          ) : (
+            fmt(dc.location)
+          )}
+        </p>
+      </div>
+      <div>
+        <span className="text-text-muted text-xs uppercase tracking-wider">Max Leads</span>
+        <p>{dc.max_leads}</p>
+      </div>
+      <div>
+        <span className="text-text-muted text-xs uppercase tracking-wider">Max Follows</span>
+        <p>{dc.max_follows}</p>
+      </div>
+      <div>
+        <span className="text-text-muted text-xs uppercase tracking-wider">Preis (EUR)</span>
+        <p>{dc.price_eur != null ? `${dc.price_eur} €` : '—'}</p>
+      </div>
+      <div>
+        <span className="text-text-muted text-xs uppercase tracking-wider">Öffentlich</span>
+        <p>{dc.is_public ? 'Ja' : 'Nein'}</p>
+      </div>
+      <div>
+        <span className="text-text-muted text-xs uppercase tracking-wider">Reg. öffnet</span>
+        <p>{fmtDate(dc.registration_opens_at)}</p>
+      </div>
+      <div>
+        <span className="text-text-muted text-xs uppercase tracking-wider">Reg. schließt</span>
+        <p>{fmtDate(dc.registration_closes_at)}</p>
+      </div>
+
+      {sessions.length > 0 && (
+        <div className="md:col-span-2 mt-2">
+          <span className="text-text-muted text-xs uppercase tracking-wider">Termine</span>
+          <div className="mt-1 space-y-1">
+            {sessions
+              .sort((a, b) => (a.session_date ?? '').localeCompare(b.session_date ?? ''))
+              .map((s, i) => (
+                <div key={s.id || i} className="flex items-center gap-3 text-sm bg-white rounded px-3 py-1.5 border border-gray-100">
+                  <span className="font-medium">
+                    {s.session_date ? new Date(s.session_date + 'T00:00:00').toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' }) : '—'}
+                  </span>
+                  <span className="text-text-muted">
+                    {s.start_time?.slice(0, 5) || '?'} – {s.end_time?.slice(0, 5) || '?'}
+                  </span>
+                  {s.note && <span className="text-text-muted italic">{s.note}</span>}
+                </div>
+              ))}
+          </div>
+        </div>
       )}
     </div>
   );
