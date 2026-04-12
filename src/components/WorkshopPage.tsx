@@ -143,6 +143,14 @@ export default function WorkshopPage({ locale }: { locale: Locale }) {
     <div className="grid gap-8 lg:grid-cols-5">
       {/* Class list */}
       <div className="lg:col-span-3 space-y-4">
+        {filteredClasses.length === 0 && (
+          <div className="bg-surface rounded-2xl border border-bg-warm p-6 text-center">
+            <p className="font-semibold text-primary">{i18n.workshops.no_current_workshops}</p>
+            {filterLevel !== 'all' && (
+              <p className="text-sm text-text-muted mt-2">{i18n.workshops.no_current_workshops_for_level}</p>
+            )}
+          </div>
+        )}
         {filteredClasses.map((dc) => {
           const title = locale === 'de' ? dc.title_de : dc.title_en;
           const description = locale === 'de' ? dc.description_de : dc.description_en;

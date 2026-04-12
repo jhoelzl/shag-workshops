@@ -32,7 +32,9 @@
     "registration_closes": "Registration possible until",
     "archive": "Archive",
     "what_to_bring": "What to bring",
-    "filter_all_levels": "All Levels"
+    "filter_all_levels": "All Levels",
+    "no_current_workshops": "There are currently no workshops available.",
+    "no_current_workshops_for_level": "There are currently no workshops available for this level."
   },
   "registration": {
     "title": "Registration",
