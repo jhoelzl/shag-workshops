@@ -48,6 +48,8 @@
     "success_message": "You will receive a confirmation email. The organizer will review and confirm your registration.",
     "error_title": "Error",
     "error_duplicate": "You are already registered for this workshop.",
+    "error_closed": "Registration is currently closed.",
+    "error_validation": "Please check your input and try again.",
     "error_generic": "Something went wrong. Please try again."
   },
   "footer": {
