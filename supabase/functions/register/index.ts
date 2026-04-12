@@ -57,14 +57,17 @@ Deno.serve(async (req) => {
       );
     }
 
-    if (danceClass.status !== 'open' || !danceClass.registration_opens_at || new Date(danceClass.registration_opens_at) > new Date()) {
+    const now = new Date();
+
+    // Registration opens at a specific time if configured.
+    if (danceClass.registration_opens_at && new Date(danceClass.registration_opens_at) > now) {
       return new Response(
         JSON.stringify({ error: 'Registration is closed', code: 'CLOSED' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    if (danceClass.registration_closes_at && new Date(danceClass.registration_closes_at) < new Date()) {
+    if (danceClass.registration_closes_at && new Date(danceClass.registration_closes_at) < now) {
       return new Response(
         JSON.stringify({ error: 'Registration deadline has passed', code: 'CLOSED' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

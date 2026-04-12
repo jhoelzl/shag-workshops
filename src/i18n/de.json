@@ -48,6 +48,8 @@
     "success_message": "Du erhältst eine Bestätigungs-E-Mail. Der Veranstalter wird deine Anmeldung prüfen und bestätigen.",
     "error_title": "Fehler",
     "error_duplicate": "Du bist bereits für diesen Workshop angemeldet.",
+    "error_closed": "Die Anmeldung ist derzeit geschlossen.",
+    "error_validation": "Bitte prüfe deine Eingaben und versuche es erneut.",
     "error_generic": "Etwas ist schiefgelaufen. Bitte versuche es erneut."
   },
   "footer": {

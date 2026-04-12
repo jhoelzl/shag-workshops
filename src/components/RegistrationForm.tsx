@@ -55,8 +55,12 @@ export default function RegistrationForm({ locale, danceClasses, supabaseFunctio
       if (!response.ok) {
         if (data.code === 'DUPLICATE') {
           setResult({ type: 'error', message: i18n.registration.error_duplicate });
+        } else if (data.code === 'CLOSED') {
+          setResult({ type: 'error', message: i18n.registration.error_closed });
+        } else if (data.code === 'VALIDATION') {
+          setResult({ type: 'error', message: i18n.registration.error_validation });
         } else {
-          setResult({ type: 'error', message: data.message || i18n.registration.error_generic });
+          setResult({ type: 'error', message: data.message || data.error || i18n.registration.error_generic });
         }
       } else {
         setResult({ type: 'success', message: i18n.registration.success_message });
