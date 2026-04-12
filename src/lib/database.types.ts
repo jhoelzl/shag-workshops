@@ -18,6 +18,8 @@ export interface Database {
           price_eur: number | null;
           registration_opens_at: string | null;
           registration_closes_at: string | null;
+          dance: string | null;
+          teachers: string | null;
           is_public: boolean;
           created_at: string;
           updated_at: string;
@@ -36,6 +38,8 @@ export interface Database {
           price_eur?: number | null;
           registration_opens_at?: string | null;
           registration_closes_at?: string | null;
+          dance?: string | null;
+          teachers?: string | null;
           is_public?: boolean;
           created_at?: string;
           updated_at?: string;
@@ -54,6 +58,8 @@ export interface Database {
           price_eur?: number | null;
           registration_opens_at?: string | null;
           registration_closes_at?: string | null;
+          dance?: string | null;
+          teachers?: string | null;
           is_public?: boolean;
           created_at?: string;
           updated_at?: string;

@@ -117,7 +117,7 @@ export default function AdminDashboard() {
         )}
 
         {tab === 'classes' && (
-          <ClassEditor classes={classes} onUpdate={loadData} />
+          <ClassEditor classes={classes} registrations={registrations} onUpdate={loadData} />
         )}
 
         {tab === 'registrations' && (

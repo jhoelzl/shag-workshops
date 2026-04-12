@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../../lib/supabase';
-import type { DanceClass, ClassSession } from '../../lib/database.types';
-import { getClassState } from '../../lib/classState';
+import type { DanceClass, ClassSession, Registration } from '../../lib/database.types';
+import { getClassState, type ClassState } from '../../lib/classState';
 
 interface Props {
   classes: DanceClass[];
+  registrations: Registration[];
   onUpdate: () => void;
 }
 
@@ -22,6 +23,8 @@ const EMPTY_CLASS = {
   description_de: '',
   description_en: '',
   level: '',
+  dance: '',
+  teachers: '',
   location: '',
   location_url: '',
   max_leads: 10,
@@ -39,13 +42,27 @@ const EMPTY_SESSION: SessionDraft = {
   note: '',
 };
 
-export default function ClassEditor({ classes, onUpdate }: Props) {
+const LEVELS = ['Beginner', 'Beginner/Improver', 'Improver', 'Intermediate', 'Intermediate/Advanced', 'Advanced'];
+const DANCES = ['Collegiate Shag', 'Lindy Hop', 'Balboa'];
+const STATUS_OPTIONS: { value: ClassState | 'all'; label: string }[] = [
+  { value: 'all', label: 'All Statuses' },
+  { value: 'open', label: '🟢 Open' },
+  { value: 'upcoming', label: '🟡 Upcoming' },
+  { value: 'archived', label: '⚫ Archived' },
+];
+
+export default function ClassEditor({ classes, registrations, onUpdate }: Props) {
   const [editing, setEditing] = useState<Partial<DanceClass> | null>(null);
   const [sessions, setSessions] = useState<SessionDraft[]>([]);
   const [saving, setSaving] = useState(false);
   const [classSessionsMap, setClassSessionsMap] = useState<Record<string, ClassSession[]>>({});
+  const [expandedClassId, setExpandedClassId] = useState<string | null>(null);
+  const [filterLevel, setFilterLevel] = useState<string>('all');
+  const [filterDance, setFilterDance] = useState<string>('all');
+  const [filterStatus, setFilterStatus] = useState<ClassState | 'all'>('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [addingRegFor, setAddingRegFor] = useState<string | null>(null);
 
-  // Load sessions for all classes
   useEffect(() => {
     async function loadSessions() {
       const { data } = await supabase
@@ -63,6 +80,43 @@ export default function ClassEditor({ classes, onUpdate }: Props) {
     }
     loadSessions();
   }, [classes]);
+
+  const regCountsMap = useMemo(() => {
+    const map: Record<string, { leads: number; follows: number; pending: number; confirmed: number; waitlisted: number; cancelled: number }> = {};
+    for (const r of registrations) {
+      if (!map[r.dance_class_id]) map[r.dance_class_id] = { leads: 0, follows: 0, pending: 0, confirmed: 0, waitlisted: 0, cancelled: 0 };
+      if (['pending', 'confirmed'].includes(r.status)) {
+        if (r.role === 'lead') map[r.dance_class_id].leads++;
+        else map[r.dance_class_id].follows++;
+      }
+      map[r.dance_class_id][r.status as 'pending' | 'confirmed' | 'waitlisted' | 'cancelled']++;
+    }
+    return map;
+  }, [registrations]);
+
+  const availableLevels = useMemo(() => {
+    const levels = new Set(classes.map((c) => c.level).filter(Boolean));
+    return Array.from(levels).sort();
+  }, [classes]);
+
+  const availableDances = useMemo(() => {
+    const dances = new Set(classes.map((c) => c.dance).filter(Boolean));
+    return Array.from(dances).sort();
+  }, [classes]);
+
+  const filteredClasses = useMemo(() => {
+    return classes.filter((dc) => {
+      const state = getClassState(classSessionsMap[dc.id] || [], dc.registration_opens_at, dc.registration_closes_at);
+      if (filterStatus !== 'all' && state !== filterStatus) return false;
+      if (filterLevel !== 'all' && dc.level !== filterLevel) return false;
+      if (filterDance !== 'all' && dc.dance !== filterDance) return false;
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase();
+        if (!dc.title_de.toLowerCase().includes(q) && !dc.title_en.toLowerCase().includes(q)) return false;
+      }
+      return true;
+    });
+  }, [classes, classSessionsMap, filterLevel, filterDance, filterStatus, searchQuery]);
 
   function duplicateClass(dc: DanceClass) {
     const existing = classSessionsMap[dc.id] || [];
@@ -116,7 +170,6 @@ export default function ClassEditor({ classes, onUpdate }: Props) {
     setSessions(updated);
   }
 
-  // Generate weekly dates helper
   function generateWeeklyDates(startDate: string, weeks: number, startTime: string, endTime: string) {
     const dates: SessionDraft[] = [];
     const start = new Date(startDate);
@@ -144,6 +197,8 @@ export default function ClassEditor({ classes, onUpdate }: Props) {
       description_de: editing.description_de || null,
       description_en: editing.description_en || null,
       level: editing.level || null,
+      dance: editing.dance || null,
+      teachers: editing.teachers || null,
       location: editing.location || null,
       location_url: editing.location_url || null,
       max_leads: editing.max_leads,
@@ -164,9 +219,7 @@ export default function ClassEditor({ classes, onUpdate }: Props) {
     }
 
     if (classId) {
-      // Delete existing sessions and re-insert
       await supabase.from('class_sessions').delete().eq('dance_class_id', classId);
-
       if (sessions.length > 0) {
         const sessionPayload = sessions
           .filter((s) => s.session_date && s.start_time && s.end_time)
@@ -190,6 +243,8 @@ export default function ClassEditor({ classes, onUpdate }: Props) {
 
   async function handleDelete(id: string) {
     if (!confirm('Delete this class and all its registrations?')) return;
+    await supabase.from('class_sessions').delete().eq('dance_class_id', id);
+    await supabase.from('registrations').delete().eq('dance_class_id', id);
     await supabase.from('dance_classes').delete().eq('id', id);
     onUpdate();
   }
@@ -208,19 +263,80 @@ export default function ClassEditor({ classes, onUpdate }: Props) {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-xl font-bold">Dance Classes</h2>
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <h2 className="text-2xl font-bold">Dance Classes</h2>
         {!isCreatingNew && (
           <button
             onClick={() => startEditing()}
-            className="bg-primary hover:bg-primary-light text-white font-medium px-4 py-2 rounded-lg transition-colors text-sm"
+            className="bg-primary hover:bg-primary-light text-white font-medium px-5 py-2.5 rounded-xl transition-colors text-sm shadow-sm"
           >
             + New Class
           </button>
         )}
       </div>
 
-      {/* New Class Form (inline at the top) */}
+      {/* Filters */}
+      {!editing && (
+        <div className="bg-surface rounded-xl border border-gray-100 shadow-sm p-4 mb-6">
+          <div className="flex flex-wrap gap-3 items-center">
+            <div className="relative flex-1 min-w-[200px]">
+              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <input
+                type="text"
+                placeholder="Search classes..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
+              />
+            </div>
+            <select
+              value={filterLevel}
+              onChange={(e) => setFilterLevel(e.target.value)}
+              className="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-primary/30 outline-none"
+            >
+              <option value="all">All Levels</option>
+              {availableLevels.map((l) => (
+                <option key={l} value={l!}>{l}</option>
+              ))}
+            </select>
+            <select
+              value={filterDance}
+              onChange={(e) => setFilterDance(e.target.value)}
+              className="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-primary/30 outline-none"
+            >
+              <option value="all">All Dances</option>
+              {availableDances.map((d) => (
+                <option key={d} value={d!}>{d}</option>
+              ))}
+            </select>
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value as ClassState | 'all')}
+              className="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-primary/30 outline-none"
+            >
+              {STATUS_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
+            </select>
+            {(filterLevel !== 'all' || filterDance !== 'all' || filterStatus !== 'all' || searchQuery) && (
+              <button
+                onClick={() => { setFilterLevel('all'); setFilterDance('all'); setFilterStatus('all'); setSearchQuery(''); }}
+                className="text-xs text-text-muted hover:text-text px-2 py-1 transition-colors"
+              >
+                Clear filters
+              </button>
+            )}
+          </div>
+          <div className="text-xs text-text-muted mt-2">
+            {filteredClasses.length} of {classes.length} classes
+          </div>
+        </div>
+      )}
+
+      {/* New Class Form */}
       {isCreatingNew && (
         <div className="mb-6">
           <ClassForm
@@ -240,74 +356,353 @@ export default function ClassEditor({ classes, onUpdate }: Props) {
         </div>
       )}
 
-      {/* Class List */}
-      <div className="space-y-3 mb-8">
-        {classes.map((dc) => (
-          <div key={dc.id}>
-            {isEditingThis(dc.id) ? (
-              <ClassForm
-                editing={editing}
-                setEditing={setEditing}
-                sessions={sessions}
-                setSessions={setSessions}
-                addSession={addSession}
-                removeSession={removeSession}
-                updateSession={updateSession}
-                generateWeeklyDates={generateWeeklyDates}
-                handleSave={handleSave}
-                saving={saving}
-                onCancel={() => setEditing(null)}
-                title={`Edit: ${dc.title_de}`}
-              />
-            ) : (
-              <div className={`bg-surface rounded-lg shadow-sm border border-gray-100 p-4 flex items-center justify-between ${editing ? 'opacity-50' : ''}`}>
-                <div>
-                  <div className="font-medium">{dc.title_de} / {dc.title_en}</div>
-                  <div className="text-sm text-text-muted">
-                    {dc.level} · {getClassDateSummary(dc.id)} · {dc.max_leads}L/{dc.max_follows}F
-                    {(() => {
-                      const state = getClassState(classSessionsMap[dc.id] || [], dc.registration_opens_at, dc.registration_closes_at);
-                      if (state === 'open') return <span className="text-green-600 ml-2 font-medium">OPEN</span>;
-                      if (state === 'archived') return <span className="text-text-muted ml-2 font-medium">ARCHIVED</span>;
-                      return <span className="text-accent ml-2 font-medium">UPCOMING</span>;
-                    })()}
-                    {!dc.is_public && <span className="text-text-muted ml-2 font-medium">DRAFT</span>}
+      {/* Class Cards */}
+      <div className="space-y-3">
+        {filteredClasses.map((dc) => {
+          const state = getClassState(classSessionsMap[dc.id] || [], dc.registration_opens_at, dc.registration_closes_at);
+          const counts = regCountsMap[dc.id] || { leads: 0, follows: 0, pending: 0, confirmed: 0, waitlisted: 0, cancelled: 0 };
+          const isExpanded = expandedClassId === dc.id;
+          const classRegs = registrations.filter((r) => r.dance_class_id === dc.id);
+
+          return (
+            <div key={dc.id}>
+              {isEditingThis(dc.id) ? (
+                <ClassForm
+                  editing={editing!}
+                  setEditing={setEditing}
+                  sessions={sessions}
+                  setSessions={setSessions}
+                  addSession={addSession}
+                  removeSession={removeSession}
+                  updateSession={updateSession}
+                  generateWeeklyDates={generateWeeklyDates}
+                  handleSave={handleSave}
+                  saving={saving}
+                  onCancel={() => setEditing(null)}
+                  title={`Edit: ${dc.title_de}`}
+                />
+              ) : (
+                <div className={`bg-surface rounded-xl border shadow-sm transition-all ${editing ? 'opacity-40 pointer-events-none' : 'border-gray-100 hover:shadow-md'}`}>
+                  <div className="p-4">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap mb-1">
+                          <h3 className="font-semibold text-base truncate">{dc.title_de}</h3>
+                          <StatusBadge state={state} />
+                          {!dc.is_public && (
+                            <span className="text-[10px] font-semibold uppercase tracking-wider bg-gray-100 text-gray-500 px-2 py-0.5 rounded">Draft</span>
+                          )}
+                        </div>
+                        <div className="text-sm text-text-muted flex flex-wrap items-center gap-x-3 gap-y-1">
+                          {dc.level && (
+                            <span className="inline-flex items-center gap-1">
+                              <LevelDot level={dc.level} />
+                              {dc.level}
+                            </span>
+                          )}
+                          {dc.dance && <span>💃 {dc.dance}</span>}
+                          {dc.teachers && <span>🎓 {dc.teachers}</span>}
+                          <span>{getClassDateSummary(dc.id)}</span>
+                          {dc.location && <span>📍 {dc.location}</span>}
+                        </div>
+                        <div className="flex items-center gap-4 mt-3">
+                          <CapacityBar label="Leads" current={counts.leads} max={dc.max_leads} />
+                          <CapacityBar label="Follows" current={counts.follows} max={dc.max_follows} />
+                          <div className="text-xs text-text-muted ml-auto flex gap-2 items-center">
+                            {counts.pending > 0 && <span className="bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded font-medium">{counts.pending} pending</span>}
+                            {counts.confirmed > 0 && <span className="bg-green-100 text-green-700 px-1.5 py-0.5 rounded font-medium">{counts.confirmed} confirmed</span>}
+                            {counts.waitlisted > 0 && <span className="bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded font-medium">{counts.waitlisted} waitlisted</span>}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <button
+                          onClick={() => setExpandedClassId(isExpanded ? null : dc.id)}
+                          className={`text-xs font-medium px-3 py-1.5 rounded-lg transition-colors ${isExpanded ? 'bg-primary text-white' : 'bg-primary/5 hover:bg-primary/10 text-primary'}`}
+                          title="Show registrations"
+                        >
+                          {classRegs.length} Reg.
+                        </button>
+                        <button onClick={() => startEditing(dc)} className="text-xs font-medium bg-gray-50 hover:bg-gray-100 px-3 py-1.5 rounded-lg transition-colors">Edit</button>
+                        <button onClick={() => duplicateClass(dc)} className="text-xs font-medium bg-blue-50 hover:bg-blue-100 text-primary px-3 py-1.5 rounded-lg transition-colors">Duplicate</button>
+                        <button onClick={() => handleDelete(dc.id)} className="text-xs font-medium bg-red-50 hover:bg-red-100 text-error px-3 py-1.5 rounded-lg transition-colors">Delete</button>
+                      </div>
+                    </div>
                   </div>
+
+                  {isExpanded && (
+                    <div className="border-t border-gray-100 bg-gray-50/50 rounded-b-xl">
+                      <InlineRegistrations
+                        classRegs={classRegs}
+                        danceClass={dc}
+                        onUpdate={onUpdate}
+                        addingRegFor={addingRegFor}
+                        setAddingRegFor={setAddingRegFor}
+                      />
+                    </div>
+                  )}
                 </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => startEditing(dc)}
-                    disabled={!!editing}
-                    className="text-sm bg-gray-100 hover:bg-gray-200 disabled:opacity-50 px-3 py-1 rounded transition-colors"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => duplicateClass(dc)}
-                    disabled={!!editing}
-                    className="text-sm bg-blue-50 hover:bg-blue-100 text-primary disabled:opacity-50 px-3 py-1 rounded transition-colors"
-                  >
-                    Duplicate
-                  </button>
-                  <button
-                    onClick={() => handleDelete(dc.id)}
-                    disabled={!!editing}
-                    className="text-sm bg-red-50 hover:bg-red-100 text-error disabled:opacity-50 px-3 py-1 rounded transition-colors"
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
-            )}
+              )}
+            </div>
+          );
+        })}
+        {filteredClasses.length === 0 && !isCreatingNew && (
+          <div className="text-center py-12 text-text-muted">
+            <p className="text-lg mb-1">No classes found</p>
+            <p className="text-sm">Try adjusting your filters or create a new class.</p>
           </div>
-        ))}
-        {classes.length === 0 && !isCreatingNew && <p className="text-text-muted text-center py-8">No classes yet.</p>}
+        )}
       </div>
     </div>
   );
 }
 
-// Inline Class Form
+function StatusBadge({ state }: { state: ClassState }) {
+  const styles: Record<ClassState, string> = {
+    open: 'bg-green-100 text-green-700 ring-green-500/20',
+    upcoming: 'bg-amber-50 text-amber-700 ring-amber-500/20',
+    archived: 'bg-gray-100 text-gray-500 ring-gray-500/20',
+  };
+  const labels: Record<ClassState, string> = { open: 'Open', upcoming: 'Upcoming', archived: 'Archived' };
+  return (
+    <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ring-1 ${styles[state]}`}>
+      {labels[state]}
+    </span>
+  );
+}
+
+function LevelDot({ level }: { level: string }) {
+  const color = level.includes('Beginner') ? 'bg-green-400' : level.includes('Intermediate') ? 'bg-amber-400' : level.includes('Advanced') ? 'bg-red-400' : 'bg-gray-400';
+  return <span className={`w-2 h-2 rounded-full inline-block ${color}`} />;
+}
+
+function CapacityBar({ label, current, max }: { label: string; current: number; max: number }) {
+  const pct = max > 0 ? Math.min((current / max) * 100, 100) : 0;
+  const color = pct >= 100 ? 'bg-red-500' : pct >= 75 ? 'bg-amber-400' : 'bg-teal';
+  return (
+    <div className="flex items-center gap-2 text-xs min-w-[120px]">
+      <span className="text-text-muted font-medium w-14">{label}</span>
+      <div className="flex-1 bg-gray-200 rounded-full h-1.5 overflow-hidden">
+        <div className={`h-full rounded-full transition-all ${color}`} style={{ width: `${pct}%` }} />
+      </div>
+      <span className="text-text-muted tabular-nums">{current}/{max}</span>
+    </div>
+  );
+}
+
+function InlineRegistrations({
+  classRegs,
+  danceClass,
+  onUpdate,
+  addingRegFor,
+  setAddingRegFor,
+}: {
+  classRegs: Registration[];
+  danceClass: DanceClass;
+  onUpdate: () => void;
+  addingRegFor: string | null;
+  setAddingRegFor: (v: string | null) => void;
+}) {
+  const [updating, setUpdating] = useState<Set<string>>(new Set());
+  const [manualReg, setManualReg] = useState({ name: '', email: '', role: 'lead' as 'lead' | 'follow', partner_name: '', comment: '' });
+  const [manualSaving, setManualSaving] = useState(false);
+  const [manualError, setManualError] = useState('');
+
+  const sorted = [...classRegs].sort((a, b) => {
+    const order: Record<string, number> = { confirmed: 0, pending: 1, waitlisted: 2, cancelled: 3 };
+    return (order[a.status] ?? 9) - (order[b.status] ?? 9);
+  });
+
+  async function updateStatus(registrationId: string, newStatus: string) {
+    setUpdating((prev) => new Set(prev).add(registrationId));
+    const { data: { session } } = await supabase.auth.getSession();
+    const functionsUrl = `${import.meta.env.PUBLIC_SUPABASE_URL}/functions/v1`;
+    await fetch(`${functionsUrl}/confirm-registration`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session?.access_token}`,
+      },
+      body: JSON.stringify({ registration_id: registrationId, new_status: newStatus }),
+    });
+    setUpdating((prev) => { const next = new Set(prev); next.delete(registrationId); return next; });
+    onUpdate();
+  }
+
+  async function handleManualRegister(e: React.FormEvent) {
+    e.preventDefault();
+    setManualSaving(true);
+    setManualError('');
+    try {
+      const functionsUrl = `${import.meta.env.PUBLIC_SUPABASE_URL}/functions/v1`;
+      const response = await fetch(`${functionsUrl}/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          apikey: import.meta.env.PUBLIC_SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${import.meta.env.PUBLIC_SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({
+          dance_class_id: danceClass.id,
+          role: manualReg.role,
+          name: manualReg.name.trim(),
+          email: manualReg.email.trim().toLowerCase(),
+          partner_name: manualReg.partner_name.trim() || null,
+          comment: manualReg.comment.trim() || null,
+          locale: 'de',
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        setManualError(data.message || data.error || 'Registration failed');
+      } else {
+        setManualReg({ name: '', email: '', role: 'lead', partner_name: '', comment: '' });
+        setAddingRegFor(null);
+        onUpdate();
+      }
+    } catch {
+      setManualError('Network error');
+    } finally {
+      setManualSaving(false);
+    }
+  }
+
+  async function bulkConfirmByRole(role: 'lead' | 'follow') {
+    const pending = classRegs.filter((r) => r.role === role && r.status === 'pending');
+    if (pending.length === 0) return;
+    if (!confirm(`Confirm all ${pending.length} pending ${role}s?`)) return;
+    for (const reg of pending) {
+      await updateStatus(reg.id, 'confirmed');
+    }
+  }
+
+  const statusColors: Record<string, string> = {
+    pending: 'bg-yellow-100 text-yellow-700',
+    confirmed: 'bg-green-100 text-green-700',
+    waitlisted: 'bg-gray-100 text-gray-600',
+    cancelled: 'bg-red-100 text-red-600',
+  };
+
+  const isAdding = addingRegFor === danceClass.id;
+
+  return (
+    <div className="p-4">
+      <div className="flex flex-wrap items-center gap-2 mb-3">
+        <button
+          onClick={() => setAddingRegFor(isAdding ? null : danceClass.id)}
+          className={`text-xs font-medium px-3 py-1.5 rounded-lg transition-colors ${isAdding ? 'bg-gray-200 text-gray-700' : 'bg-teal/10 hover:bg-teal/20 text-teal'}`}
+        >
+          {isAdding ? 'Cancel' : '+ Add Participant'}
+        </button>
+        <button onClick={() => bulkConfirmByRole('lead')} className="text-xs font-medium bg-green-50 hover:bg-green-100 text-green-700 px-3 py-1.5 rounded-lg transition-colors">
+          Confirm pending Leads
+        </button>
+        <button onClick={() => bulkConfirmByRole('follow')} className="text-xs font-medium bg-green-50 hover:bg-green-100 text-green-700 px-3 py-1.5 rounded-lg transition-colors">
+          Confirm pending Follows
+        </button>
+      </div>
+
+      {isAdding && (
+        <form onSubmit={handleManualRegister} className="bg-white rounded-lg border border-teal/30 p-4 mb-4">
+          <h4 className="font-semibold text-sm mb-1">Add Participant Manually</h4>
+          <p className="text-xs text-text-muted mb-3">The participant will receive a confirmation email.</p>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <div>
+              <label className="block text-xs font-medium mb-1">Name <span className="text-coral">*</span></label>
+              <input type="text" value={manualReg.name} onChange={(e) => setManualReg({ ...manualReg, name: e.target.value })} required className="w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-sm focus:ring-2 focus:ring-teal/30 focus:border-teal outline-none" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium mb-1">Email <span className="text-coral">*</span></label>
+              <input type="email" value={manualReg.email} onChange={(e) => setManualReg({ ...manualReg, email: e.target.value })} required className="w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-sm focus:ring-2 focus:ring-teal/30 focus:border-teal outline-none" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium mb-1">Role <span className="text-coral">*</span></label>
+              <select value={manualReg.role} onChange={(e) => setManualReg({ ...manualReg, role: e.target.value as 'lead' | 'follow' })} className="w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-sm">
+                <option value="lead">Lead</option>
+                <option value="follow">Follow</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium mb-1">Partner Name</label>
+              <input type="text" value={manualReg.partner_name} onChange={(e) => setManualReg({ ...manualReg, partner_name: e.target.value })} className="w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-sm" />
+            </div>
+            <div className="col-span-2">
+              <label className="block text-xs font-medium mb-1">Comment</label>
+              <input type="text" value={manualReg.comment} onChange={(e) => setManualReg({ ...manualReg, comment: e.target.value })} placeholder="e.g. Phone registration" className="w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-sm" />
+            </div>
+          </div>
+          {manualError && <p className="text-error text-xs mt-2">{manualError}</p>}
+          <div className="flex justify-end mt-3">
+            <button type="submit" disabled={manualSaving} className="bg-teal hover:bg-teal-dark disabled:opacity-50 text-white font-medium px-4 py-1.5 rounded-lg text-xs transition-colors">
+              {manualSaving ? 'Saving...' : 'Register & Send Email'}
+            </button>
+          </div>
+        </form>
+      )}
+
+      {sorted.length > 0 ? (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-xs text-text-muted border-b border-gray-200">
+                <th className="py-2 px-2 font-medium">Name</th>
+                <th className="py-2 px-2 font-medium">Email</th>
+                <th className="py-2 px-2 font-medium">Role</th>
+                <th className="py-2 px-2 font-medium">Partner</th>
+                <th className="py-2 px-2 font-medium">Status</th>
+                <th className="py-2 px-2 font-medium">Date</th>
+                <th className="py-2 px-2 font-medium">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {sorted.map((reg) => {
+                const isUpdating = updating.has(reg.id);
+                return (
+                  <tr key={reg.id} className="border-b border-gray-100 hover:bg-white/80 transition-colors">
+                    <td className="py-2 px-2 font-medium">{reg.name}</td>
+                    <td className="py-2 px-2 text-text-muted">{reg.email}</td>
+                    <td className="py-2 px-2">
+                      <span className={`text-xs font-semibold ${reg.role === 'lead' ? 'text-primary' : 'text-accent-dark'}`}>
+                        {reg.role === 'lead' ? 'Lead' : 'Follow'}
+                      </span>
+                    </td>
+                    <td className="py-2 px-2 text-text-muted">{reg.partner_name || '—'}</td>
+                    <td className="py-2 px-2">
+                      <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${statusColors[reg.status]}`}>{reg.status}</span>
+                    </td>
+                    <td className="py-2 px-2 text-text-muted text-xs tabular-nums">{new Date(reg.created_at).toLocaleDateString('de-AT')}</td>
+                    <td className="py-2 px-2">
+                      <div className="flex gap-1">
+                        {reg.status !== 'confirmed' && (
+                          <button onClick={() => updateStatus(reg.id, 'confirmed')} disabled={isUpdating} className="text-[10px] font-medium bg-green-50 hover:bg-green-100 text-green-700 px-2 py-1 rounded-md disabled:opacity-50 transition-colors">
+                            {isUpdating ? '...' : 'Confirm'}
+                          </button>
+                        )}
+                        {reg.status !== 'waitlisted' && (
+                          <button onClick={() => updateStatus(reg.id, 'waitlisted')} disabled={isUpdating} className="text-[10px] font-medium bg-gray-50 hover:bg-gray-100 text-gray-600 px-2 py-1 rounded-md disabled:opacity-50 transition-colors">
+                            Waitlist
+                          </button>
+                        )}
+                        {reg.status !== 'cancelled' && (
+                          <button onClick={() => updateStatus(reg.id, 'cancelled')} disabled={isUpdating} className="text-[10px] font-medium bg-red-50 hover:bg-red-100 text-red-600 px-2 py-1 rounded-md disabled:opacity-50 transition-colors">
+                            Cancel
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <p className="text-text-muted text-sm text-center py-4">No registrations yet.</p>
+      )}
+    </div>
+  );
+}
+
 function ClassForm({
   editing,
   setEditing,
@@ -344,20 +739,19 @@ function ClassForm({
         <Input label="Title (EN)" value={editing.title_en ?? ''} onChange={(v) => setEditing({ ...editing, title_en: v })} required />
         <div>
           <label className="block text-sm font-medium mb-1">Level</label>
-          <select
-            value={editing.level ?? ''}
-            onChange={(e) => setEditing({ ...editing, level: e.target.value })}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-          >
+          <select value={editing.level ?? ''} onChange={(e) => setEditing({ ...editing, level: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
             <option value="">—</option>
-            <option value="Beginner">Beginner</option>
-            <option value="Beginner/Improver">Beginner/Improver</option>
-            <option value="Improver">Improver</option>
-            <option value="Intermediate">Intermediate</option>
-            <option value="Intermediate/Advanced">Intermediate/Advanced</option>
-            <option value="Advanced">Advanced</option>
+            {LEVELS.map((l) => <option key={l} value={l}>{l}</option>)}
           </select>
         </div>
+        <div>
+          <label className="block text-sm font-medium mb-1">Dance</label>
+          <select value={editing.dance ?? ''} onChange={(e) => setEditing({ ...editing, dance: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+            <option value="">—</option>
+            {DANCES.map((d) => <option key={d} value={d}>{d}</option>)}
+          </select>
+        </div>
+        <Input label="Teachers" value={editing.teachers ?? ''} onChange={(v) => setEditing({ ...editing, teachers: v })} placeholder="e.g. Alice & Bob" />
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 mt-4">
@@ -371,99 +765,39 @@ function ClassForm({
         <Input label="Price (EUR)" type="number" value={String(editing.price_eur ?? 0)} onChange={(v) => setEditing({ ...editing, price_eur: Number(v) })} />
         <Input label="Max Leads" type="number" value={String(editing.max_leads ?? 10)} onChange={(v) => setEditing({ ...editing, max_leads: Number(v) })} required />
         <Input label="Max Follows" type="number" value={String(editing.max_follows ?? 10)} onChange={(v) => setEditing({ ...editing, max_follows: Number(v) })} required />
-        <Input
-          label="Registration Opens At"
-          type="datetime-local"
-          value={editing.registration_opens_at ? editing.registration_opens_at.slice(0, 16) : ''}
-          onChange={(v) => setEditing({ ...editing, registration_opens_at: v ? new Date(v).toISOString() : '' })}
-        />
-        <Input
-          label="Registration Closes At"
-          type="datetime-local"
-          value={editing.registration_closes_at ? editing.registration_closes_at.slice(0, 16) : ''}
-          onChange={(v) => setEditing({ ...editing, registration_closes_at: v ? new Date(v).toISOString() : '' })}
-        />
+        <Input label="Registration Opens At" type="datetime-local" value={editing.registration_opens_at ? editing.registration_opens_at.slice(0, 16) : ''} onChange={(v) => setEditing({ ...editing, registration_opens_at: v ? new Date(v).toISOString() : '' })} />
+        <Input label="Registration Closes At" type="datetime-local" value={editing.registration_closes_at ? editing.registration_closes_at.slice(0, 16) : ''} onChange={(v) => setEditing({ ...editing, registration_closes_at: v ? new Date(v).toISOString() : '' })} />
         <div className="flex items-center gap-2 pt-6">
-          <input
-            type="checkbox"
-            id="is_public"
-            checked={editing.is_public ?? false}
-            onChange={(e) => setEditing({ ...editing, is_public: e.target.checked })}
-            className="accent-primary"
-          />
+          <input type="checkbox" id="is_public" checked={editing.is_public ?? false} onChange={(e) => setEditing({ ...editing, is_public: e.target.checked })} className="accent-primary" />
           <label htmlFor="is_public" className="text-sm">Public (im Frontend sichtbar)</label>
         </div>
       </div>
 
-      {/* Sessions Section */}
       <div className="mt-6 border-t pt-4">
         <div className="flex justify-between items-center mb-3">
           <h4 className="font-bold text-sm">Sessions ({sessions.length})</h4>
           <div className="flex gap-2">
             <GenerateButton onGenerate={generateWeeklyDates} />
-            <button
-              type="button"
-              onClick={addSession}
-              className="text-xs bg-primary/10 hover:bg-primary/20 text-primary font-medium px-3 py-1 rounded transition-colors"
-            >
-              + Add Date
-            </button>
+            <button type="button" onClick={addSession} className="text-xs bg-primary/10 hover:bg-primary/20 text-primary font-medium px-3 py-1 rounded transition-colors">+ Add Date</button>
           </div>
         </div>
-
-        {sessions.length === 0 && (
-          <p className="text-text-muted text-sm text-center py-4">No sessions yet. Add individual dates or generate weekly dates.</p>
-        )}
-
+        {sessions.length === 0 && <p className="text-text-muted text-sm text-center py-4">No sessions yet. Add individual dates or generate weekly dates.</p>}
         <div className="space-y-2">
           {sessions.map((s, i) => (
             <div key={i} className="flex items-center gap-2 bg-gray-50 rounded-lg p-2">
-              <input
-                type="date"
-                value={s.session_date}
-                onChange={(e) => updateSession(i, 'session_date', e.target.value)}
-                required
-                className="border border-gray-300 rounded px-2 py-1 text-sm flex-1 min-w-0"
-              />
-              <input
-                type="time"
-                value={s.start_time}
-                onChange={(e) => updateSession(i, 'start_time', e.target.value)}
-                required
-                className="border border-gray-300 rounded px-2 py-1 text-sm w-24"
-              />
+              <input type="date" value={s.session_date} onChange={(e) => updateSession(i, 'session_date', e.target.value)} required className="border border-gray-300 rounded px-2 py-1 text-sm flex-1 min-w-0" />
+              <input type="time" value={s.start_time} onChange={(e) => updateSession(i, 'start_time', e.target.value)} required className="border border-gray-300 rounded px-2 py-1 text-sm w-24" />
               <span className="text-text-muted text-xs">–</span>
-              <input
-                type="time"
-                value={s.end_time}
-                onChange={(e) => updateSession(i, 'end_time', e.target.value)}
-                required
-                className="border border-gray-300 rounded px-2 py-1 text-sm w-24"
-              />
-              <input
-                type="text"
-                value={s.note}
-                onChange={(e) => updateSession(i, 'note', e.target.value)}
-                placeholder="Note"
-                className="border border-gray-300 rounded px-2 py-1 text-sm w-32"
-              />
-              <button
-                type="button"
-                onClick={() => removeSession(i)}
-                className="text-error hover:text-red-700 text-lg font-bold px-1"
-                title="Remove"
-              >
-                ×
-              </button>
+              <input type="time" value={s.end_time} onChange={(e) => updateSession(i, 'end_time', e.target.value)} required className="border border-gray-300 rounded px-2 py-1 text-sm w-24" />
+              <input type="text" value={s.note} onChange={(e) => updateSession(i, 'note', e.target.value)} placeholder="Note" className="border border-gray-300 rounded px-2 py-1 text-sm w-32" />
+              <button type="button" onClick={() => removeSession(i)} className="text-error hover:text-red-700 text-lg font-bold px-1" title="Remove">×</button>
             </div>
           ))}
         </div>
       </div>
 
       <div className="flex justify-end gap-3 mt-6 border-t pt-4">
-        <button type="button" onClick={onCancel} className="px-4 py-2 text-sm text-text-muted hover:text-text transition-colors">
-          Cancel
-        </button>
+        <button type="button" onClick={onCancel} className="px-4 py-2 text-sm text-text-muted hover:text-text transition-colors">Cancel</button>
         <button type="submit" disabled={saving} className="bg-primary hover:bg-primary-light disabled:opacity-50 text-white font-medium px-6 py-2 rounded-lg transition-colors text-sm">
           {saving ? 'Saving...' : 'Save'}
         </button>
@@ -472,7 +806,6 @@ function ClassForm({
   );
 }
 
-// Generate weekly dates helper popup
 function GenerateButton({ onGenerate }: { onGenerate: (start: string, weeks: number, startTime: string, endTime: string) => void }) {
   const [open, setOpen] = useState(false);
   const [startDate, setStartDate] = useState('');
@@ -488,13 +821,7 @@ function GenerateButton({ onGenerate }: { onGenerate: (start: string, weeks: num
 
   if (!open) {
     return (
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="text-xs bg-accent/15 hover:bg-accent/25 text-accent-dark font-medium px-3 py-1 rounded transition-colors"
-      >
-        Generate Weekly
-      </button>
+      <button type="button" onClick={() => setOpen(true)} className="text-xs bg-accent/15 hover:bg-accent/25 text-accent-dark font-medium px-3 py-1 rounded transition-colors">Generate Weekly</button>
     );
   }
 
@@ -502,23 +829,11 @@ function GenerateButton({ onGenerate }: { onGenerate: (start: string, weeks: num
     <div className="absolute bg-surface border shadow-lg rounded-lg p-4 z-10 right-0 w-72">
       <h5 className="font-bold text-sm mb-3">Generate Weekly Dates</h5>
       <div className="space-y-2">
-        <div>
-          <label className="text-xs font-medium">First Date</label>
-          <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="w-full border rounded px-2 py-1 text-sm" />
-        </div>
-        <div>
-          <label className="text-xs font-medium">Number of Weeks</label>
-          <input type="number" min={1} max={52} value={weeks} onChange={(e) => setWeeks(Number(e.target.value))} className="w-full border rounded px-2 py-1 text-sm" />
-        </div>
+        <div><label className="text-xs font-medium">First Date</label><input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="w-full border rounded px-2 py-1 text-sm" /></div>
+        <div><label className="text-xs font-medium">Number of Weeks</label><input type="number" min={1} max={52} value={weeks} onChange={(e) => setWeeks(Number(e.target.value))} className="w-full border rounded px-2 py-1 text-sm" /></div>
         <div className="grid grid-cols-2 gap-2">
-          <div>
-            <label className="text-xs font-medium">Start Time</label>
-            <input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} className="w-full border rounded px-2 py-1 text-sm" />
-          </div>
-          <div>
-            <label className="text-xs font-medium">End Time</label>
-            <input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} className="w-full border rounded px-2 py-1 text-sm" />
-          </div>
+          <div><label className="text-xs font-medium">Start Time</label><input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} className="w-full border rounded px-2 py-1 text-sm" /></div>
+          <div><label className="text-xs font-medium">End Time</label><input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} className="w-full border rounded px-2 py-1 text-sm" /></div>
         </div>
       </div>
       <div className="flex justify-end gap-2 mt-3">
@@ -529,17 +844,11 @@ function GenerateButton({ onGenerate }: { onGenerate: (start: string, weeks: num
   );
 }
 
-function Input({ label, value, onChange, type = 'text', required }: { label: string; value: string; onChange: (v: string) => void; type?: string; required?: boolean }) {
+function Input({ label, value, onChange, type = 'text', required, placeholder }: { label: string; value: string; onChange: (v: string) => void; type?: string; required?: boolean; placeholder?: string }) {
   return (
     <div>
       <label className="block text-sm font-medium mb-1">{label}</label>
-      <input
-        type={type}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        required={required}
-        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
-      />
+      <input type={type} value={value} onChange={(e) => onChange(e.target.value)} required={required} placeholder={placeholder} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none" />
     </div>
   );
 }
@@ -548,12 +857,7 @@ function TextArea({ label, value, onChange, hint }: { label: string; value: stri
   return (
     <div>
       <label className="block text-sm font-medium mb-1">{label}</label>
-      <textarea
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        rows={3}
-        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none resize-y"
-      />
+      <textarea value={value} onChange={(e) => onChange(e.target.value)} rows={3} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none resize-y" />
       {hint && <p className="text-xs text-gray-400 mt-1">{hint}</p>}
     </div>
   );

@@ -10,13 +10,21 @@ interface Props {
 
 export default function RegistrationTable({ registrations, classes, onUpdate }: Props) {
   const [filterClassId, setFilterClassId] = useState<string>('all');
+  const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState('');
   const [updating, setUpdating] = useState<Set<string>>(new Set());
 
-  const filtered = filterClassId === 'all'
-    ? registrations
-    : registrations.filter((r) => r.dance_class_id === filterClassId);
-
   const classMap = new Map(classes.map((c) => [c.id, c]));
+
+  const filtered = registrations.filter((r) => {
+    if (filterClassId !== 'all' && r.dance_class_id !== filterClassId) return false;
+    if (filterStatus !== 'all' && r.status !== filterStatus) return false;
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      if (!r.name.toLowerCase().includes(q) && !r.email.toLowerCase().includes(q)) return false;
+    }
+    return true;
+  });
 
   // Count leads/follows for filtered class
   const leadsCount = filtered.filter((r) => r.role === 'lead' && ['pending', 'confirmed'].includes(r.status)).length;
@@ -66,27 +74,58 @@ export default function RegistrationTable({ registrations, classes, onUpdate }: 
   return (
     <div>
       {/* Filters */}
-      <div className="flex flex-wrap items-center gap-4 mb-6">
-        <div>
-          <label className="text-sm font-medium mr-2">Filter by class:</label>
+      <div className="bg-surface rounded-xl border border-gray-100 shadow-sm p-4 mb-6">
+        <div className="flex flex-wrap gap-3 items-center">
+          <div className="relative flex-1 min-w-[180px]">
+            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <input
+              type="text"
+              placeholder="Search name or email..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
+            />
+          </div>
           <select
             value={filterClassId}
             onChange={(e) => setFilterClassId(e.target.value)}
-            className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+            className="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-primary/30 outline-none"
           >
             <option value="all">All Classes</option>
             {classes.map((c) => (
               <option key={c.id} value={c.id}>{c.title_de}</option>
             ))}
           </select>
+          <select
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value)}
+            className="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-primary/30 outline-none"
+          >
+            <option value="all">All Statuses</option>
+            <option value="pending">⏳ Pending</option>
+            <option value="confirmed">✅ Confirmed</option>
+            <option value="waitlisted">⏸ Waitlisted</option>
+            <option value="cancelled">❌ Cancelled</option>
+          </select>
+          {(filterClassId !== 'all' || filterStatus !== 'all' || searchQuery) && (
+            <button
+              onClick={() => { setFilterClassId('all'); setFilterStatus('all'); setSearchQuery(''); }}
+              className="text-xs text-text-muted hover:text-text px-2 py-1 transition-colors"
+            >
+              Clear filters
+            </button>
+          )}
         </div>
-
-        {selectedClass && (
-          <div className="flex gap-4 text-sm">
-            <span className="font-medium">Leads: {leadsCount}/{selectedClass.max_leads}</span>
-            <span className="font-medium">Follows: {followsCount}/{selectedClass.max_follows}</span>
-          </div>
-        )}
+        <div className="flex items-center gap-4 mt-2">
+          <span className="text-xs text-text-muted">{filtered.length} of {registrations.length} registrations</span>
+          {selectedClass && (
+            <span className="text-xs font-medium">
+              Leads: {leadsCount}/{selectedClass.max_leads} · Follows: {followsCount}/{selectedClass.max_follows}
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Bulk Actions */}
@@ -102,85 +141,87 @@ export default function RegistrationTable({ registrations, classes, onUpdate }: 
       )}
 
       {/* Table */}
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b text-left text-text-muted">
-              <th className="py-2 px-3">Name</th>
-              <th className="py-2 px-3">Email</th>
-              <th className="py-2 px-3">Class</th>
-              <th className="py-2 px-3">Role</th>
-              <th className="py-2 px-3">Partner</th>
-              <th className="py-2 px-3">Status</th>
-              <th className="py-2 px-3">Date</th>
-              <th className="py-2 px-3">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.map((reg) => {
-              const dc = classMap.get(reg.dance_class_id);
-              const isUpdating = updating.has(reg.id);
-
-              return (
-                <tr key={reg.id} className="border-b hover:bg-gray-50">
-                  <td className="py-2 px-3 font-medium">{reg.name}</td>
-                  <td className="py-2 px-3">{reg.email}</td>
-                  <td className="py-2 px-3 text-xs">{dc?.title_de ?? '—'}</td>
-                  <td className="py-2 px-3">
-                    <span className={`font-medium ${reg.role === 'lead' ? 'text-primary' : 'text-accent-dark'}`}>
-                      {reg.role}
-                    </span>
-                  </td>
-                  <td className="py-2 px-3 text-text-muted">{reg.partner_name || '—'}</td>
-                  <td className="py-2 px-3">
-                    <span className={`text-xs font-medium px-2 py-1 rounded ${statusColors[reg.status]}`}>
-                      {reg.status}
-                    </span>
-                  </td>
-                  <td className="py-2 px-3 text-text-muted text-xs">
-                    {new Date(reg.created_at).toLocaleDateString('de')}
-                  </td>
-                  <td className="py-2 px-3">
-                    <div className="flex gap-1">
-                      {reg.status !== 'confirmed' && (
-                        <button
-                          onClick={() => updateStatus(reg.id, 'confirmed')}
-                          disabled={isUpdating}
-                          className="text-xs bg-green-50 hover:bg-green-100 text-success px-2 py-1 rounded disabled:opacity-50"
-                        >
-                          {isUpdating ? '...' : 'Confirm'}
-                        </button>
-                      )}
-                      {reg.status !== 'waitlisted' && (
-                        <button
-                          onClick={() => updateStatus(reg.id, 'waitlisted')}
-                          disabled={isUpdating}
-                          className="text-xs bg-gray-50 hover:bg-gray-100 text-text-muted px-2 py-1 rounded disabled:opacity-50"
-                        >
-                          Waitlist
-                        </button>
-                      )}
-                      {reg.status !== 'cancelled' && (
-                        <button
-                          onClick={() => updateStatus(reg.id, 'cancelled')}
-                          disabled={isUpdating}
-                          className="text-xs bg-red-50 hover:bg-red-100 text-error px-2 py-1 rounded disabled:opacity-50"
-                        >
-                          Cancel
-                        </button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
-            {filtered.length === 0 && (
-              <tr>
-                <td colSpan={8} className="py-8 text-center text-text-muted">No registrations found.</td>
+      <div className="bg-surface rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-gray-50/80 text-left text-xs text-text-muted">
+                <th className="py-3 px-4 font-medium">Name</th>
+                <th className="py-3 px-4 font-medium">Email</th>
+                <th className="py-3 px-4 font-medium">Class</th>
+                <th className="py-3 px-4 font-medium">Role</th>
+                <th className="py-3 px-4 font-medium">Partner</th>
+                <th className="py-3 px-4 font-medium">Status</th>
+                <th className="py-3 px-4 font-medium">Date</th>
+                <th className="py-3 px-4 font-medium">Actions</th>
               </tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {filtered.map((reg) => {
+                const dc = classMap.get(reg.dance_class_id);
+                const isUpdating = updating.has(reg.id);
+
+                return (
+                  <tr key={reg.id} className="border-b border-gray-100 hover:bg-gray-50/50 transition-colors">
+                    <td className="py-2.5 px-4 font-medium">{reg.name}</td>
+                    <td className="py-2.5 px-4 text-text-muted">{reg.email}</td>
+                    <td className="py-2.5 px-4 text-xs">{dc?.title_de ?? '—'}</td>
+                    <td className="py-2.5 px-4">
+                      <span className={`text-xs font-semibold ${reg.role === 'lead' ? 'text-primary' : 'text-accent-dark'}`}>
+                        {reg.role === 'lead' ? 'Lead' : 'Follow'}
+                      </span>
+                    </td>
+                    <td className="py-2.5 px-4 text-text-muted">{reg.partner_name || '—'}</td>
+                    <td className="py-2.5 px-4">
+                      <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${statusColors[reg.status]}`}>
+                        {reg.status}
+                      </span>
+                    </td>
+                    <td className="py-2.5 px-4 text-text-muted text-xs tabular-nums">
+                      {new Date(reg.created_at).toLocaleDateString('de-AT')}
+                    </td>
+                    <td className="py-2.5 px-4">
+                      <div className="flex gap-1">
+                        {reg.status !== 'confirmed' && (
+                          <button
+                            onClick={() => updateStatus(reg.id, 'confirmed')}
+                            disabled={isUpdating}
+                            className="text-[10px] font-medium bg-green-50 hover:bg-green-100 text-green-700 px-2 py-1 rounded-md disabled:opacity-50 transition-colors"
+                          >
+                            {isUpdating ? '...' : 'Confirm'}
+                          </button>
+                        )}
+                        {reg.status !== 'waitlisted' && (
+                          <button
+                            onClick={() => updateStatus(reg.id, 'waitlisted')}
+                            disabled={isUpdating}
+                            className="text-[10px] font-medium bg-gray-50 hover:bg-gray-100 text-gray-600 px-2 py-1 rounded-md disabled:opacity-50 transition-colors"
+                          >
+                            Waitlist
+                          </button>
+                        )}
+                        {reg.status !== 'cancelled' && (
+                          <button
+                            onClick={() => updateStatus(reg.id, 'cancelled')}
+                            disabled={isUpdating}
+                            className="text-[10px] font-medium bg-red-50 hover:bg-red-100 text-red-600 px-2 py-1 rounded-md disabled:opacity-50 transition-colors"
+                          >
+                            Cancel
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+              {filtered.length === 0 && (
+                <tr>
+                  <td colSpan={8} className="py-12 text-center text-text-muted">No registrations found.</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
