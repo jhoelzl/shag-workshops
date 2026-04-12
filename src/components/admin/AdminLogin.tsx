@@ -22,7 +22,9 @@ export default function AdminLogin() {
       setError(error.message);
       setLoading(false);
     } else {
-      window.location.href = `${base}/admin/`;
+      const params = new URLSearchParams(window.location.search);
+      const returnTo = params.get('returnTo');
+      window.location.href = returnTo ?? `${base}/admin/`;
     }
   }
 
