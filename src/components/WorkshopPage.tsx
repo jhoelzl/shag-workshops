@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { supabase } from '../lib/supabase';
 import { simpleMarkdown } from '../lib/markdown';
 import { getClassState } from '../lib/classState';
@@ -21,6 +21,7 @@ export default function WorkshopPage({ locale }: { locale: Locale }) {
   const [archivedClasses, setArchivedClasses] = useState<ClassWithCounts[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [filterLevel, setFilterLevel] = useState<string>('all');
   const i18n = translations[locale];
   const dtLocale = locale === 'de' ? 'de-AT' : 'en-AT';
   const fmtCurrency = (v: number) => new Intl.NumberFormat(dtLocale, { style: 'currency', currency: 'EUR' }).format(v);
@@ -105,15 +106,46 @@ export default function WorkshopPage({ locale }: { locale: Locale }) {
   }
 
   const openClasses = classes.filter((dc) => getClassState(dc.sessions || [], dc.registration_opens_at, dc.registration_closes_at) === 'open');
+
+  const allClasses = [...classes, ...archivedClasses];
+  const availableLevels = useMemo(() => {
+    const levels = new Set(allClasses.map((c) => c.level).filter(Boolean));
+    return Array.from(levels).sort();
+  }, [classes, archivedClasses]);
+
+  const filteredClasses = filterLevel === 'all' ? classes : classes.filter((dc) => dc.level === filterLevel);
+  const filteredArchived = filterLevel === 'all' ? archivedClasses : archivedClasses.filter((dc) => dc.level === filterLevel);
+
   const supabaseFunctionsUrl = `${import.meta.env.PUBLIC_SUPABASE_URL}/functions/v1`;
   const supabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY;
 
   return (
     <div>
+    {/* Level filter */}
+    {availableLevels.length > 1 && (
+      <div className="flex flex-wrap items-center justify-center gap-2 mb-8">
+        <button
+          onClick={() => setFilterLevel('all')}
+          className={`text-sm font-medium px-4 py-1.5 rounded-full transition-colors ${filterLevel === 'all' ? 'bg-teal text-white shadow-sm' : 'bg-teal/8 text-teal-dark hover:bg-teal/15'}`}
+        >
+          {i18n.workshops.filter_all_levels}
+        </button>
+        {availableLevels.map((level) => (
+          <button
+            key={level}
+            onClick={() => setFilterLevel(level!)}
+            className={`text-sm font-medium px-4 py-1.5 rounded-full transition-colors ${filterLevel === level ? 'bg-teal text-white shadow-sm' : 'bg-teal/8 text-teal-dark hover:bg-teal/15'}`}
+          >
+            {level}
+          </button>
+        ))}
+      </div>
+    )}
+
     <div className="grid gap-8 lg:grid-cols-5">
       {/* Class list */}
       <div className="lg:col-span-3 space-y-4">
-        {classes.map((dc) => {
+        {filteredClasses.map((dc) => {
           const title = locale === 'de' ? dc.title_de : dc.title_en;
           const description = locale === 'de' ? dc.description_de : dc.description_en;
           const whatToBring = locale === 'de' ? dc.what_to_bring_de : dc.what_to_bring_en;
@@ -255,7 +287,7 @@ export default function WorkshopPage({ locale }: { locale: Locale }) {
     </div>
 
     {/* Archive section */}
-    {archivedClasses.length > 0 && (
+    {filteredArchived.length > 0 && (
       <div className="mt-16">
         <div className="flex items-center gap-3 mb-6">
           <span className="h-px flex-1 bg-text-muted/20"></span>
@@ -263,7 +295,7 @@ export default function WorkshopPage({ locale }: { locale: Locale }) {
           <span className="h-px flex-1 bg-text-muted/20"></span>
         </div>
         <div className="space-y-3">
-          {archivedClasses.map((dc) => {
+          {filteredArchived.map((dc) => {
             const title = locale === 'de' ? dc.title_de : dc.title_en;
             const description = locale === 'de' ? dc.description_de : dc.description_en;
             const whatToBring = locale === 'de' ? dc.what_to_bring_de : dc.what_to_bring_en;

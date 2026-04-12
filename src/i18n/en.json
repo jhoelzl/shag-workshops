@@ -31,7 +31,8 @@
     "registration_opens": "Registration opens on",
     "registration_closes": "Registration possible until",
     "archive": "Archive",
-    "what_to_bring": "What to bring"
+    "what_to_bring": "What to bring",
+    "filter_all_levels": "All Levels"
   },
   "registration": {
     "title": "Registration",

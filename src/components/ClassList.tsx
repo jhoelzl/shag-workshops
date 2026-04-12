@@ -100,77 +100,119 @@ export default function ClassList({ locale }: { locale: Locale }) {
   function renderClassCard(dc: ClassWithCounts) {
     const title = locale === 'de' ? dc.title_de : dc.title_en;
     const description = locale === 'de' ? dc.description_de : dc.description_en;
+    const whatToBring = locale === 'de' ? dc.what_to_bring_de : dc.what_to_bring_en;
     const sessions = dc.sessions || [];
     const classState = getClassState(sessions, dc.registration_opens_at, dc.registration_closes_at);
 
     return (
-      <div key={dc.id} className={`bg-surface rounded-2xl shadow-sm border border-bg-warm p-6 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 ${classState === 'archived' ? 'opacity-60' : ''}`}>
-        <div className="flex justify-between items-start mb-3">
-          <h3 className="font-display text-xl font-bold text-primary">{title}</h3>
-          <div className="flex gap-2 items-center">
+      <div key={dc.id} className={`bg-surface rounded-2xl shadow-sm border border-bg-warm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 overflow-hidden ${classState === 'archived' ? 'opacity-60' : ''}`}>
+        {/* Header */}
+        <div className="px-5 pt-5 pb-3">
+          <div className="flex justify-between items-start gap-3">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 mb-1">
+                {dc.dance && <span className="text-[11px] font-bold uppercase tracking-widest text-accent-dark">{dc.dance}</span>}
+                {dc.dance && dc.teachers && <span className="text-text-muted/30">·</span>}
+                {dc.teachers && <span className="text-[11px] font-medium text-text-muted tracking-wide">{dc.teachers}</span>}
+              </div>
+              <h3 className="font-display text-xl font-bold text-primary leading-tight">{title}</h3>
+            </div>
             {dc.level && (
-              <span className="text-xs bg-teal/10 text-teal-dark font-semibold px-3 py-1 rounded-full">
-                {dc.level}
-              </span>
+              <span className="text-xs bg-teal/10 text-teal-dark font-semibold px-3 py-1 rounded-full shrink-0">{dc.level}</span>
             )}
           </div>
         </div>
 
-        {description && <div className="border-l-2 border-teal/30 pl-3 text-text-muted text-sm mb-4 leading-relaxed [&_strong]:text-text" dangerouslySetInnerHTML={{ __html: simpleMarkdown(description) }} />}
+        {/* Description */}
+        {description && (
+          <div className="px-5 pb-3">
+            <div className="text-text-muted text-sm leading-relaxed [&_strong]:text-text" dangerouslySetInnerHTML={{ __html: simpleMarkdown(description) }} />
+          </div>
+        )}
 
-        <div className="space-y-2 text-sm text-text-muted mb-5">
+        {/* What to Bring */}
+        {whatToBring && (
+          <div className="px-5 pb-3">
+            <p className="text-xs font-bold uppercase tracking-wider text-teal mb-1.5">{i18n.workshops.what_to_bring}</p>
+            <div className="text-text-muted text-sm leading-relaxed [&_li]:ml-4" dangerouslySetInnerHTML={{ __html: simpleMarkdown(whatToBring) }} />
+          </div>
+        )}
+
+        {/* Details */}
+        <div className="px-5 pb-4 space-y-3">
           {sessions.length > 0 && (
-            <div>
-              <div className="font-medium text-text mb-1">📅 {sessions.length} {sessions.length === 1 ? i18n.workshops.session : i18n.workshops.sessions}:</div>
-              <div className="space-y-0.5 ml-5">
-                {sessions.slice(0, 4).map((s) => (
-                  <div key={s.id}>
-                    {new Date(s.session_date).toLocaleDateString(dtLocale, { weekday: 'short', day: 'numeric', month: 'short' })},{' '}
-                    {s.start_time.slice(0, 5)}–{s.end_time.slice(0, 5)}
-                    {s.note && <span className="text-accent-dark ml-1">({s.note})</span>}
+            <div className="rounded-xl border border-teal/12 bg-gradient-to-br from-white to-teal/[0.04] px-4 py-3.5">
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 rounded-lg bg-teal/10 flex items-center justify-center shrink-0">
+                  <svg className="w-4 h-4 text-teal" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" strokeWidth="2" /><path d="M16 2v4M8 2v4M3 10h18" strokeWidth="2" strokeLinecap="round" /></svg>
+                </div>
+                <div className="text-sm flex-1">
+                  <span className="font-semibold text-text">{sessions.length} {sessions.length === 1 ? i18n.workshops.session : i18n.workshops.sessions}:</span>
+                  <div className="mt-1.5 space-y-1 text-text-muted">
+                    {sessions.map((s) => (
+                      <div key={s.id} className="flex items-baseline gap-1.5 tabular-nums">
+                        <span>{new Date(s.session_date).toLocaleDateString(dtLocale, { weekday: 'short', day: 'numeric', month: 'short' })},</span>
+                        <span className="text-text">{s.start_time.slice(0, 5)}–{s.end_time.slice(0, 5)}</span>
+                        {s.note && <span className="text-xs text-accent-dark italic ml-1">{s.note}</span>}
+                      </div>
+                    ))}
                   </div>
-                ))}
-                {sessions.length > 4 && <div className="text-text-muted">+{sessions.length - 4} more…</div>}
+                </div>
               </div>
             </div>
           )}
-          {(dc.location || dc.price_eur != null) && (
-            <div className="flex items-center gap-3">
+
+          {(dc.location || dc.price_eur != null || dc.is_donation) && (
+            <div className="flex flex-wrap gap-2">
               {dc.location && (
-                <span>
-                  📍{' '}
+                <span className="inline-flex items-center gap-1.5 bg-white border border-gray-150 rounded-full px-3.5 py-1.5 text-sm shadow-sm">
+                  <svg className="w-3.5 h-3.5 text-coral" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" /></svg>
                   {dc.location_url ? (
-                    <a href={dc.location_url} target="_blank" rel="noopener noreferrer" className="underline hover:text-teal transition-colors">
+                    <a href={dc.location_url} target="_blank" rel="noopener noreferrer" className="font-medium text-text hover:text-primary transition-colors">
                       {dc.location}
                     </a>
                   ) : (
-                    dc.location
+                    <span className="font-medium text-text">{dc.location}</span>
                   )}
                 </span>
               )}
-              {dc.location && dc.price_eur != null && <span className="text-text-muted/40">·</span>}
-              {dc.price_eur != null && <span>{fmtCurrency(Number(dc.price_eur))}</span>}
+              {dc.is_donation ? (
+                <span className="inline-flex items-center gap-1.5 bg-teal/8 border border-teal/15 rounded-full px-3.5 py-1.5 text-sm shadow-sm">
+                  <span className="text-teal">♥</span>
+                  <span className="font-semibold text-teal-dark">{locale === 'de' ? 'Freiwillige Spende' : 'Voluntary Donation'}</span>
+                </span>
+              ) : dc.price_eur != null && (
+                <span className="inline-flex items-center gap-1.5 bg-white border border-gray-150 rounded-full px-3.5 py-1.5 text-sm shadow-sm">
+                  <span className="text-teal font-bold text-base leading-none">€</span>
+                  <span className="font-semibold text-text">{fmtCurrency(Number(dc.price_eur))}</span>
+                </span>
+              )}
             </div>
           )}
         </div>
 
+        {/* Registration status + CTA */}
         {classState === 'upcoming' && dc.registration_opens_at && (
-          <p className="text-sm text-accent-dark font-medium mb-3">
+          <div className="px-5 py-2.5 text-sm font-medium bg-amber-50/80 text-amber-700 border-t border-amber-100">
             {i18n.workshops.registration_opens} {new Date(dc.registration_opens_at).toLocaleString(dtLocale, { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false })}
-          </p>
-        )}
-        {classState === 'open' && dc.registration_closes_at && (
-          <p className="text-sm text-text-muted mb-3">
-            {i18n.workshops.registration_closes} {new Date(dc.registration_closes_at).toLocaleString(dtLocale, { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false })}
-          </p>
+          </div>
         )}
         {classState === 'open' && (
-          <a
-            href={`${base}/${locale}/workshops/?class=${dc.id}`}
-            className="inline-block w-full text-center bg-coral hover:bg-coral-dark text-white font-semibold py-2.5 px-4 rounded-full transition-colors shadow-sm"
-          >
-            {i18n.workshops.register}
-          </a>
+          <>
+            {dc.registration_closes_at && (
+              <div className="px-5 py-2.5 text-sm font-medium bg-gray-50 text-text-muted border-t border-gray-100">
+                {i18n.workshops.registration_closes} {new Date(dc.registration_closes_at).toLocaleString(dtLocale, { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false })}
+              </div>
+            )}
+            <div className="px-5 pb-5 pt-3">
+              <a
+                href={`${base}/${locale}/workshops/?class=${dc.id}`}
+                className="block w-full text-center bg-coral hover:bg-coral-dark text-white font-semibold py-2.5 px-4 rounded-full transition-colors shadow-sm"
+              >
+                {i18n.workshops.register}
+              </a>
+            </div>
+          </>
         )}
       </div>
     );
