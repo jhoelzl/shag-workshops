@@ -116,6 +116,7 @@ export default function WorkshopPage({ locale }: { locale: Locale }) {
         {classes.map((dc) => {
           const title = locale === 'de' ? dc.title_de : dc.title_en;
           const description = locale === 'de' ? dc.description_de : dc.description_en;
+          const whatToBring = locale === 'de' ? dc.what_to_bring_de : dc.what_to_bring_en;
           const isSelected = selectedId === dc.id;
           const sessions = dc.sessions || [];
           const isPlanned = getClassState(sessions, dc.registration_opens_at, dc.registration_closes_at) === 'upcoming';
@@ -159,6 +160,14 @@ export default function WorkshopPage({ locale }: { locale: Locale }) {
               {description && (
                 <div className="px-5 pb-3">
                   <div className="text-text-muted text-sm leading-relaxed [&_strong]:text-text" dangerouslySetInnerHTML={{ __html: simpleMarkdown(description) }} />
+                </div>
+              )}
+
+              {/* What to Bring */}
+              {whatToBring && (
+                <div className="px-5 pb-3">
+                  <p className="text-xs font-bold uppercase tracking-wider text-teal mb-1.5">{i18n.workshops.what_to_bring}</p>
+                  <div className="text-text-muted text-sm leading-relaxed [&_li]:ml-4" dangerouslySetInnerHTML={{ __html: simpleMarkdown(whatToBring) }} />
                 </div>
               )}
 
@@ -257,6 +266,7 @@ export default function WorkshopPage({ locale }: { locale: Locale }) {
           {archivedClasses.map((dc) => {
             const title = locale === 'de' ? dc.title_de : dc.title_en;
             const description = locale === 'de' ? dc.description_de : dc.description_en;
+            const whatToBring = locale === 'de' ? dc.what_to_bring_de : dc.what_to_bring_en;
             const sessions = dc.sessions || [];
             const isExpanded = selectedId === dc.id;
             return (
@@ -294,6 +304,12 @@ export default function WorkshopPage({ locale }: { locale: Locale }) {
                 {isExpanded && (
                   <div className="px-4 pb-4 space-y-3">
                     {description && <div className="text-text-muted text-sm leading-relaxed [&_strong]:text-text" dangerouslySetInnerHTML={{ __html: simpleMarkdown(description) }} />}
+                    {whatToBring && (
+                      <div>
+                        <p className="text-xs font-bold uppercase tracking-wider text-teal mb-1.5">{i18n.workshops.what_to_bring}</p>
+                        <div className="text-text-muted text-sm leading-relaxed [&_li]:ml-4" dangerouslySetInnerHTML={{ __html: simpleMarkdown(whatToBring) }} />
+                      </div>
+                    )}
                     <div className="space-y-3">
                       {sessions.length > 0 && (
                         <div className="rounded-xl border border-teal/12 bg-gradient-to-br from-white to-teal/[0.04] px-4 py-3.5">
