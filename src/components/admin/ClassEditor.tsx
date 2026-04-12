@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../../lib/supabase';
-import type { DanceClass, ClassSession, Registration } from '../../lib/database.types';
+import type { DanceClass, ClassSession, Registration, Database } from '../../lib/database.types';
 import { getClassState, type ClassState } from '../../lib/classState';
 
 interface Props {
@@ -197,9 +197,7 @@ export default function ClassEditor({ classes, registrations, onUpdate }: Props)
     if (!editing) return;
     setSaving(true);
 
-    const payload = {
-      title_de: editing.title_de,
-      title_en: editing.title_en,
+    const basePayload: Database['public']['Tables']['dance_classes']['Update'] = {
       description_de: editing.description_de || null,
       description_en: editing.description_en || null,
       level: editing.level || null,
@@ -207,8 +205,8 @@ export default function ClassEditor({ classes, registrations, onUpdate }: Props)
       teachers: editing.teachers || null,
       location: editing.location || null,
       location_url: editing.location_url || null,
-      max_leads: editing.max_leads,
-      max_follows: editing.max_follows,
+      max_leads: editing.max_leads ?? 10,
+      max_follows: editing.max_follows ?? 10,
       min_leads: editing.min_leads ?? 3,
       min_follows: editing.min_follows ?? 3,
       price_eur: editing.price_eur ?? null,
@@ -223,9 +221,23 @@ export default function ClassEditor({ classes, registrations, onUpdate }: Props)
     let classId = editing.id;
 
     if (classId) {
-      await supabase.from('dance_classes').update(payload).eq('id', classId);
+      await supabase
+        .from('dance_classes')
+        .update({
+          ...basePayload,
+          title_de: editing.title_de ?? '',
+          title_en: editing.title_en ?? '',
+        })
+        .eq('id', classId);
     } else {
-      const { data } = await supabase.from('dance_classes').insert(payload).select('id').single();
+      const insertPayload: Database['public']['Tables']['dance_classes']['Insert'] = {
+        ...basePayload,
+        title_de: editing.title_de ?? '',
+        title_en: editing.title_en ?? '',
+        max_leads: editing.max_leads ?? 10,
+        max_follows: editing.max_follows ?? 10,
+      };
+      const { data } = await supabase.from('dance_classes').insert(insertPayload).select('id').single();
       classId = data?.id;
     }
 

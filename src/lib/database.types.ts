@@ -29,6 +29,7 @@ export interface Database {
           created_at: string;
           updated_at: string;
         };
+        Relationships: [];
         Insert: {
           id?: string;
           title_de: string;
@@ -90,6 +91,7 @@ export interface Database {
           note: string | null;
           created_at: string;
         };
+        Relationships: [];
         Insert: {
           id?: string;
           dance_class_id: string;
@@ -122,6 +124,7 @@ export interface Database {
           admin_notes: string | null;
           created_at: string;
         };
+        Relationships: [];
         Insert: {
           id?: string;
           dance_class_id: string;
@@ -148,6 +151,21 @@ export interface Database {
         };
       };
     };
+    Views: {
+      class_registration_counts: {
+        Row: {
+          dance_class_id: string | null;
+          lead_count: number | null;
+          follow_count: number | null;
+          leads_available: number | null;
+          follows_available: number | null;
+        };
+        Relationships: [];
+      };
+    };
+    Functions: Record<string, never>;
+    Enums: Record<string, never>;
+    CompositeTypes: Record<string, never>;
   };
 }
 
