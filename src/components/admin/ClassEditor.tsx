@@ -29,6 +29,8 @@ const EMPTY_CLASS = {
   location_url: '',
   max_leads: 10,
   max_follows: 10,
+  min_leads: 3,
+  min_follows: 3,
   price_eur: 0,
   registration_opens_at: '',
   registration_closes_at: '',
@@ -204,6 +206,8 @@ export default function ClassEditor({ classes, registrations, onUpdate }: Props)
       location_url: editing.location_url || null,
       max_leads: editing.max_leads,
       max_follows: editing.max_follows,
+      min_leads: editing.min_leads ?? 3,
+      min_follows: editing.min_follows ?? 3,
       price_eur: editing.price_eur ?? null,
       registration_opens_at: editing.registration_opens_at || null,
       registration_closes_at: editing.registration_closes_at || null,
@@ -904,6 +908,8 @@ function ClassForm({
         <Input label="Price (EUR)" type="number" value={String(editing.price_eur ?? 0)} onChange={(v) => setEditing({ ...editing, price_eur: Number(v) })} />
         <Input label="Max Leads" type="number" value={String(editing.max_leads ?? 10)} onChange={(v) => setEditing({ ...editing, max_leads: Number(v) })} required />
         <Input label="Max Follows" type="number" value={String(editing.max_follows ?? 10)} onChange={(v) => setEditing({ ...editing, max_follows: Number(v) })} required />
+        <Input label="Min Leads" type="number" value={String(editing.min_leads ?? 3)} onChange={(v) => setEditing({ ...editing, min_leads: Number(v) })} />
+        <Input label="Min Follows" type="number" value={String(editing.min_follows ?? 3)} onChange={(v) => setEditing({ ...editing, min_follows: Number(v) })} />
         <Input label="Registration Opens At" type="datetime-local" value={editing.registration_opens_at ? editing.registration_opens_at.slice(0, 16) : ''} onChange={(v) => setEditing({ ...editing, registration_opens_at: v ? new Date(v).toISOString() : '' })} />
         <Input label="Registration Closes At" type="datetime-local" value={editing.registration_closes_at ? editing.registration_closes_at.slice(0, 16) : ''} onChange={(v) => setEditing({ ...editing, registration_closes_at: v ? new Date(v).toISOString() : '' })} />
         <div className="flex items-center gap-2 pt-6">
