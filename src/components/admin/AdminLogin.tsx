@@ -24,7 +24,10 @@ export default function AdminLogin() {
     } else {
       const params = new URLSearchParams(window.location.search);
       const returnTo = params.get('returnTo');
-      window.location.href = returnTo ?? `${base}/admin/`;
+      // Only allow relative paths starting with base to prevent open redirect / XSS
+      const safeDefault = `${base}/admin/`;
+      const isAllowed = returnTo && returnTo.startsWith(`${base}/`) && !returnTo.includes('//');
+      window.location.href = isAllowed ? returnTo : safeDefault;
     }
   }
 
