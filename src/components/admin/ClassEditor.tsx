@@ -876,53 +876,76 @@ function ClassForm({
   title: string;
 }) {
   return (
-    <form onSubmit={handleSave} className="bg-surface rounded-xl shadow-md border-2 border-primary/20 p-6">
-      <h3 className="text-lg font-bold mb-4">{title}</h3>
+    <form onSubmit={handleSave} className="bg-surface rounded-xl shadow-md border-2 border-primary/20 p-6 space-y-6">
+      <h3 className="text-lg font-bold">{title}</h3>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <Input label="Title (DE)" value={editing.title_de ?? ''} onChange={(v) => setEditing({ ...editing, title_de: v })} required />
-        <Input label="Title (EN)" value={editing.title_en ?? ''} onChange={(v) => setEditing({ ...editing, title_en: v })} required />
-        <div>
-          <label className="block text-sm font-medium mb-1">Level</label>
-          <select value={editing.level ?? ''} onChange={(e) => setEditing({ ...editing, level: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
-            <option value="">—</option>
-            {LEVELS.map((l) => <option key={l} value={l}>{l}</option>)}
-          </select>
+      {/* ── Basic Info ── */}
+      <fieldset className="space-y-4">
+        <legend className="text-xs font-bold uppercase tracking-wider text-text-muted mb-2">Basic Info</legend>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <Input label="Title (DE)" value={editing.title_de ?? ''} onChange={(v) => setEditing({ ...editing, title_de: v })} required />
+          <Input label="Title (EN)" value={editing.title_en ?? ''} onChange={(v) => setEditing({ ...editing, title_en: v })} required />
+          <div>
+            <label className="block text-sm font-medium mb-1">Dance</label>
+            <select value={editing.dance ?? ''} onChange={(e) => setEditing({ ...editing, dance: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+              <option value="">—</option>
+              {DANCES.map((d) => <option key={d} value={d}>{d}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Level</label>
+            <select value={editing.level ?? ''} onChange={(e) => setEditing({ ...editing, level: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+              <option value="">—</option>
+              {LEVELS.map((l) => <option key={l} value={l}>{l}</option>)}
+            </select>
+          </div>
+          <Input label="Teachers" value={editing.teachers ?? ''} onChange={(v) => setEditing({ ...editing, teachers: v })} placeholder="e.g. Alice & Bob" />
         </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">Dance</label>
-          <select value={editing.dance ?? ''} onChange={(e) => setEditing({ ...editing, dance: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
-            <option value="">—</option>
-            {DANCES.map((d) => <option key={d} value={d}>{d}</option>)}
-          </select>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <TextArea label="Description (DE)" value={editing.description_de ?? ''} onChange={(v) => setEditing({ ...editing, description_de: v })} hint="Markdown: **bold**, newline = line break, - for lists" />
+          <TextArea label="Description (EN)" value={editing.description_en ?? ''} onChange={(v) => setEditing({ ...editing, description_en: v })} hint="Markdown: **bold**, newline = line break, - for lists" />
         </div>
-        <Input label="Teachers" value={editing.teachers ?? ''} onChange={(v) => setEditing({ ...editing, teachers: v })} placeholder="e.g. Alice & Bob" />
-      </div>
+      </fieldset>
 
-      <div className="grid gap-4 sm:grid-cols-2 mt-4">
-        <TextArea label="Description (DE)" value={editing.description_de ?? ''} onChange={(v) => setEditing({ ...editing, description_de: v })} hint="Markdown: **fett**, Zeilenumbruch = neue Zeile, - für Listen" />
-        <TextArea label="Description (EN)" value={editing.description_en ?? ''} onChange={(v) => setEditing({ ...editing, description_en: v })} hint="Markdown: **bold**, newline = line break, - for lists" />
-      </div>
+      {/* ── Location & Pricing ── */}
+      <fieldset className="space-y-4 border-t pt-4">
+        <legend className="text-xs font-bold uppercase tracking-wider text-text-muted mb-2">Location & Pricing</legend>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <Input label="Location" value={editing.location ?? ''} onChange={(v) => setEditing({ ...editing, location: v })} />
+          <Input label="Location URL (Google Maps)" value={editing.location_url ?? ''} onChange={(v) => setEditing({ ...editing, location_url: v })} placeholder="https://maps.google.com/..." />
+          <div>
+            <Input label="Price (EUR)" type="number" value={String(editing.price_eur ?? 0)} onChange={(v) => setEditing({ ...editing, price_eur: Number(v) })} />
+            <label className="flex items-center gap-2 mt-2 cursor-pointer">
+              <input type="checkbox" id="is_donation" checked={editing.is_donation ?? false} onChange={(e) => setEditing({ ...editing, is_donation: e.target.checked })} className="accent-primary" />
+              <span className="text-xs text-text-muted">Donation-based (no fixed price)</span>
+            </label>
+          </div>
+        </div>
+      </fieldset>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 mt-4">
-        <Input label="Location" value={editing.location ?? ''} onChange={(v) => setEditing({ ...editing, location: v })} />
-        <Input label="Location URL (Google Maps)" value={editing.location_url ?? ''} onChange={(v) => setEditing({ ...editing, location_url: v })} placeholder="https://maps.google.com/..." />
-        <Input label="Price (EUR)" type="number" value={String(editing.price_eur ?? 0)} onChange={(v) => setEditing({ ...editing, price_eur: Number(v) })} />
-        <Input label="Max Leads" type="number" value={String(editing.max_leads ?? 10)} onChange={(v) => setEditing({ ...editing, max_leads: Number(v) })} required />
-        <Input label="Max Follows" type="number" value={String(editing.max_follows ?? 10)} onChange={(v) => setEditing({ ...editing, max_follows: Number(v) })} required />
-        <Input label="Min Leads" type="number" value={String(editing.min_leads ?? 3)} onChange={(v) => setEditing({ ...editing, min_leads: Number(v) })} />
-        <Input label="Min Follows" type="number" value={String(editing.min_follows ?? 3)} onChange={(v) => setEditing({ ...editing, min_follows: Number(v) })} />
-        <Input label="Registration Opens At" type="datetime-local" value={editing.registration_opens_at ? editing.registration_opens_at.slice(0, 16) : ''} onChange={(v) => setEditing({ ...editing, registration_opens_at: v ? new Date(v).toISOString() : '' })} />
-        <Input label="Registration Closes At" type="datetime-local" value={editing.registration_closes_at ? editing.registration_closes_at.slice(0, 16) : ''} onChange={(v) => setEditing({ ...editing, registration_closes_at: v ? new Date(v).toISOString() : '' })} />
-        <div className="flex items-center gap-2 pt-6">
-          <input type="checkbox" id="is_public" checked={editing.is_public ?? false} onChange={(e) => setEditing({ ...editing, is_public: e.target.checked })} className="accent-primary" />
-          <label htmlFor="is_public" className="text-sm">Public (im Frontend sichtbar)</label>
+      {/* ── Capacity ── */}
+      <fieldset className="space-y-4 border-t pt-4">
+        <legend className="text-xs font-bold uppercase tracking-wider text-text-muted mb-2">Capacity</legend>
+        <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
+          <Input label="Max Leads" type="number" value={String(editing.max_leads ?? 10)} onChange={(v) => setEditing({ ...editing, max_leads: Number(v) })} required />
+          <Input label="Max Follows" type="number" value={String(editing.max_follows ?? 10)} onChange={(v) => setEditing({ ...editing, max_follows: Number(v) })} required />
+          <Input label="Min Leads" type="number" value={String(editing.min_leads ?? 3)} onChange={(v) => setEditing({ ...editing, min_leads: Number(v) })} />
+          <Input label="Min Follows" type="number" value={String(editing.min_follows ?? 3)} onChange={(v) => setEditing({ ...editing, min_follows: Number(v) })} />
         </div>
-        <div className="flex items-center gap-2 pt-6">
-          <input type="checkbox" id="is_donation" checked={editing.is_donation ?? false} onChange={(e) => setEditing({ ...editing, is_donation: e.target.checked })} className="accent-primary" />
-          <label htmlFor="is_donation" className="text-sm">Freiwillige Spende (statt Preis)</label>
+      </fieldset>
+
+      {/* ── Registration & Visibility ── */}
+      <fieldset className="space-y-4 border-t pt-4">
+        <legend className="text-xs font-bold uppercase tracking-wider text-text-muted mb-2">Registration & Visibility</legend>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <Input label="Registration Opens At" type="datetime-local" value={editing.registration_opens_at ? editing.registration_opens_at.slice(0, 16) : ''} onChange={(v) => setEditing({ ...editing, registration_opens_at: v ? new Date(v).toISOString() : '' })} />
+          <Input label="Registration Closes At" type="datetime-local" value={editing.registration_closes_at ? editing.registration_closes_at.slice(0, 16) : ''} onChange={(v) => setEditing({ ...editing, registration_closes_at: v ? new Date(v).toISOString() : '' })} />
+          <div className="flex items-center gap-2 pt-6">
+            <input type="checkbox" id="is_public" checked={editing.is_public ?? false} onChange={(e) => setEditing({ ...editing, is_public: e.target.checked })} className="accent-primary" />
+            <label htmlFor="is_public" className="text-sm">Public (visible on website)</label>
+          </div>
         </div>
-      </div>
+      </fieldset>
 
       <div className="mt-6 border-t pt-4">
         <div className="flex justify-between items-center mb-3">
