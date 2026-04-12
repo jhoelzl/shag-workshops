@@ -134,7 +134,10 @@ export default function WorkshopPage({ locale }: { locale: Locale }) {
               }`}
             >
               <div className="flex justify-between items-start mb-2">
-                <h3 className="font-display text-xl font-bold text-primary">{title}</h3>
+                <div>
+                  {dc.dance && <span className="text-xs font-semibold uppercase tracking-wider text-accent-dark">{dc.dance}</span>}
+                  <h3 className="font-display text-xl font-bold text-primary">{title}</h3>
+                </div>
                 <div className="flex gap-2 items-center">
                   {dc.level && (
                     <span className="text-xs bg-teal/10 text-teal-dark font-semibold px-3 py-1 rounded-full">{dc.level}</span>
@@ -232,7 +235,10 @@ export default function WorkshopPage({ locale }: { locale: Locale }) {
                 className="bg-surface/60 rounded-2xl p-4 border border-bg-warm opacity-70 cursor-pointer hover:opacity-90 transition-all duration-300"
               >
                 <div className="flex justify-between items-center">
-                  <h4 className="font-display font-semibold text-text">{title}</h4>
+                  <div>
+                    {dc.dance && <span className="text-xs font-semibold uppercase tracking-wider text-accent-dark">{dc.dance}</span>}
+                    <h4 className="font-display font-semibold text-text">{title}</h4>
+                  </div>
                   <div className="flex gap-2 items-center">
                     {dc.level && (
                       <span className="text-xs bg-gray-100 text-text-muted font-medium px-3 py-1 rounded-full">{dc.level}</span>
