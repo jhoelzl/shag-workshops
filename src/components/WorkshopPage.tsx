@@ -158,7 +158,7 @@ export default function WorkshopPage({ locale }: { locale: Locale }) {
               {/* Description */}
               {description && (
                 <div className="px-5 pb-3">
-                  <div className="border-l-2 border-teal/30 pl-3 text-text-muted text-sm leading-relaxed [&_strong]:text-text" dangerouslySetInnerHTML={{ __html: simpleMarkdown(description) }} />
+                  <div className="text-text-muted text-sm leading-relaxed [&_strong]:text-text" dangerouslySetInnerHTML={{ __html: simpleMarkdown(description) }} />
                 </div>
               )}
 
@@ -176,7 +176,7 @@ export default function WorkshopPage({ locale }: { locale: Locale }) {
                           {sessions.map((s) => (
                             <div key={s.id} className="flex items-baseline gap-1.5 tabular-nums">
                               <span>{new Date(s.session_date).toLocaleDateString(dtLocale, { weekday: 'short', day: 'numeric', month: 'short' })},</span>
-                              <span className="font-semibold text-text">{s.start_time.slice(0, 5)}–{s.end_time.slice(0, 5)}</span>
+                              <span className="text-text">{s.start_time.slice(0, 5)}–{s.end_time.slice(0, 5)}</span>
                               {s.note && <span className="text-xs text-accent-dark italic ml-1">{s.note}</span>}
                             </div>
                           ))}
@@ -222,7 +222,7 @@ export default function WorkshopPage({ locale }: { locale: Locale }) {
                     <span>🔜 {i18n.workshops.registration_opens} {new Date(dc.registration_opens_at).toLocaleString(dtLocale, { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false })}</span>
                   )}
                   {isOpen && dc.registration_closes_at && (
-                    <span>⏳ {i18n.workshops.registration_closes} {new Date(dc.registration_closes_at).toLocaleString(dtLocale, { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false })}</span>
+                    <span>{i18n.workshops.registration_closes} {new Date(dc.registration_closes_at).toLocaleString(dtLocale, { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false })}</span>
                   )}
                 </div>
               )}
@@ -293,7 +293,7 @@ export default function WorkshopPage({ locale }: { locale: Locale }) {
                 </div>
                 {isExpanded && (
                   <div className="px-4 pb-4 space-y-3">
-                    {description && <div className="border-l-2 border-teal/30 pl-3 text-text-muted text-sm leading-relaxed [&_strong]:text-text" dangerouslySetInnerHTML={{ __html: simpleMarkdown(description) }} />}
+                    {description && <div className="text-text-muted text-sm leading-relaxed [&_strong]:text-text" dangerouslySetInnerHTML={{ __html: simpleMarkdown(description) }} />}
                     <div className="space-y-3">
                       {sessions.length > 0 && (
                         <div className="rounded-xl border border-teal/12 bg-gradient-to-br from-white to-teal/[0.04] px-4 py-3.5">
@@ -307,7 +307,7 @@ export default function WorkshopPage({ locale }: { locale: Locale }) {
                                 {sessions.map((s) => (
                                   <div key={s.id} className="flex items-baseline gap-1.5 tabular-nums">
                                     <span>{new Date(s.session_date).toLocaleDateString(dtLocale, { weekday: 'short', day: 'numeric', month: 'short' })},</span>
-                                    <span className="font-semibold text-text">{s.start_time.slice(0, 5)}–{s.end_time.slice(0, 5)}</span>
+                                    <span className="text-text">{s.start_time.slice(0, 5)}–{s.end_time.slice(0, 5)}</span>
                                     {s.note && <span className="text-xs text-accent-dark italic ml-1">{s.note}</span>}
                                   </div>
                                 ))}
