@@ -140,7 +140,7 @@ Deno.serve(async (req) => {
           ? `<h2>Hallo ${name.trim()}!</h2>
              <p>Deine Anmeldung für <strong>${classTitle}</strong> als <strong>${role === 'lead' ? 'Lead' : 'Follow'}</strong> ist eingegangen.</p>
              ${status === 'waitlisted' ? '<p>⚠️ Aktuell sind alle Plätze belegt. Du stehst auf der Warteliste.</p>' : ''}
-             <p>Der Veranstalter wird deine Anmeldung prüfen und bestätigen. Du erhältst dann eine weitere E-Mail.</p>
+             <p>Wir werden deine Anmeldung prüfen und bestätigen. Du erhältst dann eine weitere E-Mail.</p>
              <p>Collegiate Shag Salzburg 💃</p>`
           : `<h2>Hello ${name.trim()}!</h2>
              <p>Your registration for <strong>${classTitle}</strong> as <strong>${role === 'lead' ? 'Lead' : 'Follow'}</strong> has been received.</p>

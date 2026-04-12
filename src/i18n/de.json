@@ -45,7 +45,7 @@
     "submit": "Anmelden",
     "submitting": "Wird gesendet...",
     "success_title": "Anmeldung eingegangen!",
-    "success_message": "Du erhältst eine Bestätigungs-E-Mail. Der Veranstalter wird deine Anmeldung prüfen und bestätigen.",
+    "success_message": "Du erhältst eine Bestätigungs-E-Mail. Wir werden deine Anmeldung prüfen und bestätigen.",
     "error_title": "Fehler",
     "error_duplicate": "Du bist bereits für diesen Workshop angemeldet.",
     "error_closed": "Die Anmeldung ist derzeit geschlossen.",
