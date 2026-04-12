@@ -137,6 +137,7 @@ export default function WorkshopPage({ locale }: { locale: Locale }) {
                 <div>
                   {dc.dance && <span className="text-xs font-semibold uppercase tracking-wider text-accent-dark">{dc.dance}</span>}
                   <h3 className="font-display text-xl font-bold text-primary">{title}</h3>
+                  {dc.teachers && <p className="text-sm text-text-muted">mit {dc.teachers}</p>}
                 </div>
                 <div className="flex gap-2 items-center">
                   {dc.level && (
@@ -238,6 +239,7 @@ export default function WorkshopPage({ locale }: { locale: Locale }) {
                   <div>
                     {dc.dance && <span className="text-xs font-semibold uppercase tracking-wider text-accent-dark">{dc.dance}</span>}
                     <h4 className="font-display font-semibold text-text">{title}</h4>
+                    {dc.teachers && <p className="text-sm text-text-muted">mit {dc.teachers}</p>}
                   </div>
                   <div className="flex gap-2 items-center">
                     {dc.level && (
