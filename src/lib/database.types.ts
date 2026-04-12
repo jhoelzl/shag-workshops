@@ -15,6 +15,8 @@ export interface Database {
           location_url: string | null;
           max_leads: number;
           max_follows: number;
+          min_leads: number;
+          min_follows: number;
           price_eur: number | null;
           registration_opens_at: string | null;
           registration_closes_at: string | null;
@@ -35,6 +37,8 @@ export interface Database {
           location_url?: string | null;
           max_leads: number;
           max_follows: number;
+          min_leads?: number;
+          min_follows?: number;
           price_eur?: number | null;
           registration_opens_at?: string | null;
           registration_closes_at?: string | null;
@@ -55,6 +59,8 @@ export interface Database {
           location_url?: string | null;
           max_leads?: number;
           max_follows?: number;
+          min_leads?: number;
+          min_follows?: number;
           price_eur?: number | null;
           registration_opens_at?: string | null;
           registration_closes_at?: string | null;
