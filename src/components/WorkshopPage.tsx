@@ -162,55 +162,57 @@ export default function WorkshopPage({ locale }: { locale: Locale }) {
                 </div>
               )}
 
-              {/* Details grid */}
-              <div className="px-5 pb-4">
-                <div className="bg-bg-warm/50 rounded-xl px-4 py-3 space-y-3">
-                  {sessions.length > 0 && (
-                    <div className="flex gap-3">
-                      <svg className="w-4 h-4 text-teal shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" strokeWidth="2" /><path d="M16 2v4M8 2v4M3 10h18" strokeWidth="2" strokeLinecap="round" /></svg>
-                      <div className="text-sm">
+              {/* Details */}
+              <div className="px-5 pb-4 space-y-3">
+                {sessions.length > 0 && (
+                  <div className="rounded-xl border border-teal/12 bg-gradient-to-br from-white to-teal/[0.04] px-4 py-3.5">
+                    <div className="flex items-start gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-teal/10 flex items-center justify-center shrink-0">
+                        <svg className="w-4 h-4 text-teal" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" strokeWidth="2" /><path d="M16 2v4M8 2v4M3 10h18" strokeWidth="2" strokeLinecap="round" /></svg>
+                      </div>
+                      <div className="text-sm flex-1">
                         <span className="font-semibold text-text">{sessions.length} {sessions.length === 1 ? i18n.workshops.session : i18n.workshops.sessions}:</span>
-                        <div className="mt-1 space-y-0.5 text-text-muted">
+                        <div className="mt-1.5 space-y-1 text-text-muted">
                           {sessions.map((s) => (
-                            <div key={s.id} className="flex items-baseline gap-1 tabular-nums">
+                            <div key={s.id} className="flex items-baseline gap-1.5 tabular-nums">
                               <span>{new Date(s.session_date).toLocaleDateString(dtLocale, { weekday: 'short', day: 'numeric', month: 'short' })},</span>
-                              <span className="font-medium text-text">{s.start_time.slice(0, 5)}–{s.end_time.slice(0, 5)}</span>
+                              <span className="font-semibold text-text">{s.start_time.slice(0, 5)}–{s.end_time.slice(0, 5)}</span>
                               {s.note && <span className="text-xs text-accent-dark italic ml-1">{s.note}</span>}
                             </div>
                           ))}
                         </div>
                       </div>
                     </div>
-                  )}
+                  </div>
+                )}
 
-                  {(dc.location || dc.price_eur != null) && (
-                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-text-muted">
-                      {dc.location && (
-                        <span className="inline-flex items-center gap-1.5">
-                          <span>📍</span>
-                          {dc.location_url ? (
-                            <a href={dc.location_url} target="_blank" rel="noopener noreferrer" className="font-medium text-primary underline decoration-primary/30 hover:decoration-primary transition-colors" onClick={(e) => e.stopPropagation()}>
-                              {dc.location}
-                            </a>
-                          ) : (
-                            <span className="font-medium">{dc.location}</span>
-                          )}
-                        </span>
-                      )}
-                      {dc.is_donation ? (
-                        <span className="inline-flex items-center gap-1.5">
-                          <span className="text-teal font-bold">♥</span>
-                          <span className="font-semibold text-text">{locale === 'de' ? 'Freiwillige Spende' : 'Voluntary Donation'}</span>
-                        </span>
-                      ) : dc.price_eur != null && (
-                        <span className="inline-flex items-center gap-1.5">
-                          <span className="text-teal font-bold">€</span>
-                          <span className="font-semibold text-text">{fmtCurrency(Number(dc.price_eur))}</span>
-                        </span>
-                      )}
-                    </div>
-                  )}
-                </div>
+                {(dc.location || dc.price_eur != null || dc.is_donation) && (
+                  <div className="flex flex-wrap gap-2">
+                    {dc.location && (
+                      <span className="inline-flex items-center gap-1.5 bg-white border border-gray-150 rounded-full px-3.5 py-1.5 text-sm shadow-sm">
+                        <svg className="w-3.5 h-3.5 text-coral" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" /></svg>
+                        {dc.location_url ? (
+                          <a href={dc.location_url} target="_blank" rel="noopener noreferrer" className="font-medium text-text hover:text-primary transition-colors" onClick={(e) => e.stopPropagation()}>
+                            {dc.location}
+                          </a>
+                        ) : (
+                          <span className="font-medium text-text">{dc.location}</span>
+                        )}
+                      </span>
+                    )}
+                    {dc.is_donation ? (
+                      <span className="inline-flex items-center gap-1.5 bg-teal/8 border border-teal/15 rounded-full px-3.5 py-1.5 text-sm shadow-sm">
+                        <span className="text-teal">♥</span>
+                        <span className="font-semibold text-teal-dark">{locale === 'de' ? 'Freiwillige Spende' : 'Voluntary Donation'}</span>
+                      </span>
+                    ) : dc.price_eur != null && (
+                      <span className="inline-flex items-center gap-1.5 bg-white border border-gray-150 rounded-full px-3.5 py-1.5 text-sm shadow-sm">
+                        <span className="text-teal font-bold text-base leading-none">€</span>
+                        <span className="font-semibold text-text">{fmtCurrency(Number(dc.price_eur))}</span>
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Registration status */}
@@ -292,46 +294,51 @@ export default function WorkshopPage({ locale }: { locale: Locale }) {
                 {isExpanded && (
                   <div className="px-4 pb-4 space-y-3">
                     {description && <div className="border-l-2 border-teal/30 pl-3 text-text-muted text-sm leading-relaxed [&_strong]:text-text" dangerouslySetInnerHTML={{ __html: simpleMarkdown(description) }} />}
-                    <div className="bg-bg-warm/40 rounded-xl px-4 py-3 space-y-3">
+                    <div className="space-y-3">
                       {sessions.length > 0 && (
-                        <div className="flex gap-3 text-sm">
-                          <svg className="w-4 h-4 text-teal shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" strokeWidth="2" /><path d="M16 2v4M8 2v4M3 10h18" strokeWidth="2" strokeLinecap="round" /></svg>
-                          <div>
-                            <span className="font-semibold text-text">{sessions.length} {sessions.length === 1 ? i18n.workshops.session : i18n.workshops.sessions}:</span>
-                            <div className="mt-1 space-y-0.5 text-text-muted">
-                              {sessions.map((s) => (
-                                <div key={s.id} className="flex items-baseline gap-1 tabular-nums">
-                                  <span>{new Date(s.session_date).toLocaleDateString(dtLocale, { weekday: 'short', day: 'numeric', month: 'short' })},</span>
-                                  <span className="font-medium text-text">{s.start_time.slice(0, 5)}–{s.end_time.slice(0, 5)}</span>
-                                  {s.note && <span className="text-xs text-accent-dark italic ml-1">{s.note}</span>}
-                                </div>
-                              ))}
+                        <div className="rounded-xl border border-teal/12 bg-gradient-to-br from-white to-teal/[0.04] px-4 py-3.5">
+                          <div className="flex items-start gap-3">
+                            <div className="w-8 h-8 rounded-lg bg-teal/10 flex items-center justify-center shrink-0">
+                              <svg className="w-4 h-4 text-teal" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" strokeWidth="2" /><path d="M16 2v4M8 2v4M3 10h18" strokeWidth="2" strokeLinecap="round" /></svg>
+                            </div>
+                            <div className="text-sm flex-1">
+                              <span className="font-semibold text-text">{sessions.length} {sessions.length === 1 ? i18n.workshops.session : i18n.workshops.sessions}:</span>
+                              <div className="mt-1.5 space-y-1 text-text-muted">
+                                {sessions.map((s) => (
+                                  <div key={s.id} className="flex items-baseline gap-1.5 tabular-nums">
+                                    <span>{new Date(s.session_date).toLocaleDateString(dtLocale, { weekday: 'short', day: 'numeric', month: 'short' })},</span>
+                                    <span className="font-semibold text-text">{s.start_time.slice(0, 5)}–{s.end_time.slice(0, 5)}</span>
+                                    {s.note && <span className="text-xs text-accent-dark italic ml-1">{s.note}</span>}
+                                  </div>
+                                ))}
+                              </div>
                             </div>
                           </div>
                         </div>
                       )}
-                      {(dc.location || dc.price_eur != null) && (
-                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-text-muted">
+
+                      {(dc.location || dc.price_eur != null || dc.is_donation) && (
+                        <div className="flex flex-wrap gap-2">
                           {dc.location && (
-                            <span className="inline-flex items-center gap-1.5">
-                              <span>📍</span>
+                            <span className="inline-flex items-center gap-1.5 bg-white border border-gray-150 rounded-full px-3.5 py-1.5 text-sm shadow-sm">
+                              <svg className="w-3.5 h-3.5 text-coral" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" /></svg>
                               {dc.location_url ? (
-                                <a href={dc.location_url} target="_blank" rel="noopener noreferrer" className="font-medium text-primary underline decoration-primary/30 hover:decoration-primary transition-colors" onClick={(e) => e.stopPropagation()}>
+                                <a href={dc.location_url} target="_blank" rel="noopener noreferrer" className="font-medium text-text hover:text-primary transition-colors" onClick={(e) => e.stopPropagation()}>
                                   {dc.location}
                                 </a>
                               ) : (
-                                <span className="font-medium">{dc.location}</span>
+                                <span className="font-medium text-text">{dc.location}</span>
                               )}
                             </span>
                           )}
                           {dc.is_donation ? (
-                            <span className="inline-flex items-center gap-1.5">
-                              <span className="text-teal font-bold">♥</span>
-                              <span className="font-semibold text-text">{locale === 'de' ? 'Freiwillige Spende' : 'Voluntary Donation'}</span>
+                            <span className="inline-flex items-center gap-1.5 bg-teal/8 border border-teal/15 rounded-full px-3.5 py-1.5 text-sm shadow-sm">
+                              <span className="text-teal">♥</span>
+                              <span className="font-semibold text-teal-dark">{locale === 'de' ? 'Freiwillige Spende' : 'Voluntary Donation'}</span>
                             </span>
                           ) : dc.price_eur != null && (
-                            <span className="inline-flex items-center gap-1.5">
-                              <span className="text-teal font-bold">€</span>
+                            <span className="inline-flex items-center gap-1.5 bg-white border border-gray-150 rounded-full px-3.5 py-1.5 text-sm shadow-sm">
+                              <span className="text-teal font-bold text-base leading-none">€</span>
                               <span className="font-semibold text-text">{fmtCurrency(Number(dc.price_eur))}</span>
                             </span>
                           )}
