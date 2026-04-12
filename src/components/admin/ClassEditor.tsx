@@ -439,11 +439,11 @@ export default function ClassEditor({ classes, registrations, onUpdate }: Props)
 
                   {isViewing && (
                     <div className="border-t border-gray-100 bg-gray-50/30 px-4 py-4">
-                      <ClassDetailView dc={dc} sessions={classSessions} />
+                      <ClassDetailView dc={dc} sessions={classSessions} classRegs={classRegs} regCounts={counts} onUpdate={onUpdate} addingRegFor={addingRegFor} setAddingRegFor={setAddingRegFor} />
                     </div>
                   )}
 
-                  {isExpanded && (
+                  {!isViewing && isExpanded && (
                     <div className="border-t border-gray-100 bg-gray-50/50 rounded-b-xl">
                       <InlineRegistrations
                         classRegs={classRegs}
@@ -716,7 +716,15 @@ function InlineRegistrations({
   );
 }
 
-function ClassDetailView({ dc, sessions }: { dc: DanceClass; sessions: ClassSession[] }) {
+function ClassDetailView({ dc, sessions, classRegs, regCounts, onUpdate, addingRegFor, setAddingRegFor }: {
+  dc: DanceClass;
+  sessions: ClassSession[];
+  classRegs: Registration[];
+  regCounts: { leads: number; follows: number; pending: number; confirmed: number; waitlisted: number; cancelled: number };
+  onUpdate: () => void;
+  addingRegFor: string | null;
+  setAddingRegFor: (v: string | null) => void;
+}) {
   const fmt = (v: string | null | undefined) => v || '—';
   const fmtDate = (v: string | null | undefined) => {
     if (!v) return '—';
@@ -724,6 +732,7 @@ function ClassDetailView({ dc, sessions }: { dc: DanceClass; sessions: ClassSess
   };
 
   return (
+    <div className="space-y-6">
     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3 text-sm">
       <div>
         <span className="text-text-muted text-xs uppercase tracking-wider">Titel (DE)</span>
@@ -808,6 +817,27 @@ function ClassDetailView({ dc, sessions }: { dc: DanceClass; sessions: ClassSess
           </div>
         </div>
       )}
+    </div>
+
+    {/* Registrations */}
+    <div>
+      <div className="flex items-center gap-3 mb-3">
+        <h4 className="text-text-muted text-xs uppercase tracking-wider font-semibold">Registrierungen</h4>
+        <div className="flex gap-2 text-xs">
+          {regCounts.confirmed > 0 && <span className="bg-green-100 text-green-700 px-1.5 py-0.5 rounded font-medium">{regCounts.confirmed} confirmed</span>}
+          {regCounts.pending > 0 && <span className="bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded font-medium">{regCounts.pending} pending</span>}
+          {regCounts.waitlisted > 0 && <span className="bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded font-medium">{regCounts.waitlisted} waitlisted</span>}
+          {regCounts.cancelled > 0 && <span className="bg-red-100 text-red-600 px-1.5 py-0.5 rounded font-medium">{regCounts.cancelled} cancelled</span>}
+        </div>
+      </div>
+      <InlineRegistrations
+        classRegs={classRegs}
+        danceClass={dc}
+        onUpdate={onUpdate}
+        addingRegFor={addingRegFor}
+        setAddingRegFor={setAddingRegFor}
+      />
+    </div>
     </div>
   );
 }
