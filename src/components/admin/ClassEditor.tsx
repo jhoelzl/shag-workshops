@@ -36,6 +36,8 @@ const EMPTY_CLASS = {
   registration_closes_at: '',
   is_public: false,
   is_donation: false,
+  what_to_bring_de: '- bequeme Kleidung (und zusätzliche T-Shirt)\n- deine Lieblings-Tanzschuhe\n- Wasserflasche',
+  what_to_bring_en: '- comfortable clothing (perhaps an extra shirt)\n- your favorite dance shoes\n- water bottle',
 };
 
 const EMPTY_SESSION: SessionDraft = {
@@ -214,6 +216,8 @@ export default function ClassEditor({ classes, registrations, onUpdate }: Props)
       registration_closes_at: editing.registration_closes_at || null,
       is_public: editing.is_public ?? false,
       is_donation: editing.is_donation ?? false,
+      what_to_bring_de: editing.what_to_bring_de || null,
+      what_to_bring_en: editing.what_to_bring_en || null,
     };
 
     let classId = editing.id;
@@ -931,6 +935,15 @@ function ClassForm({
           <Input label="Max Follows" type="number" value={String(editing.max_follows ?? 10)} onChange={(v) => setEditing({ ...editing, max_follows: Number(v) })} required />
           <Input label="Min Leads" type="number" value={String(editing.min_leads ?? 3)} onChange={(v) => setEditing({ ...editing, min_leads: Number(v) })} />
           <Input label="Min Follows" type="number" value={String(editing.min_follows ?? 3)} onChange={(v) => setEditing({ ...editing, min_follows: Number(v) })} />
+        </div>
+      </fieldset>
+
+      {/* ── What to Bring ── */}
+      <fieldset className="space-y-4 border-t pt-4">
+        <legend className="text-xs font-bold uppercase tracking-wider text-text-muted mb-2">What to Bring</legend>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <TextArea label="What to Bring (DE)" value={editing.what_to_bring_de ?? ''} onChange={(v) => setEditing({ ...editing, what_to_bring_de: v })} hint="One item per line, use - for bullet list" />
+          <TextArea label="What to Bring (EN)" value={editing.what_to_bring_en ?? ''} onChange={(v) => setEditing({ ...editing, what_to_bring_en: v })} hint="One item per line, use - for bullet list" />
         </div>
       </fieldset>
 

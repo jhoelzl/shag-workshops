@@ -30,7 +30,8 @@
     "coming_soon": "Coming Soon",
     "registration_opens": "Registration opens on",
     "registration_closes": "Registration possible until",
-    "archive": "Archive"
+    "archive": "Archive",
+    "what_to_bring": "What to bring"
   },
   "registration": {
     "title": "Registration",

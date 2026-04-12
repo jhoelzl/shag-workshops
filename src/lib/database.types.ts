@@ -23,6 +23,8 @@ export interface Database {
           registration_closes_at: string | null;
           dance: string | null;
           teachers: string | null;
+          what_to_bring_de: string | null;
+          what_to_bring_en: string | null;
           is_public: boolean;
           created_at: string;
           updated_at: string;
@@ -46,6 +48,8 @@ export interface Database {
           registration_closes_at?: string | null;
           dance?: string | null;
           teachers?: string | null;
+          what_to_bring_de?: string | null;
+          what_to_bring_en?: string | null;
           is_public?: boolean;
           created_at?: string;
           updated_at?: string;
@@ -69,6 +73,8 @@ export interface Database {
           registration_closes_at?: string | null;
           dance?: string | null;
           teachers?: string | null;
+          what_to_bring_de?: string | null;
+          what_to_bring_en?: string | null;
           is_public?: boolean;
           created_at?: string;
           updated_at?: string;
