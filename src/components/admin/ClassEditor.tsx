@@ -23,6 +23,8 @@ const EMPTY_CLASS = {
   description_de: '',
   description_en: '',
   level: '',
+  dance: '',
+  teachers: '',
   location: '',
   location_url: '',
   max_leads: 10,
@@ -41,6 +43,7 @@ const EMPTY_SESSION: SessionDraft = {
 };
 
 const LEVELS = ['Beginner', 'Beginner/Improver', 'Improver', 'Intermediate', 'Intermediate/Advanced', 'Advanced'];
+const DANCES = ['Collegiate Shag', 'Lindy Hop', 'Balboa'];
 const STATUS_OPTIONS: { value: ClassState | 'all'; label: string }[] = [
   { value: 'all', label: 'All Statuses' },
   { value: 'open', label: '🟢 Open' },
@@ -55,6 +58,7 @@ export default function ClassEditor({ classes, registrations, onUpdate }: Props)
   const [classSessionsMap, setClassSessionsMap] = useState<Record<string, ClassSession[]>>({});
   const [expandedClassId, setExpandedClassId] = useState<string | null>(null);
   const [filterLevel, setFilterLevel] = useState<string>('all');
+  const [filterDance, setFilterDance] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<ClassState | 'all'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [addingRegFor, setAddingRegFor] = useState<string | null>(null);
@@ -95,18 +99,24 @@ export default function ClassEditor({ classes, registrations, onUpdate }: Props)
     return Array.from(levels).sort();
   }, [classes]);
 
+  const availableDances = useMemo(() => {
+    const dances = new Set(classes.map((c) => c.dance).filter(Boolean));
+    return Array.from(dances).sort();
+  }, [classes]);
+
   const filteredClasses = useMemo(() => {
     return classes.filter((dc) => {
       const state = getClassState(classSessionsMap[dc.id] || [], dc.registration_opens_at, dc.registration_closes_at);
       if (filterStatus !== 'all' && state !== filterStatus) return false;
       if (filterLevel !== 'all' && dc.level !== filterLevel) return false;
+      if (filterDance !== 'all' && dc.dance !== filterDance) return false;
       if (searchQuery) {
         const q = searchQuery.toLowerCase();
         if (!dc.title_de.toLowerCase().includes(q) && !dc.title_en.toLowerCase().includes(q)) return false;
       }
       return true;
     });
-  }, [classes, classSessionsMap, filterLevel, filterStatus, searchQuery]);
+  }, [classes, classSessionsMap, filterLevel, filterDance, filterStatus, searchQuery]);
 
   function duplicateClass(dc: DanceClass) {
     const existing = classSessionsMap[dc.id] || [];
@@ -187,6 +197,8 @@ export default function ClassEditor({ classes, registrations, onUpdate }: Props)
       description_de: editing.description_de || null,
       description_en: editing.description_en || null,
       level: editing.level || null,
+      dance: editing.dance || null,
+      teachers: editing.teachers || null,
       location: editing.location || null,
       location_url: editing.location_url || null,
       max_leads: editing.max_leads,
@@ -291,6 +303,16 @@ export default function ClassEditor({ classes, registrations, onUpdate }: Props)
               ))}
             </select>
             <select
+              value={filterDance}
+              onChange={(e) => setFilterDance(e.target.value)}
+              className="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-primary/30 outline-none"
+            >
+              <option value="all">All Dances</option>
+              {availableDances.map((d) => (
+                <option key={d} value={d!}>{d}</option>
+              ))}
+            </select>
+            <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value as ClassState | 'all')}
               className="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-primary/30 outline-none"
@@ -299,9 +321,9 @@ export default function ClassEditor({ classes, registrations, onUpdate }: Props)
                 <option key={o.value} value={o.value}>{o.label}</option>
               ))}
             </select>
-            {(filterLevel !== 'all' || filterStatus !== 'all' || searchQuery) && (
+            {(filterLevel !== 'all' || filterDance !== 'all' || filterStatus !== 'all' || searchQuery) && (
               <button
-                onClick={() => { setFilterLevel('all'); setFilterStatus('all'); setSearchQuery(''); }}
+                onClick={() => { setFilterLevel('all'); setFilterDance('all'); setFilterStatus('all'); setSearchQuery(''); }}
                 className="text-xs text-text-muted hover:text-text px-2 py-1 transition-colors"
               >
                 Clear filters
@@ -378,6 +400,8 @@ export default function ClassEditor({ classes, registrations, onUpdate }: Props)
                               {dc.level}
                             </span>
                           )}
+                          {dc.dance && <span>💃 {dc.dance}</span>}
+                          {dc.teachers && <span>🎓 {dc.teachers}</span>}
                           <span>{getClassDateSummary(dc.id)}</span>
                           {dc.location && <span>📍 {dc.location}</span>}
                         </div>
@@ -720,6 +744,14 @@ function ClassForm({
             {LEVELS.map((l) => <option key={l} value={l}>{l}</option>)}
           </select>
         </div>
+        <div>
+          <label className="block text-sm font-medium mb-1">Dance</label>
+          <select value={editing.dance ?? ''} onChange={(e) => setEditing({ ...editing, dance: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+            <option value="">—</option>
+            {DANCES.map((d) => <option key={d} value={d}>{d}</option>)}
+          </select>
+        </div>
+        <Input label="Teachers" value={editing.teachers ?? ''} onChange={(v) => setEditing({ ...editing, teachers: v })} placeholder="e.g. Alice & Bob" />
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 mt-4">
