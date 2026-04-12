@@ -10,10 +10,11 @@ interface Props {
   locale: Locale;
   danceClasses: DanceClass[];
   supabaseFunctionsUrl: string;
+  supabaseAnonKey: string;
   preselectedClassId?: string | null;
 }
 
-export default function RegistrationForm({ locale, danceClasses, supabaseFunctionsUrl, preselectedClassId }: Props) {
+export default function RegistrationForm({ locale, danceClasses, supabaseFunctionsUrl, supabaseAnonKey, preselectedClassId }: Props) {
   const i18n = translations[locale];
 
   const [selectedClass, setSelectedClass] = useState(preselectedClassId || '');
@@ -38,7 +39,11 @@ export default function RegistrationForm({ locale, danceClasses, supabaseFunctio
     try {
       const response = await fetch(`${supabaseFunctionsUrl}/register`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          apikey: supabaseAnonKey,
+          Authorization: `Bearer ${supabaseAnonKey}`,
+        },
         body: JSON.stringify({
           dance_class_id: selectedClass,
           role,

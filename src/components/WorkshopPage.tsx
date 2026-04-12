@@ -106,6 +106,7 @@ export default function WorkshopPage({ locale }: { locale: Locale }) {
 
   const openClasses = classes.filter((dc) => getClassState(dc.sessions || [], dc.registration_opens_at, dc.registration_closes_at) === 'open');
   const supabaseFunctionsUrl = `${import.meta.env.PUBLIC_SUPABASE_URL}/functions/v1`;
+  const supabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY;
 
   return (
     <div>
@@ -203,6 +204,7 @@ export default function WorkshopPage({ locale }: { locale: Locale }) {
             locale={locale}
             danceClasses={openClasses}
             supabaseFunctionsUrl={supabaseFunctionsUrl}
+            supabaseAnonKey={supabaseAnonKey}
             preselectedClassId={selectedId}
           />
         </div>
