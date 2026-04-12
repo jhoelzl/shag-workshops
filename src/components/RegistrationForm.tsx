@@ -87,7 +87,7 @@ export default function RegistrationForm({ locale, danceClasses, supabaseFunctio
 
       {/* Dance Class Selection */}
       <div className="mb-4">
-        <label htmlFor="dance_class" className="block text-sm font-medium mb-1">{i18n.registration.dance_class}</label>
+        <label htmlFor="dance_class" className="block text-sm font-medium mb-1">{i18n.registration.dance_class} <span className="text-coral">*</span></label>
         <select
           id="dance_class"
           value={selectedClass}
@@ -107,7 +107,7 @@ export default function RegistrationForm({ locale, danceClasses, supabaseFunctio
 
       {/* Role */}
       <div className="mb-4">
-        <label className="block text-sm font-medium mb-2">{i18n.registration.role}</label>
+        <label className="block text-sm font-medium mb-2">{i18n.registration.role} <span className="text-coral">*</span></label>
         <div className="relative flex bg-bg-warm rounded-full p-1">
           <div
             className="absolute top-1 bottom-1 w-[calc(50%-4px)] bg-teal rounded-full transition-all duration-200 ease-in-out shadow-sm"
@@ -132,7 +132,7 @@ export default function RegistrationForm({ locale, danceClasses, supabaseFunctio
 
       {/* Name */}
       <div className="mb-4">
-        <label htmlFor="name" className="block text-sm font-medium mb-1">{i18n.registration.name}</label>
+        <label htmlFor="name" className="block text-sm font-medium mb-1">{i18n.registration.name} <span className="text-coral">*</span></label>
         <input
           id="name"
           type="text"
@@ -145,7 +145,7 @@ export default function RegistrationForm({ locale, danceClasses, supabaseFunctio
 
       {/* Email */}
       <div className="mb-4">
-        <label htmlFor="email" className="block text-sm font-medium mb-1">{i18n.registration.email}</label>
+        <label htmlFor="email" className="block text-sm font-medium mb-1">{i18n.registration.email} <span className="text-coral">*</span></label>
         <input
           id="email"
           type="email"
