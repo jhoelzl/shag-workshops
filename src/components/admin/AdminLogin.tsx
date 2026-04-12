@@ -22,12 +22,22 @@ export default function AdminLogin() {
       setError(error.message);
       setLoading(false);
     } else {
+      const safeDefault = `${base}/admin/`;
       const params = new URLSearchParams(window.location.search);
       const returnTo = params.get('returnTo');
-      // Only allow relative paths starting with base to prevent open redirect / XSS
-      const safeDefault = `${base}/admin/`;
-      const isAllowed = returnTo && returnTo.startsWith(`${base}/`) && !returnTo.includes('//');
-      window.location.href = isAllowed ? returnTo : safeDefault;
+      let redirect = safeDefault;
+      if (returnTo) {
+        try {
+          // Parse as URL to sanitize — prevents javascript: scheme and open redirects
+          const url = new URL(returnTo, window.location.origin);
+          if (url.origin === window.location.origin && url.pathname.startsWith(`${base}/`)) {
+            redirect = url.pathname;
+          }
+        } catch {
+          // Invalid URL — use safe default
+        }
+      }
+      window.location.href = redirect;
     }
   }
 
