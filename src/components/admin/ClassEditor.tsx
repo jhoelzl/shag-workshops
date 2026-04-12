@@ -35,6 +35,7 @@ const EMPTY_CLASS = {
   registration_opens_at: '',
   registration_closes_at: '',
   is_public: false,
+  is_donation: false,
 };
 
 const EMPTY_SESSION: SessionDraft = {
@@ -212,6 +213,7 @@ export default function ClassEditor({ classes, registrations, onUpdate }: Props)
       registration_opens_at: editing.registration_opens_at || null,
       registration_closes_at: editing.registration_closes_at || null,
       is_public: editing.is_public ?? false,
+      is_donation: editing.is_donation ?? false,
     };
 
     let classId = editing.id;

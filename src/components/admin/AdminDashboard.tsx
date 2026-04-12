@@ -66,6 +66,7 @@ export default function AdminDashboard() {
     pending: registrations.filter((r) => r.status === 'pending').length,
     confirmed: registrations.filter((r) => r.status === 'confirmed').length,
     waitlisted: registrations.filter((r) => r.status === 'waitlisted').length,
+    cancelled: registrations.filter((r) => r.status === 'cancelled').length,
   };
 
   return (
@@ -141,7 +142,7 @@ function OverviewTab({
   classes: DanceClass[];
   registrations: Registration[];
   sessionsMap: Record<string, ClassSession[]>;
-  stats: { totalClasses: number; openClasses: number; totalRegistrations: number; pending: number; confirmed: number; waitlisted: number };
+  stats: { totalClasses: number; openClasses: number; totalRegistrations: number; pending: number; confirmed: number; waitlisted: number; cancelled: number };
   onNavigate: (tab: Tab) => void;
 }) {
   // Open classes with capacity info
@@ -223,11 +224,15 @@ function OverviewTab({
           {stats.waitlisted > 0 && (
             <div className="bg-gray-400 h-full transition-all" style={{ width: `${(stats.waitlisted / stats.totalRegistrations) * 100}%` }} title={`${stats.waitlisted} waitlisted`} />
           )}
+          {stats.cancelled > 0 && (
+            <div className="bg-red-400 h-full transition-all" style={{ width: `${(stats.cancelled / stats.totalRegistrations) * 100}%` }} title={`${stats.cancelled} cancelled`} />
+          )}
         </div>
         <div className="flex gap-4 mt-2 text-xs text-text-muted">
           <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-green-500 inline-block" /> {stats.confirmed} Confirmed</span>
           <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-amber-400 inline-block" /> {stats.pending} Pending</span>
           <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-gray-400 inline-block" /> {stats.waitlisted} Waitlisted</span>
+          <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-red-400 inline-block" /> {stats.cancelled} Cancelled</span>
         </div>
       </div>
 
