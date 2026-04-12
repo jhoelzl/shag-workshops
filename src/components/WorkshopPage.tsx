@@ -219,7 +219,7 @@ export default function WorkshopPage({ locale }: { locale: Locale }) {
               {(isPlanned || isOpen) && (dc.registration_opens_at || dc.registration_closes_at) && (
                 <div className={`px-5 py-2.5 text-sm font-medium ${isPlanned ? 'bg-amber-50/80 text-amber-700 border-t border-amber-100' : 'bg-gray-50 text-text-muted border-t border-gray-100'}`}>
                   {isPlanned && dc.registration_opens_at && (
-                    <span>🔜 {i18n.workshops.registration_opens} {new Date(dc.registration_opens_at).toLocaleString(dtLocale, { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false })}</span>
+                    <span>{i18n.workshops.registration_opens} {new Date(dc.registration_opens_at).toLocaleString(dtLocale, { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false })}</span>
                   )}
                   {isOpen && dc.registration_closes_at && (
                     <span>{i18n.workshops.registration_closes} {new Date(dc.registration_closes_at).toLocaleString(dtLocale, { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false })}</span>
