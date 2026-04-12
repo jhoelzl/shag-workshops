@@ -916,6 +916,10 @@ function ClassForm({
           <input type="checkbox" id="is_public" checked={editing.is_public ?? false} onChange={(e) => setEditing({ ...editing, is_public: e.target.checked })} className="accent-primary" />
           <label htmlFor="is_public" className="text-sm">Public (im Frontend sichtbar)</label>
         </div>
+        <div className="flex items-center gap-2 pt-6">
+          <input type="checkbox" id="is_donation" checked={editing.is_donation ?? false} onChange={(e) => setEditing({ ...editing, is_donation: e.target.checked })} className="accent-primary" />
+          <label htmlFor="is_donation" className="text-sm">Freiwillige Spende (statt Preis)</label>
+        </div>
       </div>
 
       <div className="mt-6 border-t pt-4">

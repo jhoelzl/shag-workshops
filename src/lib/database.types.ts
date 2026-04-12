@@ -18,6 +18,7 @@ export interface Database {
           min_leads: number;
           min_follows: number;
           price_eur: number | null;
+          is_donation: boolean;
           registration_opens_at: string | null;
           registration_closes_at: string | null;
           dance: string | null;
@@ -40,6 +41,7 @@ export interface Database {
           min_leads?: number;
           min_follows?: number;
           price_eur?: number | null;
+          is_donation?: boolean;
           registration_opens_at?: string | null;
           registration_closes_at?: string | null;
           dance?: string | null;
@@ -62,6 +64,7 @@ export interface Database {
           min_leads?: number;
           min_follows?: number;
           price_eur?: number | null;
+          is_donation?: boolean;
           registration_opens_at?: string | null;
           registration_closes_at?: string | null;
           dance?: string | null;

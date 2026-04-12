@@ -197,7 +197,12 @@ export default function WorkshopPage({ locale }: { locale: Locale }) {
                           )}
                         </span>
                       )}
-                      {dc.price_eur != null && (
+                      {dc.is_donation ? (
+                        <span className="inline-flex items-center gap-1.5">
+                          <span className="text-teal font-bold">♥</span>
+                          <span className="font-semibold text-text">{locale === 'de' ? 'Freiwillige Spende' : 'Voluntary Donation'}</span>
+                        </span>
+                      ) : dc.price_eur != null && (
                         <span className="inline-flex items-center gap-1.5">
                           <span className="text-teal font-bold">€</span>
                           <span className="font-semibold text-text">{fmtCurrency(Number(dc.price_eur))}</span>
@@ -319,7 +324,12 @@ export default function WorkshopPage({ locale }: { locale: Locale }) {
                               )}
                             </span>
                           )}
-                          {dc.price_eur != null && (
+                          {dc.is_donation ? (
+                            <span className="inline-flex items-center gap-1.5">
+                              <span className="text-teal font-bold">♥</span>
+                              <span className="font-semibold text-text">{locale === 'de' ? 'Freiwillige Spende' : 'Voluntary Donation'}</span>
+                            </span>
+                          ) : dc.price_eur != null && (
                             <span className="inline-flex items-center gap-1.5">
                               <span className="text-teal font-bold">€</span>
                               <span className="font-semibold text-text">{fmtCurrency(Number(dc.price_eur))}</span>
