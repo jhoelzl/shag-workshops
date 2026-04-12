@@ -93,6 +93,18 @@ export default function WorkshopPage({ locale }: { locale: Locale }) {
     fetchClasses();
   }, []);
 
+  const allClasses = [...classes, ...archivedClasses];
+  const availableLevels = useMemo(() => {
+    const levels = new Set(allClasses.map((c) => c.level).filter(Boolean));
+    return Array.from(levels).sort();
+  }, [allClasses]);
+
+  const filteredClasses = filterLevel === 'all' ? classes : classes.filter((dc) => dc.level === filterLevel);
+  const filteredArchived = filterLevel === 'all' ? archivedClasses : archivedClasses.filter((dc) => dc.level === filterLevel);
+  const openClasses = classes.filter((dc) => getClassState(dc.sessions || [], dc.registration_opens_at, dc.registration_closes_at) === 'open');
+  const supabaseFunctionsUrl = `${import.meta.env.PUBLIC_SUPABASE_URL}/functions/v1`;
+  const supabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY;
+
   if (loading) {
     return (
       <div className="flex justify-center py-12">
@@ -104,20 +116,6 @@ export default function WorkshopPage({ locale }: { locale: Locale }) {
   if (classes.length === 0 && archivedClasses.length === 0) {
     return <p className="text-text-muted text-center py-12">{i18n.home.no_workshops}</p>;
   }
-
-  const openClasses = classes.filter((dc) => getClassState(dc.sessions || [], dc.registration_opens_at, dc.registration_closes_at) === 'open');
-
-  const allClasses = [...classes, ...archivedClasses];
-  const availableLevels = useMemo(() => {
-    const levels = new Set(allClasses.map((c) => c.level).filter(Boolean));
-    return Array.from(levels).sort();
-  }, [classes, archivedClasses]);
-
-  const filteredClasses = filterLevel === 'all' ? classes : classes.filter((dc) => dc.level === filterLevel);
-  const filteredArchived = filterLevel === 'all' ? archivedClasses : archivedClasses.filter((dc) => dc.level === filterLevel);
-
-  const supabaseFunctionsUrl = `${import.meta.env.PUBLIC_SUPABASE_URL}/functions/v1`;
-  const supabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY;
 
   return (
     <div>
