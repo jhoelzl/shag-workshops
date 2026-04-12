@@ -1,0 +1,97 @@
+---
+import type { Locale } from '../i18n/index';
+import { t, getLocalizedPath, getAlternateLocale } from '../i18n/index';
+import '../styles/global.css';
+
+interface Props {
+  title?: string;
+  locale: Locale;
+  currentPath?: string;
+}
+
+const { title, locale, currentPath = '' } = Astro.props;
+const i18n = t(locale);
+const altLocale = getAlternateLocale(locale);
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+---
+
+<!doctype html>
+<html lang={locale}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Collegiate Shag Workshops in Salzburg — Swing Dance Classes" />
+    <link rel="icon" type="image/svg+xml" href={`${base}/favicon.svg`} />
+    <title>{title ? `${title} | Shagadeus` : 'Shagadeus — Collegiate Shag in Salzburg'}</title>
+  </head>
+  <body class="min-h-screen bg-bg text-text flex flex-col font-sans" style="visibility:hidden">
+    <!-- Auth gate spinner (removed after auth check) -->
+    <div id="auth-gate" style="position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#FFF8F0;z-index:9999;visibility:visible">
+      <div style="width:2rem;height:2rem;border:4px solid rgba(0,0,0,0.1);border-top-color:#1a2744;border-radius:50%;animation:spin .8s linear infinite"></div>
+      <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+    </div>
+    <!-- Header -->
+    <header class="bg-bg/80 backdrop-blur-sm sticky top-0 z-50 border-b border-accent/10">
+      <nav class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+        <a href={`${base}/${locale}/`} class="flex items-center gap-3 hover:opacity-90 transition-opacity">
+          <img src={`${base}/shagadeus_logo.jpeg`} alt="Shagadeus Logo" class="h-10 w-auto rounded-lg shadow-sm" />
+          <span class="font-display text-xl font-bold text-primary hidden sm:inline">Shagadeus</span>
+        </a>
+
+        <div class="flex items-center gap-8">
+          <a href={`${base}/${locale}/`} class="text-text hover:text-teal transition-colors text-sm font-medium">
+            {i18n.nav.home}
+          </a>
+          <a href={`${base}/${locale}/about/`} class="text-text hover:text-teal transition-colors text-sm font-medium">
+            {i18n.nav.about}
+          </a>
+          <a
+            href={`${base}/${locale}/workshops/`}
+            class="bg-coral hover:bg-coral-dark text-white font-semibold px-5 py-2 rounded-full text-sm transition-colors shadow-sm"
+          >
+            {i18n.home.hero_cta}
+          </a>
+          <a
+            href={`${base}/${altLocale}${currentPath}`}
+            class="border border-teal/40 text-teal rounded-full px-3 py-1 text-xs font-bold hover:bg-teal/10 transition-colors"
+          >
+            {i18n.nav.language}
+          </a>
+        </div>
+      </nav>
+    </header>
+
+    <!-- Main content -->
+    <main class="flex-1">
+      <slot />
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-primary text-white/80 text-sm py-10 mt-16">
+      <div class="max-w-6xl mx-auto px-6 flex flex-col sm:flex-row justify-between items-center gap-4">
+        <div class="flex items-center gap-3">
+          <img src={`${base}/shagadeus_logo.jpeg`} alt="Shagadeus" class="h-8 w-auto rounded opacity-80" />
+          <span class="font-display">&copy; {new Date().getFullYear()} Shagadeus</span>
+        </div>
+        <div class="flex gap-6 text-white/60">
+          <span>Collegiate Shag in Salzburg</span>
+          <a href={`mailto:shag@example.com`} class="hover:text-accent transition-colors">{i18n.footer.contact}</a>
+        </div>
+      </div>
+    </footer>
+
+    <!-- AUTH GATE: Remove this script block when the site goes public -->
+    <script>
+      import { supabase } from '../lib/supabase';
+      const base = import.meta.env.BASE_URL?.replace(/\/$/, '') ?? '';
+      supabase.auth.getUser().then(({ data: { user } }) => {
+        if (!user) {
+          window.location.href = `${base}/admin/login/`;
+        } else {
+          document.body.style.visibility = 'visible';
+          document.getElementById('auth-gate')?.remove();
+        }
+      });
+    </script>
+  </body>
+</html>

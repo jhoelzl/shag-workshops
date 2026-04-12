@@ -1,0 +1,77 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { t } from '../../i18n/index';
+
+const locale = 'de';
+const i18n = t(locale);
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+const levels = [
+  { title: i18n.about.level_beginner_title, desc: i18n.about.level_beginner_desc, color: 'teal' },
+  { title: i18n.about.level_beginner_improver_title, desc: i18n.about.level_beginner_improver_desc, color: 'teal' },
+  { title: i18n.about.level_intermediate_title, desc: i18n.about.level_intermediate_desc, color: 'coral' },
+  { title: i18n.about.level_intermediate_advanced_title, desc: i18n.about.level_intermediate_advanced_desc, color: 'coral' },
+  { title: i18n.about.level_advanced_title, desc: i18n.about.level_advanced_desc, color: 'accent' },
+];
+---
+
+<BaseLayout title={i18n.about.title} locale={locale} currentPath="/about/">
+  <div class="max-w-4xl mx-auto px-6 py-16">
+    <!-- Intro -->
+    <section class="text-center mb-16">
+      <div class="mb-8">
+        <div class="inline-block p-2 bg-white rounded-2xl shadow-lg shadow-accent/10">
+          <img src={`${base}/shagadeus_logo.jpeg`} alt="Shagadeus" class="w-48 h-auto rounded-xl" />
+        </div>
+      </div>
+      <h2 class="font-display text-3xl font-bold text-primary mb-4">{i18n.about.intro_title}</h2>
+      <p class="text-text-muted text-lg leading-relaxed max-w-2xl mx-auto">{i18n.about.intro_text}</p>
+    </section>
+
+    <!-- What is Collegiate Shag -->
+    <section class="mb-16 bg-surface rounded-2xl p-8 border border-bg-warm">
+      <h2 class="font-display text-2xl font-bold text-primary mb-4">{i18n.about.what_is_shag_title}</h2>
+      <p class="text-text-muted leading-relaxed">{i18n.about.what_is_shag_text}</p>
+    </section>
+
+    <!-- Levels -->
+    <section>
+      <div class="text-center mb-10">
+        <h2 class="font-display text-3xl font-bold text-primary mb-3">{i18n.about.levels_title}</h2>
+        <div class="flex items-center justify-center gap-3">
+          <span class="h-px w-8 bg-teal/40"></span>
+          <span class="text-teal text-lg">✦</span>
+          <span class="h-px w-8 bg-teal/40"></span>
+        </div>
+      </div>
+
+      <div class="space-y-4">
+        {levels.map((level, i) => (
+          <div class="bg-surface rounded-2xl p-6 border border-bg-warm hover:shadow-md transition-shadow">
+            <div class="flex items-start gap-4">
+              <div class={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm ${
+                level.color === 'teal' ? 'bg-teal' : level.color === 'coral' ? 'bg-coral' : 'bg-accent'
+              }`}>
+                {i + 1}
+              </div>
+              <div>
+                <h3 class="font-display text-xl font-bold text-primary mb-2">{level.title}</h3>
+                <p class="text-text-muted leading-relaxed">{level.desc}</p>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="text-center mt-16">
+      <a
+        href={`${base}/de/workshops/`}
+        class="inline-block bg-coral hover:bg-coral-dark text-white font-bold px-8 py-3.5 rounded-full transition-colors text-lg shadow-md shadow-coral/20"
+      >
+        {i18n.home.hero_cta}
+      </a>
+    </section>
+  </div>
+</BaseLayout>

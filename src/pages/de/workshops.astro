@@ -1,0 +1,22 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { t } from '../../i18n/index';
+import WorkshopPage from '../../components/WorkshopPage';
+
+const locale = 'de';
+const i18n = t(locale);
+---
+
+<BaseLayout title={i18n.workshops.title} locale={locale} currentPath="/workshops/">
+  <div class="max-w-6xl mx-auto px-6 py-12">
+    <div class="text-center mb-10">
+      <h1 class="font-display text-4xl sm:text-5xl font-bold text-primary mb-3">{i18n.workshops.title}</h1>
+      <div class="flex items-center justify-center gap-3">
+        <span class="h-px w-8 bg-teal/40"></span>
+        <span class="text-teal text-lg">✦</span>
+        <span class="h-px w-8 bg-teal/40"></span>
+      </div>
+    </div>
+    <WorkshopPage client:load locale={locale} />
+  </div>
+</BaseLayout>

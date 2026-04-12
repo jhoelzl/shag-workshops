@@ -1,0 +1,53 @@
+@import "tailwindcss";
+
+/* Google Fonts — display serif for headings */
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Inter:wght@400;500;600;700&display=swap');
+
+/* Custom theme — retro warm style inspired by Orø Shag Camp */
+@theme {
+  --color-primary: #1a2744;
+  --color-primary-light: #263a5c;
+  --color-teal: #2A9D8F;
+  --color-teal-dark: #21867A;
+  --color-coral: #E76F51;
+  --color-coral-dark: #D4573B;
+  --color-accent: #d4a832;
+  --color-accent-dark: #b8911e;
+  --color-bg: #FFF8F0;
+  --color-bg-warm: #FDEEE0;
+  --color-surface: #ffffff;
+  --color-text: #1a1a1a;
+  --color-text-muted: #6b7280;
+  --color-success: #059669;
+  --color-warning: #d97706;
+  --color-error: #dc2626;
+
+  --font-display: 'Playfair Display', Georgia, serif;
+  --font-sans: 'Inter', system-ui, sans-serif;
+}
+
+/* Base styles */
+body {
+  font-family: var(--font-sans);
+}
+
+h1, h2, h3 {
+  font-family: var(--font-display);
+}
+
+/* Decorative star element */
+.star-decoration {
+  position: absolute;
+  pointer-events: none;
+}
+
+.star-decoration::before {
+  content: '✦';
+  font-size: inherit;
+  display: block;
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}

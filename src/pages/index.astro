@@ -1,0 +1,22 @@
+---
+// Redirect root to default locale (auth-gated while in test mode)
+const base = import.meta.env.BASE_URL;
+---
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <link rel="canonical" href={`${base}de/`} />
+  </head>
+  <body>
+    <p>Redirecting…</p>
+    <!-- AUTH GATE: Replace this script with a simple meta refresh when the site goes public:
+         <meta http-equiv="refresh" content="0;url=${base}de/" /> -->
+    <script>
+      import { supabase } from '../lib/supabase';
+      const base = import.meta.env.BASE_URL?.replace(/\/$/, '') ?? '';
+      supabase.auth.getUser().then(({ data: { user } }) => {
+        window.location.href = user ? `${base}/de/` : `${base}/admin/login/`;
+      });
+    </script>
+  </body>
+</html>

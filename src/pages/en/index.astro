@@ -1,0 +1,83 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { t } from '../../i18n/index';
+import ClassList from '../../components/ClassList';
+
+const locale = 'en';
+const i18n = t(locale);
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+---
+
+<BaseLayout title={i18n.nav.home} locale={locale}>
+  <!-- Hero Section — Orø-inspired retro warm style -->
+  <section class="relative bg-bg overflow-hidden py-16 sm:py-24">
+    <!-- Decorative stars -->
+    <span class="absolute top-12 left-[8%] text-accent text-3xl opacity-70 animate-pulse">✦</span>
+    <span class="absolute top-20 right-[10%] text-coral text-2xl opacity-60">✦</span>
+    <span class="absolute bottom-16 left-[15%] text-teal text-xl opacity-50">✦</span>
+    <span class="absolute top-32 right-[25%] text-primary text-lg opacity-30">✦</span>
+    <span class="absolute bottom-24 right-[12%] text-accent text-2xl opacity-40 animate-pulse">✦</span>
+
+    <div class="max-w-4xl mx-auto px-6 text-center relative z-10">
+      <!-- Logo / Hero image -->
+      <div class="mb-10">
+        <img
+          src={`${base}/shagadeus_logo.jpeg`}
+          alt="Shagadeus"
+          class="w-72 sm:w-96 h-auto rounded-2xl mx-auto drop-shadow-lg"
+        />
+      </div>
+
+      <!-- Title -->
+      <h1 class="font-display text-5xl sm:text-7xl font-black text-primary mb-4 tracking-tight">
+        {i18n.home.hero_title}
+      </h1>
+
+      <!-- Subtitle — location -->
+      <p class="text-teal text-xl sm:text-2xl font-medium mb-2">
+        Salzburg, Austria
+      </p>
+
+      <!-- Tagline with decorative lines -->
+      <div class="flex items-center justify-center gap-4 mb-10">
+        <span class="h-px w-12 bg-coral/50"></span>
+        <p class="text-coral text-lg sm:text-xl font-display italic">
+          {i18n.home.hero_subtitle}
+        </p>
+        <span class="h-px w-12 bg-coral/50"></span>
+      </div>
+
+      <!-- CTA Buttons -->
+      <div class="flex flex-col sm:flex-row gap-4 justify-center">
+        <a
+          href={`${base}/en/workshops/`}
+          class="inline-block bg-coral hover:bg-coral-dark text-white font-bold px-8 py-3.5 rounded-full transition-colors text-lg shadow-md shadow-coral/20"
+        >
+          {i18n.home.hero_cta}
+        </a>
+        <a
+          href={`${base}/en/about/`}
+          class="inline-block bg-teal hover:bg-teal-dark text-white font-bold px-8 py-3.5 rounded-full transition-colors text-lg shadow-md shadow-teal/20"
+        >
+          {i18n.home.hero_about}
+        </a>
+      </div>
+    </div>
+
+    <!-- Bottom wave decoration -->
+    <div class="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-bg-warm/50 to-transparent"></div>
+  </section>
+
+  <!-- Current Workshops -->
+  <section id="workshops" class="max-w-6xl mx-auto px-6 py-16">
+    <div class="text-center mb-12">
+      <h2 class="font-display text-3xl sm:text-4xl font-bold text-primary mb-3">{i18n.home.current_workshops}</h2>
+      <div class="flex items-center justify-center gap-3">
+        <span class="h-px w-8 bg-teal/40"></span>
+        <span class="text-teal text-lg">✦</span>
+        <span class="h-px w-8 bg-teal/40"></span>
+      </div>
+    </div>
+    <ClassList client:load locale={locale} />
+  </section>
+</BaseLayout>

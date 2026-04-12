@@ -1,0 +1,75 @@
+{
+  "nav": {
+    "home": "Startseite",
+    "workshops": "Workshops",
+    "about": "Über uns",
+    "language": "EN"
+  },
+  "home": {
+    "hero_title": "Collegiate Shag Salzburg",
+    "hero_subtitle": "Swing Tanzkurse in Salzburg",
+    "hero_cta": "Zu den Workshops",
+    "hero_about": "Über uns",
+    "current_workshops": "Aktuelle Workshops",
+    "no_workshops": "Aktuell sind keine Workshops geplant. Schau bald wieder vorbei!"
+  },
+  "workshops": {
+    "title": "Workshops",
+    "level": "Level",
+    "sessions": "Termine",
+    "session": "Termin",
+    "time": "Uhrzeit",
+    "location": "Ort",
+    "price": "Preis",
+    "spots_available": "Plätze frei",
+    "leads": "Leads",
+    "follows": "Follows",
+    "full": "Ausgebucht",
+    "register": "Anmelden",
+    "registration_closed": "Anmeldung geschlossen",
+    "coming_soon": "Demnächst",
+    "registration_opens": "Anmeldung öffnet am",
+    "registration_closes": "Anmeldung möglich bis",
+    "archive": "Archiv"
+  },
+  "registration": {
+    "title": "Anmeldung",
+    "dance_class": "Workshop",
+    "role": "Rolle",
+    "role_lead": "Lead",
+    "role_follow": "Follow",
+    "name": "Name",
+    "email": "E-Mail",
+    "partner_name": "Partner Name (optional)",
+    "comment": "Kommentar (optional)",
+    "submit": "Anmelden",
+    "submitting": "Wird gesendet...",
+    "success_title": "Anmeldung eingegangen!",
+    "success_message": "Du erhältst eine Bestätigungs-E-Mail. Der Veranstalter wird deine Anmeldung prüfen und bestätigen.",
+    "error_title": "Fehler",
+    "error_duplicate": "Du bist bereits für diesen Workshop angemeldet.",
+    "error_generic": "Etwas ist schiefgelaufen. Bitte versuche es erneut."
+  },
+  "footer": {
+    "contact": "Kontakt",
+    "imprint": "Impressum"
+  },
+  "about": {
+    "title": "Über uns",
+    "intro_title": "Shagadeus — Collegiate Shag in Salzburg",
+    "intro_text": "Wir sind eine Gruppe von begeisterten Swing-TänzerInnen, die Collegiate Shag nach Salzburg bringen. Unsere Workshops richten sich an alle Levels — von absoluten AnfängerInnen bis hin zu erfahrenen TänzerInnen.",
+    "levels_title": "Unsere Levels",
+    "level_beginner_title": "Beginner",
+    "level_beginner_desc": "Keine Vorkenntnisse nötig! Wir starten ganz von vorne: Basic Steps, Rhythmus, Bounce und erste einfache Figuren. Perfekt für alle, die Collegiate Shag zum ersten Mal ausprobieren möchten.",
+    "level_beginner_improver_title": "Beginner/Improver",
+    "level_beginner_improver_desc": "Du kennst die Basics und willst mehr! Wir vertiefen Technik, arbeiten an Musikalität und lernen neue Variationen. Voraussetzung: Grundkenntnisse in Collegiate Shag.",
+    "level_intermediate_title": "Intermediate",
+    "level_intermediate_desc": "Für TänzerInnen mit solider Grundlage. Wir arbeiten an komplexeren Figuren, Partnering, Dynamik und Styling. Du solltest die grundlegenden Shag-Variationen sicher beherrschen.",
+    "level_intermediate_advanced_title": "Intermediate/Advanced",
+    "level_intermediate_advanced_desc": "Fortgeschrittene Technik und kreatives Tanzen. Fokus auf Musikalität, Flow, schnelle Tempi und anspruchsvolle Kombinationen.",
+    "level_advanced_title": "Advanced",
+    "level_advanced_desc": "Für erfahrene TänzerInnen mit mehrjähriger Shag-Erfahrung. Fortgeschrittene Footwork-Variationen, komplexe Partnering-Konzepte und Improvisation.",
+    "what_is_shag_title": "Was ist Collegiate Shag?",
+    "what_is_shag_text": "Collegiate Shag ist ein energiegeladener Paartanz aus der Swing-Ära der 1920er–1940er Jahre. Er zeichnet sich durch schnelles Footwork, Bounce und eine enge Tanzhaltung aus. Getanzt wird vor allem zu schnellerer Swing- und Jazz-Musik."
+  }
+}
