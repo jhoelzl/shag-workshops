@@ -74,7 +74,7 @@ export default function ClassList({ locale }: { locale: Locale }) {
 
       setClasses(merged.filter((dc) => {
         const state = getClassState(dc.sessions || [], dc.registration_opens_at, dc.registration_closes_at);
-        return state === 'upcoming' || state === 'open';
+        return state === 'upcoming' || state === 'open' || state === 'ongoing';
       }));
       setArchivedClasses(merged.filter((dc) => {
         const state = getClassState(dc.sessions || [], dc.registration_opens_at, dc.registration_closes_at);
@@ -116,6 +116,9 @@ export default function ClassList({ locale }: { locale: Locale }) {
                 {dc.teachers && <span className="text-[11px] font-medium text-text-muted tracking-wide">{dc.teachers}</span>}
               </div>
               <h3 className="font-display text-xl font-bold text-primary leading-tight">{title}</h3>
+              {classState === 'ongoing' && (
+                <span className="text-[11px] font-bold uppercase tracking-wider bg-blue-100 text-blue-700 px-2.5 py-0.5 rounded-full mt-1 self-start">{i18n.workshops.ongoing}</span>
+              )}
             </div>
             {dc.level && (
               <span className="text-xs bg-teal/10 text-teal-dark font-semibold px-3 py-1 rounded-full shrink-0">{dc.level}</span>
@@ -226,7 +229,7 @@ export default function ClassList({ locale }: { locale: Locale }) {
         </div>
       )}
       {archivedClasses.length > 0 && (
-        <div className="mt-16">
+        <div className={classes.length > 0 ? 'mt-16' : ''}>
           <div className="flex items-center gap-3 mb-6">
             <span className="h-px flex-1 bg-text-muted/20"></span>
             <h3 className="font-display text-lg font-bold text-text-muted">{i18n.workshops.archive}</h3>
