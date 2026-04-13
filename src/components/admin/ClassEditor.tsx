@@ -53,6 +53,7 @@ const STATUS_OPTIONS: { value: ClassState | 'all'; label: string }[] = [
   { value: 'all', label: 'All Statuses' },
   { value: 'open', label: '🟢 Open' },
   { value: 'upcoming', label: '🟡 Upcoming' },
+  { value: 'ongoing', label: '🔵 Ongoing' },
   { value: 'archived', label: '⚫ Archived' },
 ];
 
@@ -496,9 +497,10 @@ function StatusBadge({ state }: { state: ClassState }) {
   const styles: Record<ClassState, string> = {
     open: 'bg-green-100 text-green-700 ring-green-500/20',
     upcoming: 'bg-amber-50 text-amber-700 ring-amber-500/20',
+    ongoing: 'bg-blue-100 text-blue-700 ring-blue-500/20',
     archived: 'bg-gray-100 text-gray-500 ring-gray-500/20',
   };
-  const labels: Record<ClassState, string> = { open: 'Open', upcoming: 'Upcoming', archived: 'Archived' };
+  const labels: Record<ClassState, string> = { open: 'Open', upcoming: 'Upcoming', ongoing: 'Ongoing', archived: 'Archived' };
   return (
     <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ring-1 ${styles[state]}`}>
       {labels[state]}
