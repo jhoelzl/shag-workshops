@@ -53,10 +53,10 @@ describe('getClassState', () => {
     expect(getClassState(sessions, '2025-06-01T00:00:00Z', '2025-06-30T23:59:59Z')).toBe('open');
   });
 
-  it('returns "archived" when now is past closes_at even with future sessions', () => {
+  it('returns "ongoing" when now is past closes_at but sessions are still upcoming', () => {
     vi.setSystemTime(new Date('2025-06-15T12:00:00Z'));
     const sessions = [makeSession('2025-07-01')];
-    expect(getClassState(sessions, '2025-05-01T00:00:00Z', '2025-06-10T00:00:00Z')).toBe('archived');
+    expect(getClassState(sessions, '2025-05-01T00:00:00Z', '2025-06-10T00:00:00Z')).toBe('ongoing');
   });
 
   it('returns "upcoming" when no sessions exist', () => {

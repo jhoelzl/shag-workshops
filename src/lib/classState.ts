@@ -1,11 +1,12 @@
 import type { ClassSession } from './database.types';
 
-export type ClassState = 'upcoming' | 'open' | 'archived';
+export type ClassState = 'upcoming' | 'open' | 'ongoing' | 'archived';
 
 /**
  * Derive class state from session dates and registration window.
  * - archived: all sessions are in the past
  * - open: registration window is active (opens_at <= now <= closes_at)
+ * - ongoing: registration is closed but sessions are still running/upcoming
  * - upcoming: has future sessions but registration not yet open
  */
 export function getClassState(
@@ -30,8 +31,8 @@ export function getClassState(
     if (!closesAt || now <= closesAt) {
       return 'open';
     }
-    // Past closes_at but still has future sessions
-    return 'archived';
+    // Past closes_at but still has future/current sessions
+    return 'ongoing';
   }
 
   return 'upcoming';
