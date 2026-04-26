@@ -140,13 +140,28 @@ Deno.serve(async (req) => {
 
       // Default to German if we don't know the locale
       const lang = 'de';
+      const fromAddress = Deno.env.get('EMAIL_FROM') || 'Collegiate Shag Salzburg <onboarding@resend.dev>';
+      const overrideTo = Deno.env.get('EMAIL_TO_OVERRIDE');
+      const toAddress = overrideTo || registration.email;
+      if (overrideTo) {
+        console.log(`EMAIL_TO_OVERRIDE active — redirecting mail for ${registration.email} to ${overrideTo}`);
+      }
 
-      await resend.emails.send({
-        from: Deno.env.get('EMAIL_FROM') || 'Collegiate Shag Salzburg <onboarding@resend.dev>',
-        to: [registration.email],
-        subject: subjects[new_status][lang],
-        html: bodies[new_status][lang],
-      });
+      try {
+        const { data: sendData, error: sendError } = await resend.emails.send({
+          from: fromAddress,
+          to: [toAddress],
+          subject: subjects[new_status][lang],
+          html: bodies[new_status][lang],
+        });
+        if (sendError) {
+          console.error('Resend send error:', JSON.stringify(sendError), 'from:', fromAddress, 'to:', toAddress);
+        } else {
+          console.log('Resend send ok:', JSON.stringify(sendData), 'to:', toAddress);
+        }
+      } catch (e) {
+        console.error('Resend send threw:', e instanceof Error ? e.message : String(e), 'from:', fromAddress, 'to:', toAddress);
+      }
     }
 
     return new Response(
