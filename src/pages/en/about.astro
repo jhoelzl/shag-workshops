@@ -28,8 +28,29 @@ const levels = [
 
     <!-- Who We Are -->
     <section class="mb-16 bg-surface rounded-2xl p-8 border border-bg-warm">
-      <h2 class="font-display text-2xl font-bold text-primary mb-4">{i18n.about.who_we_title}</h2>
-      <p class="text-text-muted leading-relaxed">{i18n.about.who_we_text}</p>
+      <div class="flex flex-col md:flex-row md:items-center gap-6 md:gap-8">
+        <div class="mx-auto md:mx-0 shrink-0">
+          <div class="p-1.5 rounded-full bg-gradient-to-br from-teal/40 via-coral/35 to-accent/35 shadow-lg shadow-teal/10">
+            <picture>
+              <source srcset={`${base}/vera-josef.webp`} type="image/webp" />
+              <img
+                src={`${base}/vera-josef.jpeg`}
+                alt="Vera and Josef"
+                class="w-36 h-36 md:w-40 md:h-40 rounded-full object-cover object-center border-4 border-white"
+                loading="lazy"
+                decoding="async"
+                width="160"
+                height="160"
+              />
+            </picture>
+          </div>
+          <p class="mt-2 text-center text-[11px] leading-tight text-text-muted">&copy; Dixie- &amp; Swingfestival</p>
+        </div>
+        <div>
+          <h2 class="font-display text-2xl font-bold text-primary mb-4 text-center md:text-left">{i18n.about.who_we_title}</h2>
+          <p class="text-text-muted leading-relaxed text-center md:text-left">{i18n.about.who_we_text}</p>
+        </div>
+      </div>
     </section>
 
     <!-- What is Collegiate Shag -->
