@@ -132,7 +132,16 @@ export default function RegistrationForm({ locale, danceClasses, supabaseFunctio
 
       {/* Role */}
       <div className="mb-4">
-        <label className="block text-sm font-medium mb-2">{i18n.registration.role} <span className="text-coral">*</span></label>
+        <div className="flex items-center gap-2 mb-2">
+          <label className="block text-sm font-medium">{i18n.registration.role} <span className="text-coral">*</span></label>
+          <span
+            title={i18n.registration.role_info_text}
+            aria-label={i18n.registration.role_info_label}
+            className="inline-flex items-center justify-center w-5 h-5 rounded-full border border-teal/35 text-teal text-xs font-bold cursor-help"
+          >
+            i
+          </span>
+        </div>
         <div className="relative flex bg-bg-warm rounded-full p-1">
           <div
             className="absolute top-1 bottom-1 w-[calc(50%-4px)] bg-teal rounded-full transition-all duration-200 ease-in-out shadow-sm"
@@ -153,6 +162,7 @@ export default function RegistrationForm({ locale, danceClasses, supabaseFunctio
             {i18n.registration.role_follow}
           </button>
         </div>
+        <p className="mt-2 text-xs text-text-muted leading-relaxed">{i18n.registration.role_info_text}</p>
       </div>
 
       {/* Name */}
