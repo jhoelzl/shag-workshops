@@ -8,15 +8,24 @@ const i18n = t(locale);
 ---
 
 <BaseLayout title={i18n.workshops.title} locale={locale} currentPath="/workshops/">
-  <div class="max-w-6xl mx-auto px-6 py-12">
-    <div class="text-center mb-10">
-      <h1 class="font-display text-4xl sm:text-5xl font-bold text-primary mb-3">{i18n.workshops.title}</h1>
-      <div class="flex items-center justify-center gap-3">
-        <span class="h-px w-8 bg-teal/40"></span>
-        <span class="text-teal text-lg">✦</span>
-        <span class="h-px w-8 bg-teal/40"></span>
+  <section class="relative overflow-hidden">
+    <div class="blob bg-teal/25 w-96 h-96 -top-32 -right-20 animate-float-slow"></div>
+    <div class="blob bg-coral/20 w-80 h-80 -top-20 -left-20"></div>
+
+    <div class="relative max-w-6xl mx-auto px-6 pt-14 pb-6 sm:pt-20">
+      <div class="text-center mb-8 animate-fade-up">
+        <p class="eyebrow text-coral mb-3">Program</p>
+        <h1 class="font-display text-5xl sm:text-6xl font-black text-primary tracking-tight mb-4">
+          {i18n.workshops.title}
+        </h1>
+        <span class="section-divider">
+          <span class="text-accent text-lg">✦</span>
+        </span>
       </div>
     </div>
+  </section>
+
+  <div class="max-w-6xl mx-auto px-6 pb-12">
     <WorkshopPage client:load locale={locale} />
   </div>
 </BaseLayout>
