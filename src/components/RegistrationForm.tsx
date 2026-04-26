@@ -11,74 +11,112 @@ interface Props {
   danceClasses: DanceClass[];
   supabaseFunctionsUrl: string;
   supabaseAnonKey: string;
-  preselectedClassId?: string | null;
+  preselectedClassIds?: string[];
 }
 
-export default function RegistrationForm({ locale, danceClasses, supabaseFunctionsUrl, supabaseAnonKey, preselectedClassId }: Props) {
+type WorkshopResult = { classId: string; className: string; type: 'success' | 'error'; message: string };
+
+export default function RegistrationForm({ locale, danceClasses, supabaseFunctionsUrl, supabaseAnonKey, preselectedClassIds }: Props) {
   const i18n = translations[locale];
 
-  const [selectedClass, setSelectedClass] = useState(preselectedClassId || '');
+  const [selectedClasses, setSelectedClasses] = useState<Set<string>>(
+    new Set(preselectedClassIds ?? [])
+  );
   const [role, setRole] = useState<'lead' | 'follow'>('lead');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [partnerName, setPartnerName] = useState('');
   const [comment, setComment] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const [result, setResult] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [results, setResults] = useState<WorkshopResult[]>([]);
 
-  // Sync when preselectedClassId changes
+  // Sync when preselectedClassIds changes (from card click in WorkshopPage)
   useEffect(() => {
-    if (preselectedClassId) setSelectedClass(preselectedClassId);
-  }, [preselectedClassId]);
+    if (preselectedClassIds && preselectedClassIds.length > 0) {
+      setSelectedClasses(new Set(preselectedClassIds));
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [JSON.stringify(preselectedClassIds)]);
+
+  function toggleClass(id: string) {
+    setSelectedClasses((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (selectedClasses.size === 0) return;
+
     setSubmitting(true);
-    setResult(null);
+    setResults([]);
 
-    try {
-      const response = await fetch(`${supabaseFunctionsUrl}/register`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          apikey: supabaseAnonKey,
-          Authorization: `Bearer ${supabaseAnonKey}`,
-        },
-        body: JSON.stringify({
-          dance_class_id: selectedClass,
-          role,
-          name: name.trim(),
-          email: email.trim().toLowerCase(),
-          partner_name: partnerName.trim() || null,
-          comment: comment.trim() || null,
-          locale,
-        }),
-      });
+    const newResults: WorkshopResult[] = [];
 
-      const data = await response.json();
+    for (const classId of Array.from(selectedClasses)) {
+      const dc = danceClasses.find((c) => c.id === classId);
+      const className = dc ? (locale === 'de' ? dc.title_de : dc.title_en) : classId;
 
-      if (!response.ok) {
-        if (data.code === 'DUPLICATE') {
-          setResult({ type: 'error', message: i18n.registration.error_duplicate });
-        } else if (data.code === 'CLOSED') {
-          setResult({ type: 'error', message: i18n.registration.error_closed });
-        } else if (data.code === 'VALIDATION') {
-          setResult({ type: 'error', message: i18n.registration.error_validation });
+      try {
+        const response = await fetch(`${supabaseFunctionsUrl}/register`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            apikey: supabaseAnonKey,
+            Authorization: `Bearer ${supabaseAnonKey}`,
+          },
+          body: JSON.stringify({
+            dance_class_id: classId,
+            role,
+            name: name.trim(),
+            email: email.trim().toLowerCase(),
+            partner_name: partnerName.trim() || null,
+            comment: comment.trim() || null,
+            locale,
+          }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          let message: string;
+          if (data.code === 'DUPLICATE') {
+            message = i18n.registration.error_duplicate;
+          } else if (data.code === 'CLOSED') {
+            message = i18n.registration.error_closed;
+          } else if (data.code === 'VALIDATION') {
+            message = i18n.registration.error_validation;
+          } else {
+            message = data.message || data.error || i18n.registration.error_generic;
+          }
+          newResults.push({ classId, className, type: 'error', message });
         } else {
-          setResult({ type: 'error', message: data.message || data.error || i18n.registration.error_generic });
+          newResults.push({ classId, className, type: 'success', message: i18n.registration.success_message });
         }
-      } else {
-        setResult({ type: 'success', message: i18n.registration.success_message });
-        setName('');
-        setEmail('');
-        setPartnerName('');
-        setComment('');
+      } catch {
+        newResults.push({ classId, className, type: 'error', message: i18n.registration.error_generic });
       }
-    } catch {
-      setResult({ type: 'error', message: i18n.registration.error_generic });
-    } finally {
-      setSubmitting(false);
     }
+
+    setResults(newResults);
+
+    // Clear personal details and deselect successfully registered workshops
+    if (newResults.some((r) => r.type === 'success')) {
+      setName('');
+      setEmail('');
+      setPartnerName('');
+      setComment('');
+      setSelectedClasses((prev) => {
+        const next = new Set(prev);
+        newResults.filter((r) => r.type === 'success').forEach((r) => next.delete(r.classId));
+        return next;
+      });
+    }
+
+    setSubmitting(false);
   }
 
   return (
@@ -87,22 +125,32 @@ export default function RegistrationForm({ locale, danceClasses, supabaseFunctio
 
       {/* Dance Class Selection */}
       <div className="mb-4">
-        <label htmlFor="dance_class" className="block text-sm font-medium mb-1">{i18n.registration.dance_class} <span className="text-coral">*</span></label>
-        <select
-          id="dance_class"
-          value={selectedClass}
-          onChange={(e) => setSelectedClass(e.target.value)}
-          required
-          className="w-full border border-bg-warm rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-teal/30 focus:border-teal outline-none bg-bg/50"
-        >
-          <option value="">—</option>
-          {danceClasses.map((dc) => (
-            <option key={dc.id} value={dc.id}>
-              {locale === 'de' ? dc.title_de : dc.title_en}
-              {dc.level ? ` (${dc.level})` : ''}
-            </option>
-          ))}
-        </select>
+        <label className="block text-sm font-medium mb-2">{i18n.registration.dance_classes} <span className="text-coral">*</span></label>
+        <div className="space-y-2">
+          {danceClasses.map((dc) => {
+            const title = locale === 'de' ? dc.title_de : dc.title_en;
+            const isChecked = selectedClasses.has(dc.id);
+            return (
+              <label
+                key={dc.id}
+                className={`flex items-center gap-3 rounded-xl border px-3 py-2.5 cursor-pointer transition-colors ${
+                  isChecked ? 'border-teal bg-teal/5' : 'border-bg-warm bg-bg/50 hover:border-teal/40'
+                }`}
+              >
+                <input
+                  type="checkbox"
+                  checked={isChecked}
+                  onChange={() => toggleClass(dc.id)}
+                  className="w-4 h-4 rounded accent-teal shrink-0"
+                />
+                <span className="text-sm">
+                  {title}
+                  {dc.level ? <span className="text-text-muted ml-1.5">({dc.level})</span> : null}
+                </span>
+              </label>
+            );
+          })}
+        </div>
       </div>
 
       {/* Role */}
@@ -180,20 +228,29 @@ export default function RegistrationForm({ locale, danceClasses, supabaseFunctio
         />
       </div>
 
-      {/* Result Message */}
-      {result && (
-        <div className={`mb-4 p-4 rounded-xl text-sm ${result.type === 'success' ? 'bg-green-50 text-success border border-green-200' : 'bg-red-50 text-error border border-red-200'}`}>
-          <div className="font-semibold mb-1">
-            {result.type === 'success' ? i18n.registration.success_title : i18n.registration.error_title}
-          </div>
-          {result.message}
+      {/* Result Messages */}
+      {results.length > 0 && (
+        <div className="mb-4 space-y-2">
+          {results.map((r) => (
+            <div
+              key={r.classId}
+              className={`p-3 rounded-xl text-sm ${
+                r.type === 'success' ? 'bg-green-50 text-success border border-green-200' : 'bg-red-50 text-error border border-red-200'
+              }`}
+            >
+              <div className="font-semibold mb-0.5">
+                {r.type === 'success' ? i18n.registration.success_title : i18n.registration.error_title}: {r.className}
+              </div>
+              {r.message}
+            </div>
+          ))}
         </div>
       )}
 
       {/* Submit */}
       <button
         type="submit"
-        disabled={submitting}
+        disabled={submitting || selectedClasses.size === 0}
         className="w-full bg-coral hover:bg-coral-dark disabled:opacity-50 text-white font-semibold py-3 px-4 rounded-full transition-colors shadow-md shadow-coral/20"
       >
         {submitting ? i18n.registration.submitting : i18n.registration.submit}

@@ -40,6 +40,8 @@
   "registration": {
     "title": "Registration",
     "dance_class": "Workshop",
+    "dance_classes": "Workshops",
+    "select_at_least_one": "Please select at least one workshop.",
     "role": "Role",
     "role_lead": "Lead",
     "role_follow": "Follow",
@@ -51,6 +53,7 @@
     "submitting": "Submitting...",
     "success_title": "Registration received!",
     "success_message": "You will receive a confirmation email. The organizer will review and confirm your registration.",
+    "partial_success": "Some registrations were successful, others failed. Please check the details below.",
     "error_title": "Error",
     "error_duplicate": "You are already registered for this workshop.",
     "error_closed": "Registration is currently closed.",

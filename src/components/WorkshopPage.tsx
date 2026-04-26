@@ -21,7 +21,16 @@ export default function WorkshopPage({ locale }: { locale: Locale }) {
   const [ongoingClasses, setOngoingClasses] = useState<ClassWithCounts[]>([]);
   const [archivedClasses, setArchivedClasses] = useState<ClassWithCounts[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  function toggleSelectedId(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
   const [filterLevel, setFilterLevel] = useState<string>('all');
   const i18n = translations[locale];
   const dtLocale = locale === 'de' ? 'de-AT' : 'en-AT';
@@ -31,7 +40,7 @@ export default function WorkshopPage({ locale }: { locale: Locale }) {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const classParam = params.get('class');
-    if (classParam) setSelectedId(classParam);
+    if (classParam) setSelectedIds(new Set([classParam]));
   }, []);
 
   useEffect(() => {
@@ -162,7 +171,7 @@ export default function WorkshopPage({ locale }: { locale: Locale }) {
           const title = locale === 'de' ? dc.title_de : dc.title_en;
           const description = locale === 'de' ? dc.description_de : dc.description_en;
           const whatToBring = locale === 'de' ? dc.what_to_bring_de : dc.what_to_bring_en;
-          const isSelected = selectedId === dc.id;
+          const isSelected = selectedIds.has(dc.id);
           const sessions = dc.sessions || [];
           const isPlanned = getClassState(sessions, dc.registration_opens_at, dc.registration_closes_at) === 'upcoming';
           const isOpen = getClassState(sessions, dc.registration_opens_at, dc.registration_closes_at) === 'open';
@@ -170,7 +179,7 @@ export default function WorkshopPage({ locale }: { locale: Locale }) {
           return (
             <div
               key={dc.id}
-              onClick={() => !isPlanned && setSelectedId(dc.id)}
+              onClick={() => !isPlanned && toggleSelectedId(dc.id)}
               className={`bg-surface rounded-2xl transition-all duration-300 border-2 overflow-hidden ${
                 isPlanned
                   ? 'border-transparent shadow-sm'
@@ -293,7 +302,7 @@ export default function WorkshopPage({ locale }: { locale: Locale }) {
             danceClasses={openClasses}
             supabaseFunctionsUrl={supabaseFunctionsUrl}
             supabaseAnonKey={supabaseAnonKey}
-            preselectedClassId={selectedId}
+            preselectedClassIds={Array.from(selectedIds)}
           />
         </div>
       )}
@@ -313,11 +322,11 @@ export default function WorkshopPage({ locale }: { locale: Locale }) {
             const description = locale === 'de' ? dc.description_de : dc.description_en;
             const whatToBring = locale === 'de' ? dc.what_to_bring_de : dc.what_to_bring_en;
             const sessions = dc.sessions || [];
-            const isExpanded = selectedId === dc.id;
+            const isExpanded = selectedIds.has(dc.id);
             return (
               <div
                 key={dc.id}
-                onClick={() => setSelectedId(isExpanded ? null : dc.id)}
+                onClick={() => toggleSelectedId(dc.id)}
                 className="bg-surface rounded-2xl border border-bg-warm cursor-pointer hover:shadow-sm transition-all duration-300 overflow-hidden"
               >
                 <div className="p-4">
@@ -429,11 +438,11 @@ export default function WorkshopPage({ locale }: { locale: Locale }) {
             const description = locale === 'de' ? dc.description_de : dc.description_en;
             const whatToBring = locale === 'de' ? dc.what_to_bring_de : dc.what_to_bring_en;
             const sessions = dc.sessions || [];
-            const isExpanded = selectedId === dc.id;
+            const isExpanded = selectedIds.has(dc.id);
             return (
               <div
                 key={dc.id}
-                onClick={() => setSelectedId(isExpanded ? null : dc.id)}
+                onClick={() => toggleSelectedId(dc.id)}
                 className="bg-surface/60 rounded-2xl border border-bg-warm opacity-70 cursor-pointer hover:opacity-90 transition-all duration-300 overflow-hidden"
               >
                 <div className="p-4">
