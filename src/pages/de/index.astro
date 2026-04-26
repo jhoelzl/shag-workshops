@@ -10,7 +10,7 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 
 <BaseLayout title={i18n.nav.home} locale={locale}>
   <!-- Hero Section — Orø-inspired retro warm style -->
-  <section class="relative bg-bg overflow-hidden py-16 sm:py-24">
+  <section class="relative bg-bg overflow-hidden py-8 sm:py-12">
     <!-- Decorative stars -->
     <span class="absolute top-12 left-[8%] text-accent text-3xl opacity-70 animate-pulse">✦</span>
     <span class="absolute top-20 right-[10%] text-coral text-2xl opacity-60">✦</span>
@@ -20,7 +20,7 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 
     <div class="max-w-4xl mx-auto px-6 text-center relative z-10">
       <!-- Logo / Hero image -->
-      <div class="mb-10">
+      <div class="mb-4 sm:mb-6">
         <img
           src={`${base}/shagadeus_logo.png`}
           alt="Shagadeus"
@@ -29,17 +29,17 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
       </div>
 
       <!-- Title -->
-      <h1 class="font-display text-5xl sm:text-7xl font-black text-primary mb-4 tracking-tight">
+      <h1 class="font-display text-5xl sm:text-7xl font-black text-primary mb-1 sm:mb-2 tracking-tight">
         {i18n.home.hero_title}
       </h1>
 
       <!-- Subtitle — location -->
-      <p class="text-teal text-xl sm:text-2xl font-medium mb-2">
+      <p class="text-teal text-xl sm:text-2xl font-medium mb-4 sm:mb-6">
         Salzburg, Österreich
       </p>
 
       <!-- Tagline with decorative lines -->
-      <div class="flex items-center justify-center gap-4 mb-10">
+      <div class="flex items-center justify-center gap-4 mb-6 sm:mb-8">
         <span class="h-px w-12 bg-coral/50"></span>
         <p class="text-coral text-lg sm:text-xl font-display italic">
           {i18n.home.hero_subtitle}
