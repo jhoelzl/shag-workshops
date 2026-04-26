@@ -1,0 +1,33 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { t } from '../../i18n/index';
+
+const locale = 'de';
+const i18n = t(locale);
+---
+
+<BaseLayout title="Impressum" locale={locale} currentPath="/impressum/">
+  <div class="max-w-3xl mx-auto px-6 py-16">
+    <h1 class="font-display text-4xl font-bold text-primary mb-10">Impressum</h1>
+
+    <section class="bg-surface rounded-2xl p-8 border border-bg-warm space-y-6 text-text-muted leading-relaxed">
+      <div>
+        <h2 class="font-display text-xl font-semibold text-primary mb-2">Angaben gemäß § 5 ECG</h2>
+        <p>Josef Hölzl<br />
+        Forellenweg 42<br />
+        5300 Hallwang<br />
+        Österreich</p>
+      </div>
+
+      <div>
+        <h2 class="font-display text-xl font-semibold text-primary mb-2">Kontakt</h2>
+        <p>E-Mail: <a href="mailto:hoelzl.josef@gmail.com" class="text-accent hover:underline">hoelzl.josef@gmail.com</a></p>
+      </div>
+
+      <div>
+        <h2 class="font-display text-xl font-semibold text-primary mb-2">Haftungsausschluss</h2>
+        <p>Trotz sorgfältiger inhaltlicher Kontrolle übernehmen wir keine Haftung für die Inhalte externer Links. Für den Inhalt der verlinkten Seiten sind ausschließlich deren Betreiber verantwortlich.</p>
+      </div>
+    </section>
+  </div>
+</BaseLayout>

@@ -9,74 +9,55 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 ---
 
 <BaseLayout title={i18n.nav.home} locale={locale}>
-  <!-- Hero Section — Orø-inspired retro warm style -->
-  <section class="relative bg-bg overflow-hidden py-8 sm:py-12">
-    <!-- Decorative stars -->
-    <span class="absolute top-12 left-[8%] text-accent text-3xl opacity-70 animate-pulse">✦</span>
-    <span class="absolute top-20 right-[10%] text-coral text-2xl opacity-60">✦</span>
-    <span class="absolute bottom-16 left-[15%] text-teal text-xl opacity-50">✦</span>
-    <span class="absolute top-32 right-[25%] text-primary text-lg opacity-30">✦</span>
-    <span class="absolute bottom-24 right-[12%] text-accent text-2xl opacity-40 animate-pulse">✦</span>
+  <!-- Hero Section — compact split layout -->
+  <section class="bg-bg border-b border-bg-warm">
+    <div class="max-w-5xl mx-auto px-6 py-8 sm:py-10">
+      <div class="flex flex-col sm:flex-row items-center gap-6 sm:gap-10">
 
-    <div class="max-w-4xl mx-auto px-6 text-center relative z-10">
-      <!-- Logo / Hero image -->
-      <div class="mb-4 sm:mb-6">
-        <img
-          src={`${base}/shagadeus_logo.png`}
-          alt="Shagadeus"
-          class="w-72 sm:w-96 h-auto rounded-2xl mx-auto drop-shadow-lg"
-        />
-      </div>
+        <!-- Logo -->
+        <div class="shrink-0">
+          <img
+            src={`${base}/shagadeus_logo.png`}
+            alt="Shagadeus"
+            class="w-44 sm:w-52 h-auto rounded-2xl drop-shadow-md"
+          />
+        </div>
 
-      <!-- Title -->
-      <h1 class="font-display text-5xl sm:text-7xl font-black text-primary mb-1 sm:mb-2 tracking-tight">
-        {i18n.home.hero_title}
-      </h1>
+        <!-- Text & CTA -->
+        <div class="text-center sm:text-left">
+          <h1 class="font-display text-4xl sm:text-5xl font-black text-primary leading-tight mb-2">
+            {i18n.home.hero_title}
+          </h1>
+          <p class="text-teal font-semibold text-base mb-1">Salzburg, Austria</p>
+          <p class="text-coral font-display italic text-lg mb-5">{i18n.home.hero_subtitle}</p>
+          <div class="flex flex-wrap gap-3 justify-center sm:justify-start">
+            <a
+              href={`${base}/en/workshops/`}
+              class="inline-block bg-coral hover:bg-coral-dark text-white font-bold px-6 py-2.5 rounded-full transition-colors text-sm shadow-sm"
+            >
+              {i18n.home.hero_cta}
+            </a>
+            <a
+              href={`${base}/en/about/`}
+              class="inline-block bg-teal hover:bg-teal-dark text-white font-bold px-6 py-2.5 rounded-full transition-colors text-sm shadow-sm"
+            >
+              {i18n.home.hero_about}
+            </a>
+          </div>
+        </div>
 
-      <!-- Subtitle — location -->
-      <p class="text-teal text-xl sm:text-2xl font-medium mb-4 sm:mb-6">
-        Salzburg, Austria
-      </p>
-
-      <!-- Tagline with decorative lines -->
-      <div class="flex items-center justify-center gap-4 mb-6 sm:mb-8">
-        <span class="h-px w-12 bg-coral/50"></span>
-        <p class="text-coral text-lg sm:text-xl font-display italic">
-          {i18n.home.hero_subtitle}
-        </p>
-        <span class="h-px w-12 bg-coral/50"></span>
-      </div>
-
-      <!-- CTA Buttons -->
-      <div class="flex flex-col sm:flex-row gap-4 justify-center">
-        <a
-          href={`${base}/en/workshops/`}
-          class="inline-block bg-coral hover:bg-coral-dark text-white font-bold px-8 py-3.5 rounded-full transition-colors text-lg shadow-md shadow-coral/20"
-        >
-          {i18n.home.hero_cta}
-        </a>
-        <a
-          href={`${base}/en/about/`}
-          class="inline-block bg-teal hover:bg-teal-dark text-white font-bold px-8 py-3.5 rounded-full transition-colors text-lg shadow-md shadow-teal/20"
-        >
-          {i18n.home.hero_about}
-        </a>
       </div>
     </div>
-
-    <!-- Bottom wave decoration -->
-    <div class="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-bg-warm/50 to-transparent"></div>
   </section>
 
   <!-- Current Workshops -->
-  <section id="workshops" class="max-w-6xl mx-auto px-6 py-16">
-    <div class="text-center mb-12">
-      <h2 class="font-display text-3xl sm:text-4xl font-bold text-primary mb-3">{i18n.home.current_workshops}</h2>
-      <div class="flex items-center justify-center gap-3">
-        <span class="h-px w-8 bg-teal/40"></span>
-        <span class="text-teal text-lg">✦</span>
-        <span class="h-px w-8 bg-teal/40"></span>
-      </div>
+  <section id="workshops" class="max-w-5xl mx-auto px-6 py-8 sm:py-10">
+    <div class="flex items-center gap-4 mb-6">
+      <h2 class="font-display text-2xl sm:text-3xl font-bold text-primary shrink-0">
+        {i18n.home.current_workshops}
+      </h2>
+      <span class="h-px flex-1 bg-teal/20"></span>
+      <span class="text-teal text-sm opacity-60">✦</span>
     </div>
     <ClassList client:load locale={locale} />
   </section>
