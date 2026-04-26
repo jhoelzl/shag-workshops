@@ -625,13 +625,17 @@ function InlineRegistrations({
     setManualError('');
     try {
       const functionsUrl = `${import.meta.env.PUBLIC_SUPABASE_URL}/functions/v1`;
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+      if (import.meta.env.PUBLIC_SUPABASE_ANON_KEY) {
+        headers.apikey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY;
+        headers.Authorization = `Bearer ${import.meta.env.PUBLIC_SUPABASE_ANON_KEY}`;
+      }
+
       const response = await fetch(`${functionsUrl}/register`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          apikey: import.meta.env.PUBLIC_SUPABASE_ANON_KEY,
-          Authorization: `Bearer ${import.meta.env.PUBLIC_SUPABASE_ANON_KEY}`,
-        },
+        headers,
         body: JSON.stringify({
           dance_class_id: danceClass.id,
           role: manualReg.role,
