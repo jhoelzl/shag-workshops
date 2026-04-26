@@ -105,44 +105,44 @@ export default function ClassList({ locale }: { locale: Locale }) {
     const classState = getClassState(sessions, dc.registration_opens_at, dc.registration_closes_at);
 
     return (
-      <div key={dc.id} className={`bg-surface rounded-2xl shadow-sm border border-bg-warm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 overflow-hidden ${classState === 'archived' ? 'opacity-60' : ''}`}>
+      <div key={dc.id} className={`group bg-surface rounded-3xl border border-bg-warm shadow-soft hover:shadow-lift hover:-translate-y-0.5 transition-all duration-300 overflow-hidden ${classState === 'archived' ? 'opacity-60' : ''}`}>
         {/* Header */}
-        <div className="px-5 pt-5 pb-3">
+        <div className="px-6 pt-6 pb-3">
           <div className="flex justify-between items-start gap-3">
             <div className="min-w-0">
-              <div className="flex items-center gap-2 mb-1">
-                {dc.dance && <span className="text-[11px] font-bold uppercase tracking-widest text-accent-dark">{dc.dance}</span>}
+              <div className="flex items-center gap-2 mb-1.5">
+                {dc.dance && <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-accent-dark">{dc.dance}</span>}
                 {dc.dance && dc.teachers && <span className="text-text-muted/30">·</span>}
                 {dc.teachers && <span className="text-[11px] font-medium text-text-muted tracking-wide">{dc.teachers}</span>}
               </div>
-              <h3 className="font-display text-xl font-bold text-primary leading-tight">{title}</h3>
+              <h3 className="font-display text-2xl font-bold text-primary leading-tight tracking-tight">{title}</h3>
               {classState === 'ongoing' && (
                 <span className="text-[11px] font-bold uppercase tracking-wider bg-blue-100 text-blue-700 px-2.5 py-0.5 rounded-full mt-1 self-start">{i18n.workshops.ongoing}</span>
               )}
             </div>
             {dc.level && (
-              <span className="text-xs bg-teal/10 text-teal-dark font-semibold px-3 py-1 rounded-full shrink-0">{dc.level}</span>
+              <span className="text-[11px] uppercase tracking-wider bg-gradient-to-br from-teal/15 to-teal/5 text-teal-dark font-bold px-3 py-1 rounded-full shrink-0 border border-teal/15">{dc.level}</span>
             )}
           </div>
         </div>
 
         {/* Description */}
         {description && (
-          <div className="px-5 pb-3">
+          <div className="px-6 pb-3">
             <div className="text-text-muted text-sm leading-relaxed [&_strong]:text-text" dangerouslySetInnerHTML={{ __html: simpleMarkdown(description) }} />
           </div>
         )}
 
         {/* What to Bring */}
         {whatToBring && (
-          <div className="px-5 pb-3">
-            <p className="text-xs font-bold uppercase tracking-wider text-teal mb-1.5">{i18n.workshops.what_to_bring}</p>
+          <div className="px-6 pb-3">
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-teal mb-1.5">{i18n.workshops.what_to_bring}</p>
             <div className="text-text-muted text-sm leading-relaxed [&_li]:ml-4" dangerouslySetInnerHTML={{ __html: simpleMarkdown(whatToBring) }} />
           </div>
         )}
 
         {/* Details */}
-        <div className="px-5 pb-4 space-y-3">
+        <div className="px-6 pb-5 space-y-3">
           {sessions.length > 0 && (
             <div className="rounded-xl border border-teal/12 bg-gradient-to-br from-white to-teal/[0.04] px-4 py-3.5">
               <div className="flex items-start gap-3">
@@ -196,23 +196,24 @@ export default function ClassList({ locale }: { locale: Locale }) {
 
         {/* Registration status + CTA */}
         {classState === 'upcoming' && dc.registration_opens_at && (
-          <div className="px-5 py-2.5 text-sm font-medium bg-amber-50/80 text-amber-700 border-t border-amber-100">
+          <div className="px-6 py-3 text-sm font-medium bg-amber-50/80 text-amber-700 border-t border-amber-100">
             {i18n.workshops.registration_opens} {new Date(dc.registration_opens_at).toLocaleString(dtLocale, { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false })}
           </div>
         )}
         {classState === 'open' && (
           <>
             {dc.registration_closes_at && (
-              <div className="px-5 py-2.5 text-sm font-medium bg-gray-50 text-text-muted border-t border-gray-100">
+              <div className="px-6 py-3 text-sm font-medium bg-gray-50 text-text-muted border-t border-gray-100">
                 {i18n.workshops.registration_closes} {new Date(dc.registration_closes_at).toLocaleString(dtLocale, { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false })}
               </div>
             )}
-            <div className="px-5 pb-5 pt-3">
+            <div className="px-6 pb-6 pt-3">
               <a
                 href={`${base}/${locale}/workshops/?class=${dc.id}`}
-                className="block w-full text-center bg-coral hover:bg-coral-dark text-white font-semibold py-2.5 px-4 rounded-full transition-colors shadow-sm"
+                className="flex items-center justify-center gap-1.5 w-full bg-gradient-to-br from-coral to-coral-dark hover:from-coral-dark hover:to-coral text-white font-semibold py-3 px-4 rounded-full transition-all shadow-[0_8px_20px_-8px_rgba(231,111,81,0.55)] hover:shadow-[0_14px_28px_-10px_rgba(231,111,81,0.6)] hover:-translate-y-0.5"
               >
                 {i18n.workshops.register}
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
               </a>
             </div>
           </>

@@ -31,29 +31,33 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
       <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
     </div>
     <!-- Header -->
-    <header class="bg-bg/80 backdrop-blur-sm sticky top-0 z-50 border-b border-accent/10">
-      <nav class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-        <a href={`${base}/${locale}/`} class="flex items-center gap-3 hover:opacity-90 transition-opacity">
-          <img src={`${base}/shagadeus_logo.png`} alt="Shagadeus Logo" class="h-10 w-auto rounded-lg shadow-sm" />
-          <span class="font-display text-xl font-bold text-primary hidden sm:inline">Shagadeus</span>
+    <header class="sticky top-0 z-50 backdrop-blur-md bg-bg/70 border-b border-primary/5">
+      <nav class="max-w-6xl mx-auto px-5 sm:px-6 py-3.5 flex items-center justify-between gap-4">
+        <a href={`${base}/${locale}/`} class="group flex items-center gap-3 hover:opacity-95 transition-opacity">
+          <span class="relative">
+            <span class="absolute inset-0 rounded-xl bg-gradient-to-br from-coral/30 to-accent/30 blur-md opacity-0 group-hover:opacity-100 transition-opacity"></span>
+            <img src={`${base}/shagadeus_logo.png`} alt="Shagadeus" class="relative h-10 w-auto rounded-xl shadow-soft" />
+          </span>
+          <span class="font-display text-xl font-bold text-primary hidden sm:inline tracking-tight">Shagadeus</span>
         </a>
 
-        <div class="flex items-center gap-8">
-          <a href={`${base}/${locale}/`} class="text-text hover:text-teal transition-colors text-sm font-medium">
+        <div class="flex items-center gap-1 sm:gap-2">
+          <a href={`${base}/${locale}/`} class="hidden sm:inline-block px-3 py-2 text-sm font-medium text-text/80 hover:text-primary rounded-full transition-colors">
             {i18n.nav.home}
           </a>
-          <a href={`${base}/${locale}/about/`} class="text-text hover:text-teal transition-colors text-sm font-medium">
+          <a href={`${base}/${locale}/about/`} class="hidden sm:inline-block px-3 py-2 text-sm font-medium text-text/80 hover:text-primary rounded-full transition-colors">
             {i18n.nav.about}
           </a>
           <a
             href={`${base}/${locale}/workshops/`}
-            class="bg-coral hover:bg-coral-dark text-white font-semibold px-5 py-2 rounded-full text-sm transition-colors shadow-sm"
+            class="ml-1 inline-flex items-center gap-1.5 bg-gradient-to-br from-coral to-coral-dark hover:from-coral-dark hover:to-coral text-white font-semibold px-4 sm:px-5 py-2 rounded-full text-sm shadow-[0_6px_18px_-6px_rgba(231,111,81,0.6)] transition-all hover:-translate-y-0.5"
           >
             {i18n.home.hero_cta}
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
           </a>
           <a
             href={`${base}/${altLocale}${currentPath}`}
-            class="border border-teal/40 text-teal rounded-full px-3 py-1 text-xs font-bold hover:bg-teal/10 transition-colors"
+            class="ml-1 inline-flex items-center justify-center min-w-[2.25rem] h-9 border border-primary/15 hover:border-primary/30 text-primary/80 hover:text-primary rounded-full px-2 text-[11px] font-bold tracking-wider transition-colors"
           >
             {i18n.nav.language}
           </a>
@@ -67,15 +71,43 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
     </main>
 
     <!-- Footer -->
-    <footer class="bg-primary text-white/80 text-sm py-10 mt-16">
-      <div class="max-w-6xl mx-auto px-6 flex flex-col sm:flex-row justify-between items-center gap-4">
-        <div class="flex items-center gap-3">
-          <img src={`${base}/shagadeus_logo.png`} alt="Shagadeus" class="h-8 w-auto rounded opacity-80" />
-          <span class="font-display">&copy; {new Date().getFullYear()} Shagadeus</span>
+    <footer class="relative mt-24 bg-gradient-to-br from-primary via-primary to-ink text-white/80 overflow-hidden">
+      <!-- decorative blobs -->
+      <div class="blob bg-coral/30 w-72 h-72 -top-20 -left-10"></div>
+      <div class="blob bg-teal/25 w-80 h-80 -bottom-32 right-0"></div>
+
+      <div class="relative max-w-6xl mx-auto px-6 pt-14 pb-10">
+        <div class="grid gap-10 sm:grid-cols-3 mb-10">
+          <div class="sm:col-span-1">
+            <div class="flex items-center gap-3 mb-4">
+              <img src={`${base}/shagadeus_logo.png`} alt="Shagadeus" class="h-10 w-auto rounded-lg" />
+              <span class="font-display text-xl font-bold text-white tracking-tight">Shagadeus</span>
+            </div>
+            <p class="text-sm text-white/55 leading-relaxed max-w-xs">
+              {locale === 'de' ? 'Collegiate Shag Workshops & Tanzkurse in Salzburg.' : 'Collegiate Shag workshops & dance classes in Salzburg.'}
+            </p>
+          </div>
+
+          <div>
+            <p class="eyebrow text-accent/90 mb-3">{locale === 'de' ? 'Navigation' : 'Navigation'}</p>
+            <ul class="space-y-2 text-sm">
+              <li><a href={`${base}/${locale}/`} class="text-white/70 hover:text-white transition-colors">{i18n.nav.home}</a></li>
+              <li><a href={`${base}/${locale}/about/`} class="text-white/70 hover:text-white transition-colors">{i18n.nav.about}</a></li>
+              <li><a href={`${base}/${locale}/workshops/`} class="text-white/70 hover:text-white transition-colors">{i18n.home.hero_cta}</a></li>
+            </ul>
+          </div>
+
+          <div>
+            <p class="eyebrow text-accent/90 mb-3">{locale === 'de' ? 'Rechtliches' : 'Legal'}</p>
+            <ul class="space-y-2 text-sm">
+              <li><a href={`${base}/${locale}/impressum/`} class="text-white/70 hover:text-white transition-colors">{i18n.footer.imprint}</a></li>
+            </ul>
+          </div>
         </div>
-        <div class="flex gap-6 text-white/60">
-          <span>Collegiate Shag in Salzburg</span>
-          <a href={`mailto:shag@example.com`} class="hover:text-accent transition-colors">{i18n.footer.contact}</a>
+
+        <div class="pt-6 border-t border-white/10 flex flex-col sm:flex-row justify-between items-center gap-3 text-xs text-white/50">
+          <span>Salzburg, Österreich · Collegiate Shag</span>
+          <span class="font-display italic text-accent/80">— let's swing —</span>
         </div>
       </div>
     </footer>

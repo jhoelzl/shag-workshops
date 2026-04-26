@@ -9,74 +9,68 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 ---
 
 <BaseLayout title={i18n.nav.home} locale={locale}>
-  <!-- Hero Section — Orø-inspired retro warm style -->
-  <section class="relative bg-bg overflow-hidden py-8 sm:py-12">
-    <!-- Decorative stars -->
-    <span class="absolute top-12 left-[8%] text-accent text-3xl opacity-70 animate-pulse">✦</span>
-    <span class="absolute top-20 right-[10%] text-coral text-2xl opacity-60">✦</span>
-    <span class="absolute bottom-16 left-[15%] text-teal text-xl opacity-50">✦</span>
-    <span class="absolute top-32 right-[25%] text-primary text-lg opacity-30">✦</span>
-    <span class="absolute bottom-24 right-[12%] text-accent text-2xl opacity-40 animate-pulse">✦</span>
+  <!-- Hero Section — modern with gradient blobs -->
+  <section class="relative overflow-hidden">
+    <!-- decorative blobs -->
+    <div class="blob bg-coral/35 w-[28rem] h-[28rem] -top-32 -left-32 animate-float-slow"></div>
+    <div class="blob bg-teal/30 w-[26rem] h-[26rem] -top-20 right-[-6rem] animate-float-slow" style="animation-delay: -4s"></div>
+    <div class="blob bg-accent/25 w-72 h-72 bottom-[-4rem] left-1/3"></div>
 
-    <div class="max-w-4xl mx-auto px-6 text-center relative z-10">
-      <!-- Logo / Hero image -->
-      <div class="mb-4 sm:mb-6">
-        <img
-          src={`${base}/shagadeus_logo.png`}
-          alt="Shagadeus"
-          class="w-72 sm:w-96 h-auto rounded-2xl mx-auto drop-shadow-lg"
-        />
-      </div>
+    <div class="relative max-w-6xl mx-auto px-6 pt-16 pb-20 sm:pt-24 sm:pb-28">
+      <div class="grid lg:grid-cols-12 gap-10 lg:gap-14 items-center">
+        <!-- Text -->
+        <div class="lg:col-span-7 text-center lg:text-left animate-fade-up">
+          <span class="inline-flex items-center gap-2 eyebrow text-teal-dark bg-white/60 backdrop-blur-sm border border-teal/20 rounded-full px-3.5 py-1.5 mb-6">
+            <span class="w-1.5 h-1.5 rounded-full bg-teal animate-pulse"></span>
+            Salzburg · Österreich
+          </span>
+          <h1 class="font-display text-5xl sm:text-6xl lg:text-7xl font-black text-primary leading-[1.02] mb-5">
+            <span class="block">Collegiate</span>
+            <span class="block italic font-normal text-gradient-warm">Shag</span>
+            <span class="block">Salzburg</span>
+          </h1>
+          <p class="text-text-muted text-lg sm:text-xl max-w-xl mx-auto lg:mx-0 mb-8 leading-relaxed">
+            {i18n.home.hero_subtitle} — {locale === 'de' ? 'Energiegeladene Swing-Tanzkurse für alle Levels.' : ''}
+          </p>
+          <div class="flex flex-wrap gap-3 justify-center lg:justify-start">
+            <a href={`${base}/de/workshops/`} class="btn-primary">
+              {i18n.home.hero_cta}
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
+            </a>
+            <a href={`${base}/de/about/`} class="btn-ghost">
+              {i18n.home.hero_about}
+            </a>
+          </div>
+        </div>
 
-      <!-- Title -->
-      <h1 class="font-display text-5xl sm:text-7xl font-black text-primary mb-1 sm:mb-2 tracking-tight">
-        {i18n.home.hero_title}
-      </h1>
-
-      <!-- Subtitle — location -->
-      <p class="text-teal text-xl sm:text-2xl font-medium mb-4 sm:mb-6">
-        Salzburg, Österreich
-      </p>
-
-      <!-- Tagline with decorative lines -->
-      <div class="flex items-center justify-center gap-4 mb-6 sm:mb-8">
-        <span class="h-px w-12 bg-coral/50"></span>
-        <p class="text-coral text-lg sm:text-xl font-display italic">
-          {i18n.home.hero_subtitle}
-        </p>
-        <span class="h-px w-12 bg-coral/50"></span>
-      </div>
-
-      <!-- CTA Buttons -->
-      <div class="flex flex-col sm:flex-row gap-4 justify-center">
-        <a
-          href={`${base}/de/workshops/`}
-          class="inline-block bg-coral hover:bg-coral-dark text-white font-bold px-8 py-3.5 rounded-full transition-colors text-lg shadow-md shadow-coral/20"
-        >
-          {i18n.home.hero_cta}
-        </a>
-        <a
-          href={`${base}/de/about/`}
-          class="inline-block bg-teal hover:bg-teal-dark text-white font-bold px-8 py-3.5 rounded-full transition-colors text-lg shadow-md shadow-teal/20"
-        >
-          {i18n.home.hero_about}
-        </a>
+        <!-- Logo card -->
+        <div class="lg:col-span-5 flex justify-center lg:justify-end animate-fade-up" style="animation-delay: 0.15s">
+          <div class="relative">
+            <div class="absolute inset-0 -m-6 bg-gradient-to-br from-coral/30 via-accent/25 to-teal/30 blur-2xl rounded-[2.5rem]"></div>
+            <div class="relative bg-white/70 backdrop-blur-sm border border-white/80 rounded-[2rem] p-6 shadow-lift rotate-[-3deg] hover:rotate-0 transition-transform duration-500">
+              <img
+                src={`${base}/shagadeus_logo.png`}
+                alt="Shagadeus"
+                class="w-56 sm:w-64 h-auto rounded-2xl drop-shadow-md"
+              />
+            </div>
+          </div>
+        </div>
       </div>
     </div>
-
-    <!-- Bottom wave decoration -->
-    <div class="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-bg-warm/50 to-transparent"></div>
   </section>
 
   <!-- Current Workshops -->
-  <section id="workshops" class="max-w-6xl mx-auto px-6 py-16">
-    <div class="text-center mb-12">
-      <h2 class="font-display text-3xl sm:text-4xl font-bold text-primary mb-3">{i18n.home.current_workshops}</h2>
-      <div class="flex items-center justify-center gap-3">
-        <span class="h-px w-8 bg-teal/40"></span>
-        <span class="text-teal text-lg">✦</span>
-        <span class="h-px w-8 bg-teal/40"></span>
+  <section id="workshops" class="relative max-w-6xl mx-auto px-6 py-12 sm:py-16">
+    <div class="flex items-end justify-between gap-4 mb-10">
+      <div>
+        <p class="eyebrow text-coral mb-2">{locale === 'de' ? 'Programm' : 'Program'}</p>
+        <h2 class="font-display text-3xl sm:text-4xl font-bold text-primary tracking-tight">
+          {i18n.home.current_workshops}
+        </h2>
       </div>
+      <span class="hidden sm:block h-px flex-1 bg-gradient-to-r from-transparent via-primary/15 to-transparent mb-3"></span>
+      <span class="text-accent text-2xl mb-1">✦</span>
     </div>
     <ClassList client:load locale={locale} />
   </section>

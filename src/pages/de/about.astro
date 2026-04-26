@@ -14,88 +14,101 @@ const levels = [
 ---
 
 <BaseLayout title={i18n.about.title} locale={locale} currentPath="/about/">
-  <div class="max-w-4xl mx-auto px-6 py-16">
-    <!-- Who We Are -->
-    <section class="mb-16 bg-surface rounded-2xl p-8 border border-bg-warm">
-      <div class="flex flex-col md:flex-row md:items-center gap-6 md:gap-8">
-        <div class="mx-auto md:mx-0 shrink-0">
-          <div class="p-1.5 rounded-full bg-gradient-to-br from-teal/40 via-coral/35 to-accent/35 shadow-lg shadow-teal/10">
+  <!-- Hero -->
+  <section class="relative overflow-hidden">
+    <div class="blob bg-coral/25 w-[26rem] h-[26rem] -top-28 -left-24 animate-float-slow"></div>
+    <div class="blob bg-teal/25 w-80 h-80 top-10 right-[-4rem] animate-float-slow" style="animation-delay: -5s"></div>
+
+    <div class="relative max-w-5xl mx-auto px-6 pt-14 pb-10 sm:pt-20 text-center animate-fade-up">
+      <p class="eyebrow text-coral mb-3">{i18n.about.title}</p>
+      <h1 class="font-display text-5xl sm:text-6xl font-black text-primary tracking-tight mb-4">
+        Shagadeus <span class="italic font-normal text-gradient-warm">·</span> Salzburg
+      </h1>
+      <p class="max-w-2xl mx-auto text-text-muted text-lg leading-relaxed">{i18n.about.intro_text}</p>
+    </div>
+  </section>
+
+  <div class="max-w-5xl mx-auto px-6 pb-12">
+    <!-- Who We Are — asymmetric layout -->
+    <section class="mb-16 grid md:grid-cols-5 gap-8 items-center">
+      <div class="md:col-span-2 flex justify-center md:justify-start">
+        <div class="relative">
+          <div class="absolute inset-0 -m-4 bg-gradient-to-br from-coral/30 via-accent/20 to-teal/30 rounded-full blur-2xl"></div>
+          <div class="relative p-1.5 rounded-full bg-gradient-to-br from-coral/60 via-accent/50 to-teal/60 shadow-lift">
             <picture>
               <source srcset={`${base}/vera-josef.webp`} type="image/webp" />
               <img
                 src={`${base}/vera-josef.jpeg`}
                 alt="Vera und Josef"
-                class="w-36 h-36 md:w-40 md:h-40 rounded-full object-cover object-[70%_45%] border-4 border-white"
+                class="w-48 h-48 md:w-56 md:h-56 rounded-full object-cover object-[70%_45%] border-4 border-white"
                 loading="lazy"
                 decoding="async"
-                width="160"
-                height="160"
+                width="224"
+                height="224"
               />
             </picture>
           </div>
-          <p class="mt-2 text-center text-[11px] leading-tight text-text-muted">&copy; Dixie- &amp; Swingfestival</p>
+          <p class="mt-3 text-center text-[11px] leading-tight text-text-muted">&copy; Dixie- &amp; Swingfestival</p>
         </div>
-        <div>
-          <h2 class="font-display text-2xl font-bold text-primary mb-4 text-center md:text-left">{i18n.about.who_we_title}</h2>
-          <p class="text-text-muted leading-relaxed text-center md:text-left">{i18n.about.who_we_text}</p>
-        </div>
+      </div>
+      <div class="md:col-span-3 text-center md:text-left">
+        <p class="eyebrow text-teal mb-2">Hello!</p>
+        <h2 class="font-display text-3xl sm:text-4xl font-bold text-primary mb-4 tracking-tight">{i18n.about.who_we_title}</h2>
+        <p class="text-text-muted leading-relaxed text-lg">{i18n.about.who_we_text}</p>
       </div>
     </section>
 
-    <!-- What is Collegiate Shag -->
-    <section class="mb-16 bg-surface rounded-2xl p-8 border border-bg-warm">
-      <div class="flex items-start gap-4">
-        <div class="flex-shrink-0 w-12 h-12 rounded-lg bg-teal/15 flex items-center justify-center">
-          <svg class="w-6 h-6 text-teal" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3c-1.657 0-3 1.343-3 3s1.343 3 3 3 3-1.343 3-3-1.343-3-3-3zm0 16c2.761 0 5-1.567 5-3.5S14.761 12 12 12s-5 1.567-5 3.5 2.239 3.5 5 3.5z" />
-          </svg>
-        </div>
-        <div class="flex-1">
-          <h2 class="font-display text-2xl font-bold text-primary mb-4">{i18n.about.what_is_shag_title}</h2>
+    <!-- Feature cards: What is Shag + Lead & Follow -->
+    <section class="grid md:grid-cols-2 gap-5 mb-20">
+      <article class="group relative bg-surface rounded-3xl p-7 border border-bg-warm shadow-soft hover:shadow-lift transition-all duration-300 overflow-hidden">
+        <div class="absolute -top-12 -right-12 w-40 h-40 bg-teal/10 rounded-full blur-2xl group-hover:bg-teal/15 transition-colors"></div>
+        <div class="relative">
+          <div class="inline-flex w-12 h-12 rounded-2xl bg-gradient-to-br from-teal/20 to-teal/5 items-center justify-center mb-5 group-hover:scale-105 transition-transform">
+            <svg class="w-6 h-6 text-teal" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3c-1.657 0-3 1.343-3 3s1.343 3 3 3 3-1.343 3-3-1.343-3-3-3zm0 16c2.761 0 5-1.567 5-3.5S14.761 12 12 12s-5 1.567-5 3.5 2.239 3.5 5 3.5z" />
+            </svg>
+          </div>
+          <h2 class="font-display text-2xl font-bold text-primary mb-3">{i18n.about.what_is_shag_title}</h2>
           <p class="text-text-muted leading-relaxed">{i18n.about.what_is_shag_text}</p>
         </div>
-      </div>
-    </section>
+      </article>
 
-    <!-- Lead & Follow -->
-    <section class="mb-16 bg-surface rounded-2xl p-8 border border-bg-warm">
-      <div class="flex items-start gap-4">
-        <div class="flex-shrink-0 w-12 h-12 rounded-lg bg-coral/15 flex items-center justify-center">
-          <svg class="w-6 h-6 text-coral" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-          </svg>
-        </div>
-        <div class="flex-1">
-          <h2 class="font-display text-2xl font-bold text-primary mb-4">{i18n.about.roles_title}</h2>
+      <article class="group relative bg-surface rounded-3xl p-7 border border-bg-warm shadow-soft hover:shadow-lift transition-all duration-300 overflow-hidden">
+        <div class="absolute -top-12 -right-12 w-40 h-40 bg-coral/10 rounded-full blur-2xl group-hover:bg-coral/15 transition-colors"></div>
+        <div class="relative">
+          <div class="inline-flex w-12 h-12 rounded-2xl bg-gradient-to-br from-coral/20 to-coral/5 items-center justify-center mb-5 group-hover:scale-105 transition-transform">
+            <svg class="w-6 h-6 text-coral" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+          </div>
+          <h2 class="font-display text-2xl font-bold text-primary mb-3">{i18n.about.roles_title}</h2>
           <p class="text-text-muted leading-relaxed">{i18n.about.roles_text}</p>
         </div>
-      </div>
+      </article>
     </section>
 
     <!-- Levels -->
     <section>
       <div class="text-center mb-10">
-        <h2 class="font-display text-3xl font-bold text-primary mb-3">{i18n.about.levels_title}</h2>
-        <div class="flex items-center justify-center gap-3">
-          <span class="h-px w-8 bg-teal/40"></span>
-          <span class="text-teal text-lg">✦</span>
-          <span class="h-px w-8 bg-teal/40"></span>
-        </div>
+        <p class="eyebrow text-teal mb-2">Skill</p>
+        <h2 class="font-display text-3xl sm:text-4xl font-bold text-primary mb-3 tracking-tight">{i18n.about.levels_title}</h2>
+        <span class="section-divider"><span class="text-accent">✦</span></span>
       </div>
 
-      <div class="space-y-4">
+      <div class="grid gap-4 md:grid-cols-3">
         {levels.map((level, i) => (
-          <div class="bg-surface rounded-2xl p-6 border border-bg-warm hover:shadow-md transition-shadow">
-            <div class="flex items-start gap-4">
-              <div class={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm ${
-                level.color === 'teal' ? 'bg-teal' : level.color === 'coral' ? 'bg-coral' : 'bg-accent'
+          <div class={`group relative bg-surface rounded-3xl p-6 border border-bg-warm shadow-soft hover:shadow-lift hover:-translate-y-0.5 transition-all duration-300 overflow-hidden`}>
+            <div class={`absolute -top-10 -right-10 w-32 h-32 rounded-full blur-2xl opacity-50 transition-opacity group-hover:opacity-80 ${
+              level.color === 'teal' ? 'bg-teal/15' : level.color === 'coral' ? 'bg-coral/15' : 'bg-accent/15'
+            }`}></div>
+            <div class="relative">
+              <div class={`inline-flex items-center justify-center w-11 h-11 rounded-2xl font-display font-black text-xl mb-4 text-white shadow-soft ${
+                level.color === 'teal' ? 'bg-gradient-to-br from-teal to-teal-dark' : level.color === 'coral' ? 'bg-gradient-to-br from-coral to-coral-dark' : 'bg-gradient-to-br from-accent to-accent-dark'
               }`}>
                 {i + 1}
               </div>
-              <div>
-                <h3 class="font-display text-xl font-bold text-primary mb-2">{level.title}</h3>
-                <p class="text-text-muted leading-relaxed">{level.desc}</p>
-              </div>
+              <h3 class="font-display text-xl font-bold text-primary mb-2 tracking-tight">{level.title}</h3>
+              <p class="text-text-muted leading-relaxed text-sm">{level.desc}</p>
             </div>
           </div>
         ))}
@@ -103,13 +116,14 @@ const levels = [
     </section>
 
     <!-- CTA -->
-    <section class="text-center mt-16">
-      <a
-        href={`${base}/de/workshops/`}
-        class="inline-block bg-coral hover:bg-coral-dark text-white font-bold px-8 py-3.5 rounded-full transition-colors text-lg shadow-md shadow-coral/20"
-      >
-        {i18n.home.hero_cta}
-      </a>
+    <section class="text-center mt-20">
+      <div class="inline-flex flex-col items-center gap-3">
+        <p class="eyebrow text-text-muted">{locale === 'de' ? 'Bereit zum Tanzen?' : 'Ready to dance?'}</p>
+        <a href={`${base}/de/workshops/`} class="btn-primary !px-8 !py-3.5 text-base">
+          {i18n.home.hero_cta}
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
+        </a>
+      </div>
     </section>
   </div>
 </BaseLayout>

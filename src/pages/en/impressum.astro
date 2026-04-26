@@ -1,0 +1,33 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { t } from '../../i18n/index';
+
+const locale = 'en';
+const i18n = t(locale);
+---
+
+<BaseLayout title="Imprint" locale={locale} currentPath="/impressum/">
+  <div class="max-w-3xl mx-auto px-6 py-16">
+    <h1 class="font-display text-4xl font-bold text-primary mb-10">Imprint</h1>
+
+    <section class="bg-surface rounded-2xl p-8 border border-bg-warm space-y-6 text-text-muted leading-relaxed">
+      <div>
+        <h2 class="font-display text-xl font-semibold text-primary mb-2">Information according to § 5 ECG</h2>
+        <p>Josef Hölzl<br />
+        Forellenweg 42<br />
+        5300 Hallwang<br />
+        Austria</p>
+      </div>
+
+      <div>
+        <h2 class="font-display text-xl font-semibold text-primary mb-2">Contact</h2>
+        <p>Email: <a href="mailto:hoelzl.josef@gmail.com" class="text-accent hover:underline">hoelzl.josef@gmail.com</a></p>
+      </div>
+
+      <div>
+        <h2 class="font-display text-xl font-semibold text-primary mb-2">Disclaimer</h2>
+        <p>Despite careful content control, we assume no liability for the content of external links. The operators of linked pages are solely responsible for their content.</p>
+      </div>
+    </section>
+  </div>
+</BaseLayout>
