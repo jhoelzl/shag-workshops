@@ -110,37 +110,37 @@ Deno.serve(async (req) => {
           de: `<h2>Hallo ${registration.name}!</h2>
                <p>Deine Anmeldung für <strong>${dc.title_de}</strong> wurde <strong>bestätigt</strong>! 🎉</p>
                <p>Wir freuen uns auf dich!</p>
-               <p>Collegiate Shag Salzburg</p>`,
+               <p>Amadeus Shagadeus</p>`,
           en: `<h2>Hello ${registration.name}!</h2>
                <p>Your registration for <strong>${dc.title_en}</strong> has been <strong>confirmed</strong>! 🎉</p>
                <p>We look forward to seeing you!</p>
-               <p>Collegiate Shag Salzburg</p>`,
+               <p>Amadeus Shagadeus</p>`,
         },
         waitlisted: {
           de: `<h2>Hallo ${registration.name}!</h2>
                <p>Du stehst jetzt auf der <strong>Warteliste</strong> für <strong>${dc.title_de}</strong>.</p>
                <p>Wir melden uns, sobald ein Platz frei wird.</p>
-               <p>Collegiate Shag Salzburg</p>`,
+               <p>Amadeus Shagadeus</p>`,
           en: `<h2>Hello ${registration.name}!</h2>
                <p>You have been placed on the <strong>waitlist</strong> for <strong>${dc.title_en}</strong>.</p>
                <p>We will notify you when a spot becomes available.</p>
-               <p>Collegiate Shag Salzburg</p>`,
+               <p>Amadeus Shagadeus</p>`,
         },
         cancelled: {
           de: `<h2>Hallo ${registration.name}!</h2>
                <p>Leider wurde deine Anmeldung für <strong>${dc.title_de}</strong> <strong>abgesagt</strong>.</p>
                <p>Bei Fragen kontaktiere uns gerne.</p>
-               <p>Collegiate Shag Salzburg</p>`,
+               <p>Amadeus Shagadeus</p>`,
           en: `<h2>Hello ${registration.name}!</h2>
                <p>Unfortunately your registration for <strong>${dc.title_en}</strong> has been <strong>cancelled</strong>.</p>
                <p>Please contact us if you have any questions.</p>
-               <p>Collegiate Shag Salzburg</p>`,
+               <p>Amadeus Shagadeus</p>`,
         },
       };
 
       // Default to German if we don't know the locale
       const lang = 'de';
-      const fromAddress = Deno.env.get('EMAIL_FROM') || 'Collegiate Shag Salzburg <onboarding@resend.dev>';
+      const fromAddress = Deno.env.get('EMAIL_FROM') || 'Amadeus Shagadeus <onboarding@resend.dev>';
       const overrideTo = Deno.env.get('EMAIL_TO_OVERRIDE');
       const toAddress = overrideTo || registration.email;
       if (overrideTo) {
