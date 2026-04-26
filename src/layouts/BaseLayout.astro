@@ -38,7 +38,7 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
             <span class="absolute inset-0 rounded-xl bg-gradient-to-br from-coral/30 to-accent/30 blur-md opacity-0 group-hover:opacity-100 transition-opacity"></span>
             <img src={`${base}/shagadeus_logo.png`} alt="Shagadeus" class="relative h-10 w-auto rounded-xl shadow-soft" />
           </span>
-          <span class="font-display text-xl font-bold text-primary hidden sm:inline tracking-tight">Shagadeus</span>
+          <span class="font-display text-xl font-bold text-primary hidden sm:inline tracking-tight">Amadeus <span class="italic font-normal">Shagadeus</span></span>
         </a>
 
         <div class="flex items-center gap-1 sm:gap-2">
@@ -81,7 +81,7 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
           <div class="sm:col-span-1">
             <div class="flex items-center gap-3 mb-4">
               <img src={`${base}/shagadeus_logo.png`} alt="Shagadeus" class="h-10 w-auto rounded-lg" />
-              <span class="font-display text-xl font-bold text-white tracking-tight">Shagadeus</span>
+              <span class="font-display text-xl font-bold text-white tracking-tight">Amadeus <span class="italic font-normal">Shagadeus</span></span>
             </div>
             <p class="text-sm text-white/55 leading-relaxed max-w-xs">
               {locale === 'de' ? 'Collegiate Shag Workshops & Tanzkurse in Salzburg.' : 'Collegiate Shag workshops & dance classes in Salzburg.'}
@@ -107,7 +107,6 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 
         <div class="pt-6 border-t border-white/10 flex flex-col sm:flex-row justify-between items-center gap-3 text-xs text-white/50">
           <span>Salzburg, Österreich · Collegiate Shag</span>
-          <span class="font-display italic text-accent/80">— let's swing —</span>
         </div>
       </div>
     </footer>

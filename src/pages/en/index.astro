@@ -24,8 +24,8 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
           </span>
           <h1 class="font-display text-5xl sm:text-6xl lg:text-7xl font-black text-primary leading-[1.02] mb-5">
             <span class="block">Collegiate</span>
-            <span class="block italic font-normal text-gradient-warm">Shag</span>
-            <span class="block">Salzburg</span>
+            <span class="block">Shag</span>
+            <span class="block italic font-normal text-gradient-warm pb-2">Salzburg</span>
           </h1>
           <p class="text-text-muted text-lg sm:text-xl max-w-xl mx-auto lg:mx-0 mb-8 leading-relaxed">
             {i18n.home.hero_subtitle} — Energetic swing dance classes for all levels.
@@ -43,14 +43,12 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 
         <div class="lg:col-span-5 flex justify-center lg:justify-end animate-fade-up" style="animation-delay: 0.15s">
           <div class="relative">
-            <div class="absolute inset-0 -m-6 bg-gradient-to-br from-coral/30 via-accent/25 to-teal/30 blur-2xl rounded-[2.5rem]"></div>
-            <div class="relative bg-white/70 backdrop-blur-sm border border-white/80 rounded-[2rem] p-6 shadow-lift rotate-[-3deg] hover:rotate-0 transition-transform duration-500">
-              <img
-                src={`${base}/shagadeus_logo.png`}
-                alt="Shagadeus"
-                class="w-56 sm:w-64 h-auto rounded-2xl drop-shadow-md"
-              />
-            </div>
+            <div class="absolute inset-0 -m-10 bg-gradient-to-br from-coral/30 via-accent/25 to-teal/30 blur-3xl rounded-full"></div>
+            <img
+              src={`${base}/shagadeus_logo.png`}
+              alt="Shagadeus"
+              class="relative w-72 sm:w-80 lg:w-96 h-auto rotate-[-3deg] hover:rotate-0 transition-transform duration-500 drop-shadow-[0_18px_30px_rgba(15,26,48,0.25)]"
+            />
           </div>
         </div>
       </div>
