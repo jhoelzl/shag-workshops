@@ -125,29 +125,48 @@ Deno.serve(async (req) => {
 
     // Send confirmation email via Resend
     const resendKey = Deno.env.get('RESEND_API_KEY');
+    if (!resendKey) {
+      console.warn('RESEND_API_KEY is not set — skipping email send');
+    }
     if (resendKey) {
       const resend = new Resend(resendKey);
       const isDE = locale === 'de';
       const classTitle = isDE ? danceClass.title_de : danceClass.title_en;
+      const fromAddress = Deno.env.get('EMAIL_FROM') || 'Collegiate Shag Salzburg <onboarding@resend.dev>';
+      const overrideTo = Deno.env.get('EMAIL_TO_OVERRIDE');
+      const realTo = email.toLowerCase().trim();
+      const toAddress = overrideTo || realTo;
+      if (overrideTo) {
+        console.log(`EMAIL_TO_OVERRIDE active — redirecting mail for ${realTo} to ${overrideTo}`);
+      }
 
-      await resend.emails.send({
-        from: Deno.env.get('EMAIL_FROM') || 'Collegiate Shag Salzburg <onboarding@resend.dev>',
-        to: [email.toLowerCase().trim()],
-        subject: isDE
-          ? `Anmeldung eingegangen: ${classTitle}`
-          : `Registration received: ${classTitle}`,
-        html: isDE
-          ? `<h2>Hallo ${name.trim()}!</h2>
-             <p>Deine Anmeldung für <strong>${classTitle}</strong> als <strong>${role === 'lead' ? 'Lead' : 'Follow'}</strong> ist eingegangen.</p>
-             ${status === 'waitlisted' ? '<p>⚠️ Aktuell sind alle Plätze belegt. Du stehst auf der Warteliste.</p>' : ''}
-             <p>Wir werden deine Anmeldung prüfen und bestätigen. Du erhältst dann eine weitere E-Mail.</p>
-             <p>Collegiate Shag Salzburg 💃</p>`
-          : `<h2>Hello ${name.trim()}!</h2>
-             <p>Your registration for <strong>${classTitle}</strong> as <strong>${role === 'lead' ? 'Lead' : 'Follow'}</strong> has been received.</p>
-             ${status === 'waitlisted' ? '<p>⚠️ All spots are currently taken. You have been placed on the waitlist.</p>' : ''}
-             <p>The organizer will review and confirm your registration. You will receive another email then.</p>
-             <p>Collegiate Shag Salzburg 💃</p>`,
-      });
+      try {
+        const { data: sendData, error: sendError } = await resend.emails.send({
+          from: fromAddress,
+          to: [toAddress],
+          subject: isDE
+            ? `Anmeldung eingegangen: ${classTitle}`
+            : `Registration received: ${classTitle}`,
+          html: isDE
+            ? `<h2>Hallo ${name.trim()}!</h2>
+               <p>Deine Anmeldung für <strong>${classTitle}</strong> als <strong>${role === 'lead' ? 'Lead' : 'Follow'}</strong> ist eingegangen.</p>
+               ${status === 'waitlisted' ? '<p>⚠️ Aktuell sind alle Plätze belegt. Du stehst auf der Warteliste.</p>' : ''}
+               <p>Wir werden deine Anmeldung prüfen und bestätigen. Du erhältst dann eine weitere E-Mail.</p>
+               <p>Collegiate Shag Salzburg 💃</p>`
+            : `<h2>Hello ${name.trim()}!</h2>
+               <p>Your registration for <strong>${classTitle}</strong> as <strong>${role === 'lead' ? 'Lead' : 'Follow'}</strong> has been received.</p>
+               ${status === 'waitlisted' ? '<p>⚠️ All spots are currently taken. You have been placed on the waitlist.</p>' : ''}
+               <p>The organizer will review and confirm your registration. You will receive another email then.</p>
+               <p>Collegiate Shag Salzburg 💃</p>`,
+        });
+        if (sendError) {
+          console.error('Resend send error:', JSON.stringify(sendError), 'from:', fromAddress, 'to:', toAddress);
+        } else {
+          console.log('Resend send ok:', JSON.stringify(sendData), 'to:', toAddress);
+        }
+      } catch (e) {
+        console.error('Resend send threw:', e instanceof Error ? e.message : String(e), 'from:', fromAddress, 'to:', toAddress);
+      }
     }
 
     return new Response(
