@@ -54,14 +54,21 @@ export default function AdminDashboard() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="w-8 h-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
+        <div className="w-10 h-10 border-4 border-coral/20 border-t-coral rounded-full animate-spin" />
       </div>
     );
   }
 
+  const openClassIds = new Set(
+    classes
+      .filter((c) => getClassState(sessionsMap[c.id] || [], c.registration_opens_at, c.registration_closes_at) === 'open')
+      .map((c) => c.id),
+  );
+
   const stats = {
     totalClasses: classes.length,
-    openClasses: classes.filter((c) => getClassState(sessionsMap[c.id] || [], c.registration_opens_at, c.registration_closes_at) === 'open').length,
+    openClasses: openClassIds.size,
+    openRegistrations: registrations.filter((r) => openClassIds.has(r.dance_class_id) && r.status !== 'cancelled').length,
     totalRegistrations: registrations.length,
     pending: registrations.filter((r) => r.status === 'pending').length,
     confirmed: registrations.filter((r) => r.status === 'confirmed').length,
@@ -69,43 +76,66 @@ export default function AdminDashboard() {
     cancelled: registrations.filter((r) => r.status === 'cancelled').length,
   };
 
+  const tabs: { key: Tab; label: string; icon: string }[] = [
+    { key: 'overview', label: 'Overview', icon: '✦' },
+    { key: 'classes', label: 'Classes', icon: '✦' },
+    { key: 'registrations', label: 'Registrations', icon: '✦' },
+  ];
+
   return (
     <div className="min-h-screen">
-      {/* Admin Header */}
-      <header className="bg-primary text-white">
-        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+      {/* Admin Header — modern, soft, matches frontend */}
+      <header className="sticky top-0 z-40 backdrop-blur-md bg-bg/80 border-b border-primary/5">
+        <div className="max-w-6xl mx-auto px-5 sm:px-6 py-3.5 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <span className="text-xl">💃</span>
-            <span className="font-bold">Admin Dashboard</span>
+            <span className="relative">
+              <span className="absolute inset-0 rounded-xl bg-gradient-to-br from-coral/30 to-accent/30 blur-md opacity-70"></span>
+              <img src={`${base}/shagadeus_logo.png`} alt="" className="relative h-9 w-auto rounded-xl shadow-soft" />
+            </span>
+            <div className="flex flex-col leading-tight">
+              <span className="font-display text-lg font-bold text-primary tracking-tight">Admin</span>
+              <span className="eyebrow text-coral/80 text-[0.6rem]">Shagadeus Studio</span>
+            </div>
           </div>
-          <div className="flex items-center gap-4">
-            <span className="text-sm text-white/70">{user?.email}</span>
-            <button onClick={handleLogout} className="text-sm bg-white/10 hover:bg-white/20 px-3 py-1 rounded transition-colors">
+          <div className="flex items-center gap-3">
+            <span className="hidden sm:inline text-xs text-text-muted tabular-nums">{user?.email}</span>
+            <button
+              onClick={handleLogout}
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary/80 hover:text-primary border border-primary/15 hover:border-primary/30 px-3 py-1.5 rounded-full transition-colors"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
               Logout
             </button>
           </div>
         </div>
+
+        {/* Pill Tabs */}
+        <nav className="max-w-6xl mx-auto px-5 sm:px-6 pb-3.5">
+          <div className="inline-flex items-center gap-1 p-1 bg-white/60 backdrop-blur rounded-full border border-primary/10 shadow-soft">
+            {tabs.map((t) => (
+              <button
+                key={t.key}
+                onClick={() => setTab(t.key)}
+                className={`px-4 py-1.5 text-sm font-semibold rounded-full transition-all ${
+                  tab === t.key
+                    ? 'bg-gradient-to-br from-coral to-coral-dark text-white shadow-[0_4px_14px_-4px_rgba(231,111,81,0.5)]'
+                    : 'text-primary/70 hover:text-primary hover:bg-primary/5'
+                }`}
+              >
+                {t.label}
+                {t.key === 'registrations' && stats.pending > 0 && (
+                  <span className={`ml-2 inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 text-[10px] font-bold rounded-full ${tab === t.key ? 'bg-white/25 text-white' : 'bg-amber-100 text-amber-700'}`}>
+                    {stats.pending}
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
+        </nav>
       </header>
 
-      {/* Tabs */}
-      <nav className="bg-surface border-b">
-        <div className="max-w-6xl mx-auto px-4 flex gap-1">
-          {(['overview', 'classes', 'registrations'] as Tab[]).map((t) => (
-            <button
-              key={t}
-              onClick={() => setTab(t)}
-              className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
-                tab === t ? 'border-primary text-primary' : 'border-transparent text-text-muted hover:text-text'
-              }`}
-            >
-              {t === 'overview' ? 'Overview' : t === 'classes' ? 'Classes' : 'Registrations'}
-            </button>
-          ))}
-        </div>
-      </nav>
-
       {/* Content */}
-      <div className="max-w-6xl mx-auto px-4 py-8">
+      <div className="max-w-6xl mx-auto px-5 sm:px-6 py-8">
         {tab === 'overview' && (
           <OverviewTab
             classes={classes}
@@ -142,10 +172,18 @@ function OverviewTab({
   classes: DanceClass[];
   registrations: Registration[];
   sessionsMap: Record<string, ClassSession[]>;
-  stats: { totalClasses: number; openClasses: number; totalRegistrations: number; pending: number; confirmed: number; waitlisted: number; cancelled: number };
+  stats: {
+    totalClasses: number;
+    openClasses: number;
+    openRegistrations: number;
+    totalRegistrations: number;
+    pending: number;
+    confirmed: number;
+    waitlisted: number;
+    cancelled: number;
+  };
   onNavigate: (tab: Tab) => void;
 }) {
-  // Open classes with capacity info
   const openClasses = classes
     .filter((c) => getClassState(sessionsMap[c.id] || [], c.registration_opens_at, c.registration_closes_at) === 'open')
     .map((c) => {
@@ -155,7 +193,6 @@ function OverviewTab({
       return { ...c, leads, follows };
     });
 
-  // Upcoming sessions (next 14 days)
   const now = new Date();
   const in14Days = new Date(now);
   in14Days.setDate(in14Days.getDate() + 14);
@@ -172,108 +209,118 @@ function OverviewTab({
   }
   upcomingSessions.sort((a, b) => a.session.session_date.localeCompare(b.session.session_date) || a.session.start_time.localeCompare(b.session.start_time));
 
-  // Recent registrations (last 10)
   const recentRegs = registrations.slice(0, 8).map((r) => ({
     ...r,
     className: classes.find((c) => c.id === r.dance_class_id)?.title_de || '—',
   }));
 
-  // Pending actions count
-  const pendingActions = stats.pending;
-
-  const statusColors: Record<string, string> = {
-    pending: 'bg-yellow-100 text-yellow-700',
-    confirmed: 'bg-green-100 text-green-700',
-    waitlisted: 'bg-gray-100 text-gray-600',
-    cancelled: 'bg-red-100 text-red-600',
-  };
-
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-up">
+      {/* Hero greeting */}
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+        <div>
+          <p className="eyebrow text-coral mb-1">Dashboard</p>
+          <h1 className="font-display text-3xl sm:text-4xl font-bold tracking-tight text-primary">
+            Welcome <span className="text-gradient-warm">back</span>
+          </h1>
+          <p className="text-sm text-text-muted mt-1">
+            {stats.pending > 0
+              ? `${stats.pending} registration${stats.pending > 1 ? 's are' : ' is'} waiting for your confirmation.`
+              : 'All caught up — no open actions.'}
+          </p>
+        </div>
+      </div>
+
       {/* Stat Cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Classes" value={stats.totalClasses} icon="📚" onClick={() => onNavigate('classes')} hint="View all" />
-        <StatCard label="Open for Registration" value={stats.openClasses} icon="🟢" color="success" onClick={() => onNavigate('classes')} hint="View open" />
-        <StatCard label="Total Registrations" value={stats.totalRegistrations} icon="👥" onClick={() => onNavigate('registrations')} hint="View all" />
+        <StatCard label="Classes" value={stats.totalClasses} icon="📚" tone="primary" onClick={() => onNavigate('classes')} hint="View all" />
+        <StatCard label="Open Registrations" value={stats.openRegistrations} icon="🟢" tone="teal" onClick={() => onNavigate('registrations')} hint="Active in open classes" />
+        <StatCard label="Registrations" value={stats.totalRegistrations} icon="👥" tone="primary" onClick={() => onNavigate('registrations')} hint="View all" />
         <StatCard
           label="Pending"
           value={stats.pending}
           icon="⏳"
-          color="warning"
+          tone="amber"
           onClick={() => onNavigate('registrations')}
-          hint={stats.pending > 0 ? 'Action needed!' : 'All clear'}
+          hint={stats.pending > 0 ? 'Action needed' : 'All clear'}
           pulse={stats.pending > 0}
         />
       </div>
 
-      {/* Registration summary bar */}
-      <div className="bg-surface rounded-xl border border-gray-100 shadow-sm p-4">
-        <div className="flex items-center justify-between mb-2">
-          <h3 className="font-semibold text-sm">Registration Status</h3>
-          <button onClick={() => onNavigate('registrations')} className="text-xs text-primary hover:text-primary-light font-medium transition-colors">
+      {/* Registration status distribution */}
+      <div className="bg-surface/80 backdrop-blur rounded-2xl border border-primary/5 shadow-soft p-5">
+        <div className="flex items-center justify-between mb-3">
+          <div>
+            <p className="eyebrow text-teal mb-0.5">Pipeline</p>
+            <h3 className="font-display text-lg font-bold text-primary">Registration Status</h3>
+          </div>
+          <button onClick={() => onNavigate('registrations')} className="text-xs font-semibold text-coral hover:text-coral-dark transition-colors">
             View all →
           </button>
         </div>
-        <div className="flex items-center gap-1 h-4 rounded-full overflow-hidden bg-gray-100">
+        <div className="flex items-center gap-0.5 h-3 rounded-full overflow-hidden bg-primary/5">
           {stats.confirmed > 0 && (
-            <div className="bg-green-500 h-full transition-all" style={{ width: `${(stats.confirmed / stats.totalRegistrations) * 100}%` }} title={`${stats.confirmed} confirmed`} />
+            <div className="h-full transition-all" style={{ width: `${(stats.confirmed / stats.totalRegistrations) * 100}%`, background: 'var(--color-teal)' }} title={`${stats.confirmed} confirmed`} />
           )}
           {stats.pending > 0 && (
-            <div className="bg-amber-400 h-full transition-all" style={{ width: `${(stats.pending / stats.totalRegistrations) * 100}%` }} title={`${stats.pending} pending`} />
+            <div className="h-full transition-all" style={{ width: `${(stats.pending / stats.totalRegistrations) * 100}%`, background: 'var(--color-accent)' }} title={`${stats.pending} pending`} />
           )}
           {stats.waitlisted > 0 && (
-            <div className="bg-gray-400 h-full transition-all" style={{ width: `${(stats.waitlisted / stats.totalRegistrations) * 100}%` }} title={`${stats.waitlisted} waitlisted`} />
+            <div className="h-full transition-all bg-slate-400" style={{ width: `${(stats.waitlisted / stats.totalRegistrations) * 100}%` }} title={`${stats.waitlisted} waitlisted`} />
           )}
           {stats.cancelled > 0 && (
-            <div className="bg-red-400 h-full transition-all" style={{ width: `${(stats.cancelled / stats.totalRegistrations) * 100}%` }} title={`${stats.cancelled} cancelled`} />
+            <div className="h-full transition-all" style={{ width: `${(stats.cancelled / stats.totalRegistrations) * 100}%`, background: 'var(--color-coral)' }} title={`${stats.cancelled} cancelled`} />
           )}
         </div>
-        <div className="flex gap-4 mt-2 text-xs text-text-muted">
-          <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-green-500 inline-block" /> {stats.confirmed} Confirmed</span>
-          <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-amber-400 inline-block" /> {stats.pending} Pending</span>
-          <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-gray-400 inline-block" /> {stats.waitlisted} Waitlisted</span>
-          <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-red-400 inline-block" /> {stats.cancelled} Cancelled</span>
+        <div className="flex flex-wrap gap-x-5 gap-y-1.5 mt-3 text-xs">
+          <LegendDot color="var(--color-teal)" label={`${stats.confirmed} Confirmed`} />
+          <LegendDot color="var(--color-accent)" label={`${stats.pending} Pending`} />
+          <LegendDot color="rgb(148 163 184)" label={`${stats.waitlisted} Waitlisted`} />
+          <LegendDot color="var(--color-coral)" label={`${stats.cancelled} Cancelled`} />
         </div>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        {/* Open Classes with Capacity */}
-        <div className="bg-surface rounded-xl border border-gray-100 shadow-sm">
-          <div className="flex items-center justify-between p-4 border-b border-gray-100">
-            <h3 className="font-semibold text-sm">Open Classes — Capacity</h3>
-            <button onClick={() => onNavigate('classes')} className="text-xs text-primary hover:text-primary-light font-medium transition-colors">
+        {/* Open Classes */}
+        <div className="bg-surface/80 backdrop-blur rounded-2xl border border-primary/5 shadow-soft overflow-hidden">
+          <div className="flex items-center justify-between p-5 border-b border-primary/5">
+            <div>
+              <p className="eyebrow text-teal mb-0.5">Capacity</p>
+              <h3 className="font-display text-lg font-bold text-primary">Open Classes</h3>
+            </div>
+            <button onClick={() => onNavigate('classes')} className="text-xs font-semibold text-coral hover:text-coral-dark transition-colors">
               Manage →
             </button>
           </div>
           {openClasses.length === 0 ? (
-            <p className="text-text-muted text-sm text-center py-6">No classes currently open for registration.</p>
+            <p className="text-text-muted text-sm text-center py-8">No classes currently open for registration.</p>
           ) : (
-            <div className="divide-y divide-gray-50">
+            <div className="divide-y divide-primary/5">
               {openClasses.map((c) => {
                 const leadPct = c.max_leads > 0 ? Math.min((c.leads / c.max_leads) * 100, 100) : 0;
                 const followPct = c.max_follows > 0 ? Math.min((c.follows / c.max_follows) * 100, 100) : 0;
-                const leadColor = leadPct >= 100 ? 'bg-red-500' : leadPct >= 75 ? 'bg-amber-400' : 'bg-teal';
-                const followColor = followPct >= 100 ? 'bg-red-500' : followPct >= 75 ? 'bg-amber-400' : 'bg-teal';
+                const leadBg = leadPct >= 100 ? 'bg-coral' : leadPct >= 75 ? 'bg-accent' : 'bg-teal';
+                const followBg = followPct >= 100 ? 'bg-coral' : followPct >= 75 ? 'bg-accent' : 'bg-teal';
                 return (
-                  <div key={c.id} className="p-4 hover:bg-gray-50/50 transition-colors cursor-pointer" onClick={() => onNavigate('classes')}>
-                    <div className="font-medium text-sm mb-2">{c.title_de}</div>
-                    <div className="grid grid-cols-2 gap-3">
+                  <div key={c.id} className="p-5 hover:bg-bg-warm/40 transition-colors cursor-pointer" onClick={() => onNavigate('classes')}>
+                    <div className="font-semibold text-sm mb-2.5">{c.title_de}</div>
+                    <div className="grid grid-cols-2 gap-4">
                       <div>
                         <div className="flex items-center justify-between text-xs text-text-muted mb-1">
                           <span>Leads</span>
-                          <span className="tabular-nums font-medium">{c.leads}/{c.max_leads}</span>
+                          <span className="tabular-nums font-semibold text-text">{c.leads}/{c.max_leads}</span>
                         </div>
-                        <div className="bg-gray-200 rounded-full h-2 overflow-hidden">
-                          <div className={`h-full rounded-full transition-all ${leadColor}`} style={{ width: `${leadPct}%` }} />
+                        <div className="bg-primary/5 rounded-full h-1.5 overflow-hidden">
+                          <div className={`h-full rounded-full transition-all ${leadBg}`} style={{ width: `${leadPct}%` }} />
                         </div>
                       </div>
                       <div>
                         <div className="flex items-center justify-between text-xs text-text-muted mb-1">
                           <span>Follows</span>
-                          <span className="tabular-nums font-medium">{c.follows}/{c.max_follows}</span>
+                          <span className="tabular-nums font-semibold text-text">{c.follows}/{c.max_follows}</span>
                         </div>
-                        <div className="bg-gray-200 rounded-full h-2 overflow-hidden">
-                          <div className={`h-full rounded-full transition-all ${followColor}`} style={{ width: `${followPct}%` }} />
+                        <div className="bg-primary/5 rounded-full h-1.5 overflow-hidden">
+                          <div className={`h-full rounded-full transition-all ${followBg}`} style={{ width: `${followPct}%` }} />
                         </div>
                       </div>
                     </div>
@@ -285,32 +332,36 @@ function OverviewTab({
         </div>
 
         {/* Upcoming Sessions */}
-        <div className="bg-surface rounded-xl border border-gray-100 shadow-sm">
-          <div className="flex items-center justify-between p-4 border-b border-gray-100">
-            <h3 className="font-semibold text-sm">Upcoming Sessions (14 days)</h3>
+        <div className="bg-surface/80 backdrop-blur rounded-2xl border border-primary/5 shadow-soft overflow-hidden">
+          <div className="flex items-center justify-between p-5 border-b border-primary/5">
+            <div>
+              <p className="eyebrow text-teal mb-0.5">Calendar</p>
+              <h3 className="font-display text-lg font-bold text-primary">Upcoming Sessions</h3>
+            </div>
+            <span className="text-xs text-text-muted">14 days</span>
           </div>
           {upcomingSessions.length === 0 ? (
-            <p className="text-text-muted text-sm text-center py-6">No sessions in the next 14 days.</p>
+            <p className="text-text-muted text-sm text-center py-8">No sessions in the next 14 days.</p>
           ) : (
-            <div className="divide-y divide-gray-50">
+            <div className="divide-y divide-primary/5">
               {upcomingSessions.map(({ session, danceClass }) => {
                 const date = new Date(session.session_date);
                 const isToday = session.session_date === today;
                 return (
-                  <div key={session.id} className="p-4 hover:bg-gray-50/50 transition-colors cursor-pointer flex items-center gap-3" onClick={() => onNavigate('classes')}>
-                    <div className={`text-center rounded-lg px-2.5 py-1.5 min-w-[52px] ${isToday ? 'bg-primary text-white' : 'bg-gray-100 text-text-muted'}`}>
-                      <div className="text-[10px] font-bold uppercase">{date.toLocaleDateString('de-AT', { weekday: 'short' })}</div>
-                      <div className="text-lg font-bold leading-none">{date.getDate()}</div>
-                      <div className="text-[10px]">{date.toLocaleDateString('de-AT', { month: 'short' })}</div>
+                  <div key={session.id} className="p-4 hover:bg-bg-warm/40 transition-colors cursor-pointer flex items-center gap-3" onClick={() => onNavigate('classes')}>
+                    <div className={`text-center rounded-xl px-3 py-2 min-w-[58px] ${isToday ? 'bg-gradient-to-br from-coral to-coral-dark text-white shadow-[0_6px_18px_-6px_rgba(231,111,81,0.5)]' : 'bg-bg-warm/60 text-primary'}`}>
+                      <div className="text-[10px] font-bold uppercase tracking-wider opacity-80">{date.toLocaleDateString('de-AT', { weekday: 'short' })}</div>
+                      <div className="text-xl font-bold leading-none font-display">{date.getDate()}</div>
+                      <div className="text-[10px] opacity-80">{date.toLocaleDateString('de-AT', { month: 'short' })}</div>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="font-medium text-sm truncate">{danceClass.title_de}</div>
-                      <div className="text-xs text-text-muted flex items-center gap-2">
-                        <span>{session.start_time.slice(0, 5)} – {session.end_time.slice(0, 5)}</span>
+                      <div className="font-semibold text-sm truncate">{danceClass.title_de}</div>
+                      <div className="text-xs text-text-muted flex items-center gap-1.5 mt-0.5">
+                        <span className="tabular-nums">{session.start_time.slice(0, 5)} – {session.end_time.slice(0, 5)}</span>
                         {danceClass.location && <span>· {danceClass.location}</span>}
                       </div>
                     </div>
-                    {isToday && <span className="text-[10px] font-bold uppercase bg-primary/10 text-primary px-2 py-0.5 rounded-full">Today</span>}
+                    {isToday && <span className="text-[10px] font-bold uppercase tracking-wider bg-coral/10 text-coral px-2 py-0.5 rounded-full">Today</span>}
                   </div>
                 );
               })}
@@ -320,41 +371,42 @@ function OverviewTab({
       </div>
 
       {/* Recent Registrations */}
-      <div className="bg-surface rounded-xl border border-gray-100 shadow-sm">
-        <div className="flex items-center justify-between p-4 border-b border-gray-100">
-          <h3 className="font-semibold text-sm">Recent Registrations</h3>
-          <button onClick={() => onNavigate('registrations')} className="text-xs text-primary hover:text-primary-light font-medium transition-colors">
+      <div className="bg-surface/80 backdrop-blur rounded-2xl border border-primary/5 shadow-soft overflow-hidden">
+        <div className="flex items-center justify-between p-5 border-b border-primary/5">
+          <div>
+            <p className="eyebrow text-teal mb-0.5">Activity</p>
+            <h3 className="font-display text-lg font-bold text-primary">Recent Registrations</h3>
+          </div>
+          <button onClick={() => onNavigate('registrations')} className="text-xs font-semibold text-coral hover:text-coral-dark transition-colors">
             View all →
           </button>
         </div>
         {recentRegs.length === 0 ? (
-          <p className="text-text-muted text-sm text-center py-6">No registrations yet.</p>
+          <p className="text-text-muted text-sm text-center py-8">No registrations yet.</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-left text-xs text-text-muted border-b border-gray-100">
-                  <th className="py-2 px-4 font-medium">Name</th>
-                  <th className="py-2 px-4 font-medium">Class</th>
-                  <th className="py-2 px-4 font-medium">Role</th>
-                  <th className="py-2 px-4 font-medium">Status</th>
-                  <th className="py-2 px-4 font-medium">Date</th>
+                <tr className="text-left text-[11px] font-semibold uppercase tracking-wider text-text-muted bg-bg-warm/30">
+                  <th className="py-2.5 px-5">Name</th>
+                  <th className="py-2.5 px-5">Class</th>
+                  <th className="py-2.5 px-5">Role</th>
+                  <th className="py-2.5 px-5">Status</th>
+                  <th className="py-2.5 px-5">Date</th>
                 </tr>
               </thead>
               <tbody>
                 {recentRegs.map((r) => (
-                  <tr key={r.id} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors cursor-pointer" onClick={() => onNavigate('registrations')}>
-                    <td className="py-2.5 px-4 font-medium">{r.name}</td>
-                    <td className="py-2.5 px-4 text-text-muted truncate max-w-[200px]">{r.className}</td>
-                    <td className="py-2.5 px-4">
-                      <span className={`text-xs font-semibold ${r.role === 'lead' ? 'text-primary' : 'text-accent-dark'}`}>
-                        {r.role === 'lead' ? 'Lead' : 'Follow'}
-                      </span>
+                  <tr key={r.id} className="border-t border-primary/5 hover:bg-bg-warm/30 transition-colors cursor-pointer" onClick={() => onNavigate('registrations')}>
+                    <td className="py-3 px-5 font-semibold">{r.name}</td>
+                    <td className="py-3 px-5 text-text-muted truncate max-w-[200px]">{r.className}</td>
+                    <td className="py-3 px-5">
+                      <RoleChip role={r.role} />
                     </td>
-                    <td className="py-2.5 px-4">
-                      <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${statusColors[r.status]}`}>{r.status}</span>
+                    <td className="py-3 px-5">
+                      <StatusPill status={r.status} size="sm" />
                     </td>
-                    <td className="py-2.5 px-4 text-text-muted text-xs tabular-nums">{new Date(r.created_at).toLocaleDateString('de-AT')}</td>
+                    <td className="py-3 px-5 text-text-muted text-xs tabular-nums">{new Date(r.created_at).toLocaleDateString('de-AT')}</td>
                   </tr>
                 ))}
               </tbody>
@@ -366,27 +418,73 @@ function OverviewTab({
   );
 }
 
-function StatCard({ label, value, icon, color, onClick, hint, pulse }: {
+function StatCard({ label, value, icon, tone, onClick, hint, pulse }: {
   label: string;
   value: number;
   icon?: string;
-  color?: string;
+  tone?: 'primary' | 'teal' | 'amber' | 'coral';
   onClick?: () => void;
   hint?: string;
   pulse?: boolean;
 }) {
-  const colorClass = color === 'success' ? 'text-green-600' : color === 'warning' ? 'text-amber-600' : 'text-primary';
+  const tones: Record<string, { value: string; ring: string; glow: string }> = {
+    primary: { value: 'text-primary', ring: 'border-primary/10', glow: 'from-primary/5 to-transparent' },
+    teal: { value: 'text-teal', ring: 'border-teal/15', glow: 'from-teal/8 to-transparent' },
+    amber: { value: 'text-accent-dark', ring: 'border-accent/20', glow: 'from-accent/10 to-transparent' },
+    coral: { value: 'text-coral', ring: 'border-coral/15', glow: 'from-coral/8 to-transparent' },
+  };
+  const t = tones[tone || 'primary'];
   return (
-    <div
+    <button
       onClick={onClick}
-      className={`bg-surface rounded-xl shadow-sm border border-gray-100 p-5 transition-all ${onClick ? 'cursor-pointer hover:shadow-md hover:border-primary/20 active:scale-[0.98]' : ''} ${pulse ? 'ring-2 ring-amber-300/50' : ''}`}
+      type="button"
+      className={`relative text-left bg-surface/80 backdrop-blur rounded-2xl border ${t.ring} shadow-soft p-5 transition-all overflow-hidden ${onClick ? 'cursor-pointer hover:shadow-lift hover:-translate-y-0.5' : ''} ${pulse ? 'ring-2 ring-accent/40' : ''}`}
     >
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-sm text-text-muted">{label}</span>
-        {icon && <span className="text-lg">{icon}</span>}
+      <div className={`absolute inset-0 bg-gradient-to-br ${t.glow} pointer-events-none`} />
+      <div className="relative">
+        <div className="flex items-center justify-between mb-2">
+          <span className="eyebrow text-text-muted">{label}</span>
+          {icon && <span className="text-xl opacity-80">{icon}</span>}
+        </div>
+        <div className={`text-4xl font-display font-bold ${t.value} tracking-tight`}>{value}</div>
+        {hint && <div className="text-[11px] text-text-muted mt-1">{hint}</div>}
       </div>
-      <div className={`text-3xl font-bold ${colorClass}`}>{value}</div>
-      {hint && <div className="text-[11px] text-text-muted mt-1">{hint}</div>}
-    </div>
+    </button>
+  );
+}
+
+function LegendDot({ color, label }: { color: string; label: string }) {
+  return (
+    <span className="inline-flex items-center gap-1.5 text-text-muted">
+      <span className="w-2.5 h-2.5 rounded-full" style={{ background: color }} />
+      <span className="tabular-nums">{label}</span>
+    </span>
+  );
+}
+
+function RoleChip({ role }: { role: string }) {
+  const isLead = role === 'lead';
+  return (
+    <span className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full ${isLead ? 'bg-primary/8 text-primary' : 'bg-coral/10 text-coral-dark'}`}>
+      <span className={`w-1.5 h-1.5 rounded-full ${isLead ? 'bg-primary' : 'bg-coral'}`} />
+      {isLead ? 'Lead' : 'Follow'}
+    </span>
+  );
+}
+
+function StatusPill({ status, size = 'md' }: { status: string; size?: 'sm' | 'md' }) {
+  const styles: Record<string, { bg: string; text: string; icon: string; label: string }> = {
+    pending: { bg: 'bg-accent/15', text: 'text-accent-dark', icon: '⏳', label: 'Pending' },
+    confirmed: { bg: 'bg-teal/15', text: 'text-teal-dark', icon: '✓', label: 'Confirmed' },
+    waitlisted: { bg: 'bg-slate-200/70', text: 'text-slate-600', icon: '⏸', label: 'Waitlist' },
+    cancelled: { bg: 'bg-coral/15', text: 'text-coral-dark', icon: '✕', label: 'Cancelled' },
+  };
+  const s = styles[status] || styles.pending;
+  const sz = size === 'sm' ? 'text-[10px] px-2 py-0.5' : 'text-xs px-2.5 py-1';
+  return (
+    <span className={`inline-flex items-center gap-1 font-bold uppercase tracking-wider rounded-full ${s.bg} ${s.text} ${sz}`}>
+      <span className="text-[0.85em]">{s.icon}</span>
+      {s.label}
+    </span>
   );
 }
