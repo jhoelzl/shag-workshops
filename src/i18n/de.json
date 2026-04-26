@@ -45,6 +45,8 @@
     "role": "Rolle",
     "role_lead": "Lead",
     "role_follow": "Follow",
+    "role_info_label": "Info zu Lead und Follow",
+    "role_info_text": "Lead initiiert Bewegungsablaeufe. Follow reagiert darauf und gestaltet die Bewegung mit.",
     "name": "Name",
     "email": "E-Mail",
     "partner_name": "Partner Name (optional)",
@@ -80,6 +82,8 @@
     "level_advanced_title": "Advanced",
     "level_advanced_desc": "Für erfahrene TänzerInnen mit mehrjähriger Shag-Erfahrung. Fortgeschrittene Footwork-Variationen, komplexe Partnering-Konzepte und Improvisation.",
     "what_is_shag_title": "Was ist Collegiate Shag?",
-    "what_is_shag_text": "Collegiate Shag ist ein energiegeladener Paartanz aus der Swing-Ära der 1920er–1940er Jahre. Er zeichnet sich durch schnelles Footwork, Bounce und eine enge Tanzhaltung aus. Getanzt wird vor allem zu schnellerer Swing- und Jazz-Musik."
+    "what_is_shag_text": "Collegiate Shag ist ein energiegeladener Paartanz aus der Swing-Ära der 1920er–1940er Jahre. Er zeichnet sich durch schnelles Footwork, Bounce und eine enge Tanzhaltung aus. Getanzt wird vor allem zu schnellerer Swing- und Jazz-Musik.",
+    "roles_title": "Lead & Follow",
+    "roles_text": "Lead initiiert Bewegungsablaeufe. Follow reagiert darauf und gestaltet die Bewegung mit."
   }
 }
