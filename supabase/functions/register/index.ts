@@ -132,7 +132,7 @@ Deno.serve(async (req) => {
       const resend = new Resend(resendKey);
       const isDE = locale === 'de';
       const classTitle = isDE ? danceClass.title_de : danceClass.title_en;
-      const fromAddress = Deno.env.get('EMAIL_FROM') || 'Collegiate Shag Salzburg <onboarding@resend.dev>';
+      const fromAddress = Deno.env.get('EMAIL_FROM') || 'Amadeus Shagadeus <onboarding@resend.dev>';
       const overrideTo = Deno.env.get('EMAIL_TO_OVERRIDE');
       const realTo = email.toLowerCase().trim();
       const toAddress = overrideTo || realTo;
@@ -152,12 +152,12 @@ Deno.serve(async (req) => {
                <p>Deine Anmeldung für <strong>${classTitle}</strong> als <strong>${role === 'lead' ? 'Lead' : 'Follow'}</strong> ist eingegangen.</p>
                ${status === 'waitlisted' ? '<p>⚠️ Aktuell sind alle Plätze belegt. Du stehst auf der Warteliste.</p>' : ''}
                <p>Wir werden deine Anmeldung prüfen und bestätigen. Du erhältst dann eine weitere E-Mail.</p>
-               <p>Collegiate Shag Salzburg</p>`
+               <p>Amadeus Shagadeus</p>`
             : `<h2>Hello ${name.trim()}!</h2>
                <p>Your registration for <strong>${classTitle}</strong> as <strong>${role === 'lead' ? 'Lead' : 'Follow'}</strong> has been received.</p>
                ${status === 'waitlisted' ? '<p>⚠️ All spots are currently taken. You have been placed on the waitlist.</p>' : ''}
                <p>The organizer will review and confirm your registration. You will receive another email then.</p>
-               <p>Collegiate Shag Salzburg</p>`,
+               <p>Amadeus Shagadeus</p>`,
         });
         if (sendError) {
           console.error('Resend send error:', JSON.stringify(sendError), 'from:', fromAddress, 'to:', toAddress);
