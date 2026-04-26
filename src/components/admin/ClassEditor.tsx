@@ -286,14 +286,18 @@ export default function ClassEditor({ classes, registrations, onUpdate }: Props)
   const isCreatingNew = editing && !editing.id;
 
   return (
-    <div>
+    <div className="animate-fade-up">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-        <h2 className="text-2xl font-bold">Dance Classes</h2>
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6">
+        <div>
+          <p className="eyebrow text-coral mb-1">Catalog</p>
+          <h2 className="font-display text-3xl font-bold tracking-tight text-primary">Dance Classes</h2>
+          <p className="text-sm text-text-muted mt-1">Create and manage workshops, sessions, and registrations.</p>
+        </div>
         {!isCreatingNew && (
           <button
             onClick={() => startEditing()}
-            className="bg-primary hover:bg-primary-light text-white font-medium px-5 py-2.5 rounded-xl transition-colors text-sm shadow-sm"
+            className="bg-gradient-to-br from-coral to-coral-dark hover:brightness-105 text-white font-semibold px-5 py-2.5 rounded-full transition-all text-sm shadow-[0_4px_14px_-4px_rgba(231,111,81,0.5)]"
           >
             + New Class
           </button>
@@ -302,10 +306,10 @@ export default function ClassEditor({ classes, registrations, onUpdate }: Props)
 
       {/* Filters */}
       {!editing && (
-        <div className="bg-surface rounded-xl border border-gray-100 shadow-sm p-4 mb-6">
+        <div className="bg-surface/80 backdrop-blur rounded-2xl border border-primary/5 shadow-soft p-5 mb-6">
           <div className="flex flex-wrap gap-3 items-center">
             <div className="relative flex-1 min-w-[200px]">
-              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
               <input
@@ -313,13 +317,13 @@ export default function ClassEditor({ classes, registrations, onUpdate }: Props)
                 placeholder="Search classes..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
+                className="w-full pl-10 pr-3 py-2.5 bg-white/60 border border-primary/10 rounded-xl text-sm focus:ring-2 focus:ring-coral/30 focus:border-coral outline-none transition"
               />
             </div>
             <select
               value={filterLevel}
               onChange={(e) => setFilterLevel(e.target.value)}
-              className="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-primary/30 outline-none"
+              className="border border-primary/10 rounded-xl px-3 py-2.5 text-sm bg-white/60 focus:ring-2 focus:ring-coral/30 outline-none transition cursor-pointer"
             >
               <option value="all">All Levels</option>
               {availableLevels.map((l) => (
@@ -329,7 +333,7 @@ export default function ClassEditor({ classes, registrations, onUpdate }: Props)
             <select
               value={filterDance}
               onChange={(e) => setFilterDance(e.target.value)}
-              className="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-primary/30 outline-none"
+              className="border border-primary/10 rounded-xl px-3 py-2.5 text-sm bg-white/60 focus:ring-2 focus:ring-coral/30 outline-none transition cursor-pointer"
             >
               <option value="all">All Dances</option>
               {availableDances.map((d) => (
@@ -339,7 +343,7 @@ export default function ClassEditor({ classes, registrations, onUpdate }: Props)
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value as ClassState | 'all')}
-              className="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-primary/30 outline-none"
+              className="border border-primary/10 rounded-xl px-3 py-2.5 text-sm bg-white/60 focus:ring-2 focus:ring-coral/30 outline-none transition cursor-pointer"
             >
               {STATUS_OPTIONS.map((o) => (
                 <option key={o.value} value={o.value}>{o.label}</option>
@@ -348,7 +352,7 @@ export default function ClassEditor({ classes, registrations, onUpdate }: Props)
             {(filterLevel !== 'all' || filterDance !== 'all' || filterStatus !== 'all' || searchQuery) && (
               <button
                 onClick={() => { setFilterLevel('all'); setFilterDance('all'); setFilterStatus('all'); setSearchQuery(''); }}
-                className="text-xs text-text-muted hover:text-text px-2 py-1 transition-colors"
+                className="text-xs font-semibold text-coral hover:text-coral-dark px-2 py-1 transition-colors"
               >
                 Clear filters
               </button>
@@ -408,7 +412,7 @@ export default function ClassEditor({ classes, registrations, onUpdate }: Props)
                   title={`Edit: ${dc.title_de}`}
                 />
               ) : (
-                <div className={`bg-surface rounded-xl border shadow-sm transition-all ${editing ? 'opacity-40 pointer-events-none' : 'border-gray-100 hover:shadow-md'}`}>
+                <div className={`bg-surface/80 backdrop-blur rounded-2xl border shadow-soft transition-all ${editing ? 'opacity-40 pointer-events-none' : 'border-primary/5 hover:shadow-lift hover:-translate-y-0.5'}`}>
                   <div
                     className="p-4 cursor-pointer"
                     onClick={() => setViewClassId(isViewing ? null : dc.id)}
@@ -416,12 +420,12 @@ export default function ClassEditor({ classes, registrations, onUpdate }: Props)
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap mb-1">
-                          <h3 className="font-semibold text-base truncate">{dc.title_de}</h3>
+                          <h3 className="font-display font-bold text-base truncate text-primary">{dc.title_de}</h3>
                           <StatusBadge state={state} />
                           {!dc.is_public && (
-                            <span className="text-[10px] font-semibold uppercase tracking-wider bg-gray-100 text-gray-500 px-2 py-0.5 rounded">Draft</span>
+                            <span className="text-[10px] font-semibold uppercase tracking-wider bg-primary/8 text-primary/60 px-2 py-0.5 rounded-full">Draft</span>
                           )}
-                          <svg className={`w-4 h-4 text-gray-400 transition-transform ${isViewing ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                          <svg className={`w-4 h-4 text-text-muted transition-transform ${isViewing ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
                         </div>
                         <div className="text-sm text-text-muted flex flex-wrap items-center gap-x-3 gap-y-1">
                           {dc.level && (
@@ -438,36 +442,36 @@ export default function ClassEditor({ classes, registrations, onUpdate }: Props)
                         <div className="flex items-center gap-4 mt-3">
                           <CapacityBar label="Leads" current={counts.leads} max={dc.max_leads} />
                           <CapacityBar label="Follows" current={counts.follows} max={dc.max_follows} />
-                          <div className="text-xs text-text-muted ml-auto flex gap-2 items-center">
-                            {counts.pending > 0 && <span className="bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded font-medium">{counts.pending} pending</span>}
-                            {counts.confirmed > 0 && <span className="bg-green-100 text-green-700 px-1.5 py-0.5 rounded font-medium">{counts.confirmed} confirmed</span>}
-                            {counts.waitlisted > 0 && <span className="bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded font-medium">{counts.waitlisted} waitlisted</span>}
+                          <div className="text-[11px] ml-auto flex gap-1.5 items-center flex-wrap">
+                            {counts.pending > 0 && <span className="bg-accent/15 text-accent-dark px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">⏳ {counts.pending} pending</span>}
+                            {counts.confirmed > 0 && <span className="bg-teal/15 text-teal-dark px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">✓ {counts.confirmed} confirmed</span>}
+                            {counts.waitlisted > 0 && <span className="bg-slate-200/70 text-slate-600 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">⏸ {counts.waitlisted} waitlist</span>}
                           </div>
                         </div>
                       </div>
                       <div className="flex items-center gap-1.5 shrink-0" onClick={(e) => e.stopPropagation()}>
                         <button
                           onClick={() => setExpandedClassId(isExpanded ? null : dc.id)}
-                          className={`text-xs font-medium px-3 py-1.5 rounded-lg transition-colors ${isExpanded ? 'bg-primary text-white' : 'bg-primary/5 hover:bg-primary/10 text-primary'}`}
+                          className={`text-xs font-semibold px-3 py-1.5 rounded-full transition-colors ${isExpanded ? 'bg-primary text-white' : 'bg-primary/5 hover:bg-primary/10 text-primary'}`}
                           title="Show registrations"
                         >
                           {classRegs.length} Reg.
                         </button>
-                        <button onClick={() => startEditing(dc)} className="text-xs font-medium bg-gray-50 hover:bg-gray-100 px-3 py-1.5 rounded-lg transition-colors">Edit</button>
-                        <button onClick={() => duplicateClass(dc)} className="text-xs font-medium bg-blue-50 hover:bg-blue-100 text-primary px-3 py-1.5 rounded-lg transition-colors">Duplicate</button>
-                        <button onClick={() => handleDelete(dc.id)} className="text-xs font-medium bg-red-50 hover:bg-red-100 text-error px-3 py-1.5 rounded-lg transition-colors">Delete</button>
+                        <button onClick={() => startEditing(dc)} className="text-xs font-semibold bg-primary/5 hover:bg-primary/10 text-primary px-3 py-1.5 rounded-full transition-colors">Edit</button>
+                        <button onClick={() => duplicateClass(dc)} className="text-xs font-semibold bg-teal/10 hover:bg-teal/20 text-teal-dark px-3 py-1.5 rounded-full transition-colors">Duplicate</button>
+                        <button onClick={() => handleDelete(dc.id)} className="text-xs font-semibold bg-coral/10 hover:bg-coral/20 text-coral-dark px-3 py-1.5 rounded-full transition-colors">Delete</button>
                       </div>
                     </div>
                   </div>
 
                   {isViewing && (
-                    <div className="border-t border-gray-100 bg-gray-50/30 px-4 py-4">
+                    <div className="border-t border-primary/5 bg-bg-warm/20 px-5 py-5">
                       <ClassDetailView dc={dc} sessions={classSessions} classRegs={classRegs} regCounts={counts} onUpdate={onUpdate} addingRegFor={addingRegFor} setAddingRegFor={setAddingRegFor} />
                     </div>
                   )}
 
                   {!isViewing && isExpanded && (
-                    <div className="border-t border-gray-100 bg-gray-50/50 rounded-b-xl">
+                    <div className="border-t border-primary/5 bg-bg-warm/20 rounded-b-2xl">
                       <InlineRegistrations
                         classRegs={classRegs}
                         danceClass={dc}
@@ -495,12 +499,12 @@ export default function ClassEditor({ classes, registrations, onUpdate }: Props)
 
 function StatusBadge({ state }: { state: ClassState }) {
   const styles: Record<ClassState, string> = {
-    open: 'bg-green-100 text-green-700 ring-green-500/20',
-    upcoming: 'bg-amber-50 text-amber-700 ring-amber-500/20',
-    ongoing: 'bg-blue-100 text-blue-700 ring-blue-500/20',
-    archived: 'bg-gray-100 text-gray-500 ring-gray-500/20',
+    open: 'bg-teal/15 text-teal-dark ring-teal/30',
+    upcoming: 'bg-accent/15 text-accent-dark ring-accent/30',
+    ongoing: 'bg-primary/8 text-primary ring-primary/20',
+    archived: 'bg-slate-200/70 text-slate-600 ring-slate-400/30',
   };
-  const labels: Record<ClassState, string> = { open: 'Open', upcoming: 'Upcoming', ongoing: 'Ongoing', archived: 'Archived' };
+  const labels: Record<ClassState, string> = { open: '🟢 Open', upcoming: 'Upcoming', ongoing: 'Ongoing', archived: 'Archived' };
   return (
     <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ring-1 ${styles[state]}`}>
       {labels[state]}
@@ -509,21 +513,60 @@ function StatusBadge({ state }: { state: ClassState }) {
 }
 
 function LevelDot({ level }: { level: string }) {
-  const color = level.includes('Beginner') ? 'bg-green-400' : level.includes('Intermediate') ? 'bg-amber-400' : level.includes('Advanced') ? 'bg-red-400' : 'bg-gray-400';
+  const color = level.includes('Beginner') ? 'bg-teal' : level.includes('Intermediate') ? 'bg-accent' : level.includes('Advanced') ? 'bg-coral' : 'bg-slate-400';
   return <span className={`w-2 h-2 rounded-full inline-block ${color}`} />;
 }
 
 function CapacityBar({ label, current, max }: { label: string; current: number; max: number }) {
   const pct = max > 0 ? Math.min((current / max) * 100, 100) : 0;
-  const color = pct >= 100 ? 'bg-red-500' : pct >= 75 ? 'bg-amber-400' : 'bg-teal';
+  const color = pct >= 100 ? 'bg-coral' : pct >= 75 ? 'bg-accent' : 'bg-teal';
   return (
     <div className="flex items-center gap-2 text-xs min-w-[120px]">
-      <span className="text-text-muted font-medium w-14">{label}</span>
-      <div className="flex-1 bg-gray-200 rounded-full h-1.5 overflow-hidden">
+      <span className="text-text-muted font-semibold w-14">{label}</span>
+      <div className="flex-1 bg-primary/5 rounded-full h-1.5 overflow-hidden">
         <div className={`h-full rounded-full transition-all ${color}`} style={{ width: `${pct}%` }} />
       </div>
-      <span className="text-text-muted tabular-nums">{current}/{max}</span>
+      <span className="text-text-muted tabular-nums font-semibold">{current}/{max}</span>
     </div>
+  );
+}
+
+type RegStatus = 'pending' | 'confirmed' | 'waitlisted' | 'cancelled';
+
+const REG_STATUS_META: Record<RegStatus, { label: string; icon: string; bg: string; ring: string; text: string; dot: string }> = {
+  pending:    { label: 'Pending',    icon: '⏳', bg: 'bg-accent/15',     ring: 'ring-accent/30',     text: 'text-accent-dark', dot: 'bg-accent' },
+  confirmed:  { label: 'Confirmed',  icon: '✓', bg: 'bg-teal/15',       ring: 'ring-teal/30',       text: 'text-teal-dark',   dot: 'bg-teal' },
+  waitlisted: { label: 'Waitlisted', icon: '⏸', bg: 'bg-slate-200/70',  ring: 'ring-slate-400/30',  text: 'text-slate-600',   dot: 'bg-slate-400' },
+  cancelled:  { label: 'Cancelled',  icon: '✕', bg: 'bg-coral/15',      ring: 'ring-coral/30',      text: 'text-coral-dark',  dot: 'bg-coral' },
+};
+
+const REG_TRANSITIONS: Record<RegStatus, { to: RegStatus; label: string }[]> = {
+  pending:    [{ to: 'confirmed', label: 'Confirm' }, { to: 'waitlisted', label: 'Waitlist' }, { to: 'cancelled', label: 'Cancel' }],
+  confirmed:  [{ to: 'waitlisted', label: 'Waitlist' }, { to: 'cancelled', label: 'Cancel' }],
+  waitlisted: [{ to: 'confirmed', label: 'Confirm' }, { to: 'cancelled', label: 'Cancel' }],
+  cancelled:  [{ to: 'confirmed', label: 'Re-confirm' }, { to: 'waitlisted', label: 'Waitlist' }],
+};
+
+function RegStatusPill({ status }: { status: RegStatus }) {
+  const m = REG_STATUS_META[status];
+  return (
+    <span className={`inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ring-1 ${m.bg} ${m.ring} ${m.text}`}>
+      <span aria-hidden>{m.icon}</span>{m.label}
+    </span>
+  );
+}
+
+function TransitionButton({ to, label, disabled, onClick }: { to: RegStatus; label: string; disabled: boolean; onClick: () => void }) {
+  const m = REG_STATUS_META[to];
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-1 rounded-full transition disabled:opacity-50 ${m.bg} ${m.text} hover:brightness-95 ring-1 ${m.ring}`}
+      title={`Change to ${m.label}`}
+    >
+      <span aria-hidden>→</span><span aria-hidden>{m.icon}</span>{label}
+    </button>
   );
 }
 
@@ -541,6 +584,7 @@ function InlineRegistrations({
   setAddingRegFor: (v: string | null) => void;
 }) {
   const [updating, setUpdating] = useState<Set<string>>(new Set());
+  const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [manualReg, setManualReg] = useState({ name: '', email: '', role: 'lead' as 'lead' | 'follow', partner_name: '', comment: '' });
   const [manualSaving, setManualSaving] = useState(false);
   const [manualError, setManualError] = useState('');
@@ -563,6 +607,15 @@ function InlineRegistrations({
       body: JSON.stringify({ registration_id: registrationId, new_status: newStatus }),
     });
     setUpdating((prev) => { const next = new Set(prev); next.delete(registrationId); return next; });
+    onUpdate();
+  }
+
+  async function deleteRegistration(reg: Registration) {
+    if (!confirm(`Permanently delete the registration of ${reg.name}? This cannot be undone.`)) return;
+    setUpdating((prev) => new Set(prev).add(reg.id));
+    setOpenMenu(null);
+    await supabase.from('registrations').delete().eq('id', reg.id);
+    setUpdating((prev) => { const next = new Set(prev); next.delete(reg.id); return next; });
     onUpdate();
   }
 
@@ -613,64 +666,57 @@ function InlineRegistrations({
     }
   }
 
-  const statusColors: Record<string, string> = {
-    pending: 'bg-yellow-100 text-yellow-700',
-    confirmed: 'bg-green-100 text-green-700',
-    waitlisted: 'bg-gray-100 text-gray-600',
-    cancelled: 'bg-red-100 text-red-600',
-  };
-
   const isAdding = addingRegFor === danceClass.id;
 
   return (
-    <div className="p-4">
-      <div className="flex flex-wrap items-center gap-2 mb-3">
+    <div className="p-5">
+      <div className="flex flex-wrap items-center gap-2 mb-4">
         <button
           onClick={() => setAddingRegFor(isAdding ? null : danceClass.id)}
-          className={`text-xs font-medium px-3 py-1.5 rounded-lg transition-colors ${isAdding ? 'bg-gray-200 text-gray-700' : 'bg-teal/10 hover:bg-teal/20 text-teal'}`}
+          className={`text-xs font-semibold px-3 py-1.5 rounded-full transition-colors ${isAdding ? 'bg-primary/10 text-primary' : 'bg-coral/10 hover:bg-coral/20 text-coral-dark'}`}
         >
           {isAdding ? 'Cancel' : '+ Add Participant'}
         </button>
-        <button onClick={() => bulkConfirmByRole('lead')} className="text-xs font-medium bg-green-50 hover:bg-green-100 text-green-700 px-3 py-1.5 rounded-lg transition-colors">
-          Confirm pending Leads
+        <button onClick={() => bulkConfirmByRole('lead')} className="text-xs font-semibold bg-teal/10 hover:bg-teal/20 text-teal-dark px-3 py-1.5 rounded-full transition-colors">
+          ✓ Confirm pending Leads
         </button>
-        <button onClick={() => bulkConfirmByRole('follow')} className="text-xs font-medium bg-green-50 hover:bg-green-100 text-green-700 px-3 py-1.5 rounded-lg transition-colors">
-          Confirm pending Follows
+        <button onClick={() => bulkConfirmByRole('follow')} className="text-xs font-semibold bg-teal/10 hover:bg-teal/20 text-teal-dark px-3 py-1.5 rounded-full transition-colors">
+          ✓ Confirm pending Follows
         </button>
       </div>
 
       {isAdding && (
-        <form onSubmit={handleManualRegister} className="bg-white rounded-lg border border-teal/30 p-4 mb-4">
-          <h4 className="font-semibold text-sm mb-3">Add Participant Manually</h4>
+        <form onSubmit={handleManualRegister} className="bg-white/70 backdrop-blur rounded-2xl border border-coral/30 shadow-soft p-5 mb-4">
+          <h4 className="font-display font-bold text-base mb-3 text-primary">Add Participant Manually</h4>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             <div>
-              <label className="block text-xs font-medium mb-1">Name <span className="text-coral">*</span></label>
-              <input type="text" value={manualReg.name} onChange={(e) => setManualReg({ ...manualReg, name: e.target.value })} required className="w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-sm focus:ring-2 focus:ring-teal/30 focus:border-teal outline-none" />
+              <label className="block text-xs font-semibold mb-1 text-text-muted uppercase tracking-wider">Name <span className="text-coral">*</span></label>
+              <input type="text" value={manualReg.name} onChange={(e) => setManualReg({ ...manualReg, name: e.target.value })} required className="w-full bg-white/60 border border-primary/10 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-coral/30 focus:border-coral outline-none transition" />
             </div>
             <div>
-              <label className="block text-xs font-medium mb-1">Email <span className="text-coral">*</span></label>
-              <input type="email" value={manualReg.email} onChange={(e) => setManualReg({ ...manualReg, email: e.target.value })} required className="w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-sm focus:ring-2 focus:ring-teal/30 focus:border-teal outline-none" />
+              <label className="block text-xs font-semibold mb-1 text-text-muted uppercase tracking-wider">Email <span className="text-coral">*</span></label>
+              <input type="email" value={manualReg.email} onChange={(e) => setManualReg({ ...manualReg, email: e.target.value })} required className="w-full bg-white/60 border border-primary/10 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-coral/30 focus:border-coral outline-none transition" />
             </div>
             <div>
-              <label className="block text-xs font-medium mb-1">Role <span className="text-coral">*</span></label>
-              <select value={manualReg.role} onChange={(e) => setManualReg({ ...manualReg, role: e.target.value as 'lead' | 'follow' })} className="w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-sm">
+              <label className="block text-xs font-semibold mb-1 text-text-muted uppercase tracking-wider">Role <span className="text-coral">*</span></label>
+              <select value={manualReg.role} onChange={(e) => setManualReg({ ...manualReg, role: e.target.value as 'lead' | 'follow' })} className="w-full bg-white/60 border border-primary/10 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-coral/30 outline-none transition cursor-pointer">
                 <option value="lead">Lead</option>
                 <option value="follow">Follow</option>
               </select>
             </div>
             <div>
-              <label className="block text-xs font-medium mb-1">Partner Name</label>
-              <input type="text" value={manualReg.partner_name} onChange={(e) => setManualReg({ ...manualReg, partner_name: e.target.value })} className="w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-sm" />
+              <label className="block text-xs font-semibold mb-1 text-text-muted uppercase tracking-wider">Partner Name</label>
+              <input type="text" value={manualReg.partner_name} onChange={(e) => setManualReg({ ...manualReg, partner_name: e.target.value })} className="w-full bg-white/60 border border-primary/10 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-coral/30 focus:border-coral outline-none transition" />
             </div>
             <div className="col-span-2">
-              <label className="block text-xs font-medium mb-1">Comment</label>
-              <input type="text" value={manualReg.comment} onChange={(e) => setManualReg({ ...manualReg, comment: e.target.value })} placeholder="e.g. Phone registration" className="w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-sm" />
+              <label className="block text-xs font-semibold mb-1 text-text-muted uppercase tracking-wider">Comment</label>
+              <input type="text" value={manualReg.comment} onChange={(e) => setManualReg({ ...manualReg, comment: e.target.value })} placeholder="e.g. Phone registration" className="w-full bg-white/60 border border-primary/10 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-coral/30 focus:border-coral outline-none transition" />
             </div>
           </div>
-          {manualError && <p className="text-error text-xs mt-2">{manualError}</p>}
-          <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-100">
+          {manualError && <p className="text-coral-dark text-xs mt-2 font-semibold">{manualError}</p>}
+          <div className="flex items-center justify-between mt-4 pt-3 border-t border-primary/5">
             <p className="text-xs text-text-muted">The participant will receive a confirmation email.</p>
-            <button type="submit" disabled={manualSaving} className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-semibold px-6 py-2.5 rounded-lg text-sm transition-colors shadow-sm">
+            <button type="submit" disabled={manualSaving} className="bg-gradient-to-br from-coral to-coral-dark hover:brightness-105 disabled:opacity-50 text-white font-semibold px-5 py-2 rounded-full text-sm transition-all shadow-[0_4px_14px_-4px_rgba(231,111,81,0.5)]">
               {manualSaving ? 'Saving...' : 'Register & Send Email'}
             </button>
           </div>
@@ -678,54 +724,67 @@ function InlineRegistrations({
       )}
 
       {sorted.length > 0 ? (
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto rounded-2xl border border-primary/5 bg-white/60 backdrop-blur">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-left text-xs text-text-muted border-b border-gray-200">
-                <th className="py-2 px-2 font-medium">Name</th>
-                <th className="py-2 px-2 font-medium">Email</th>
-                <th className="py-2 px-2 font-medium">Role</th>
-                <th className="py-2 px-2 font-medium">Partner</th>
-                <th className="py-2 px-2 font-medium">Status</th>
-                <th className="py-2 px-2 font-medium">Date</th>
-                <th className="py-2 px-2 font-medium">Actions</th>
+              <tr className="text-left text-[10px] font-bold uppercase tracking-wider text-text-muted bg-primary/5">
+                <th className="py-2.5 px-3">Name</th>
+                <th className="py-2.5 px-3">Email</th>
+                <th className="py-2.5 px-3">Role</th>
+                <th className="py-2.5 px-3">Partner</th>
+                <th className="py-2.5 px-3">Current Status</th>
+                <th className="py-2.5 px-3">Date</th>
+                <th className="py-2.5 px-3">Change Status</th>
+                <th className="py-2.5 px-3 w-10"></th>
               </tr>
             </thead>
             <tbody>
               {sorted.map((reg) => {
                 const isUpdating = updating.has(reg.id);
+                const status = reg.status as RegStatus;
+                const transitions = REG_TRANSITIONS[status] ?? [];
                 return (
-                  <tr key={reg.id} className="border-b border-gray-100 hover:bg-white/80 transition-colors">
-                    <td className="py-2 px-2 font-medium">{reg.name}</td>
-                    <td className="py-2 px-2 text-text-muted">{reg.email}</td>
-                    <td className="py-2 px-2">
-                      <span className={`text-xs font-semibold ${reg.role === 'lead' ? 'text-primary' : 'text-accent-dark'}`}>
+                  <tr key={reg.id} className="border-t border-primary/5 hover:bg-white/80 transition-colors">
+                    <td className="py-2.5 px-3 font-semibold text-primary">{reg.name}</td>
+                    <td className="py-2.5 px-3 text-text-muted">{reg.email}</td>
+                    <td className="py-2.5 px-3">
+                      <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${reg.role === 'lead' ? 'bg-primary/8 text-primary' : 'bg-coral/15 text-coral-dark'}`}>
                         {reg.role === 'lead' ? 'Lead' : 'Follow'}
                       </span>
                     </td>
-                    <td className="py-2 px-2 text-text-muted">{reg.partner_name || '—'}</td>
-                    <td className="py-2 px-2">
-                      <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${statusColors[reg.status]}`}>{reg.status}</span>
+                    <td className="py-2.5 px-3 text-text-muted">{reg.partner_name || '—'}</td>
+                    <td className="py-2.5 px-3">
+                      <RegStatusPill status={status} />
                     </td>
-                    <td className="py-2 px-2 text-text-muted text-xs tabular-nums">{new Date(reg.created_at).toLocaleDateString('de-AT')}</td>
-                    <td className="py-2 px-2">
-                      <div className="flex gap-1">
-                        {reg.status !== 'confirmed' && (
-                          <button onClick={() => updateStatus(reg.id, 'confirmed')} disabled={isUpdating} className="text-[10px] font-medium bg-green-50 hover:bg-green-100 text-green-700 px-2 py-1 rounded-md disabled:opacity-50 transition-colors">
-                            {isUpdating ? '...' : 'Confirm'}
-                          </button>
-                        )}
-                        {reg.status !== 'waitlisted' && (
-                          <button onClick={() => updateStatus(reg.id, 'waitlisted')} disabled={isUpdating} className="text-[10px] font-medium bg-gray-50 hover:bg-gray-100 text-gray-600 px-2 py-1 rounded-md disabled:opacity-50 transition-colors">
-                            Waitlist
-                          </button>
-                        )}
-                        {reg.status !== 'cancelled' && (
-                          <button onClick={() => updateStatus(reg.id, 'cancelled')} disabled={isUpdating} className="text-[10px] font-medium bg-red-50 hover:bg-red-100 text-red-600 px-2 py-1 rounded-md disabled:opacity-50 transition-colors">
-                            Cancel
-                          </button>
-                        )}
+                    <td className="py-2.5 px-3 text-text-muted text-xs tabular-nums">{new Date(reg.created_at).toLocaleDateString('de-AT')}</td>
+                    <td className="py-2.5 px-3">
+                      <div className="flex flex-wrap gap-1">
+                        {transitions.map((t) => (
+                          <TransitionButton key={t.to} to={t.to} label={t.label} disabled={isUpdating} onClick={() => updateStatus(reg.id, t.to)} />
+                        ))}
                       </div>
+                    </td>
+                    <td className="py-2.5 px-3 relative">
+                      <button
+                        onClick={() => setOpenMenu(openMenu === reg.id ? null : reg.id)}
+                        className="text-text-muted hover:text-primary p-1 rounded-full hover:bg-primary/5 transition"
+                        title="More actions"
+                      >
+                        ⋯
+                      </button>
+                      {openMenu === reg.id && (
+                        <>
+                          <div className="fixed inset-0 z-10" onClick={() => setOpenMenu(null)} />
+                          <div className="absolute right-2 top-8 z-20 bg-white rounded-xl shadow-lift border border-primary/10 py-1 min-w-[180px]">
+                            <button
+                              onClick={() => deleteRegistration(reg)}
+                              className="w-full text-left text-xs font-semibold text-coral-dark hover:bg-coral/10 px-3 py-2 transition"
+                            >
+                              🗑 Delete permanently
+                            </button>
+                          </div>
+                        </>
+                      )}
                     </td>
                   </tr>
                 );
@@ -734,7 +793,7 @@ function InlineRegistrations({
           </table>
         </div>
       ) : (
-        <p className="text-text-muted text-sm text-center py-4">No registrations yet.</p>
+        <p className="text-text-muted text-sm text-center py-6">✦ No registrations yet.</p>
       )}
     </div>
   );
@@ -759,19 +818,19 @@ function ClassDetailView({ dc, sessions, classRegs, regCounts, onUpdate, addingR
     <div className="space-y-6">
     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3 text-sm">
       <div>
-        <span className="text-text-muted text-xs uppercase tracking-wider">Titel (DE)</span>
+        <span className="text-text-muted text-xs uppercase tracking-wider">Title (DE)</span>
         <p className="font-medium">{fmt(dc.title_de)}</p>
       </div>
       <div>
-        <span className="text-text-muted text-xs uppercase tracking-wider">Titel (EN)</span>
+        <span className="text-text-muted text-xs uppercase tracking-wider">Title (EN)</span>
         <p className="font-medium">{fmt(dc.title_en)}</p>
       </div>
       <div className="md:col-span-2">
-        <span className="text-text-muted text-xs uppercase tracking-wider">Beschreibung (DE)</span>
+        <span className="text-text-muted text-xs uppercase tracking-wider">Description (DE)</span>
         <p className="whitespace-pre-wrap">{fmt(dc.description_de)}</p>
       </div>
       <div className="md:col-span-2">
-        <span className="text-text-muted text-xs uppercase tracking-wider">Beschreibung (EN)</span>
+        <span className="text-text-muted text-xs uppercase tracking-wider">Description (EN)</span>
         <p className="whitespace-pre-wrap">{fmt(dc.description_en)}</p>
       </div>
       <div>
@@ -779,15 +838,15 @@ function ClassDetailView({ dc, sessions, classRegs, regCounts, onUpdate, addingR
         <p>{fmt(dc.level)}</p>
       </div>
       <div>
-        <span className="text-text-muted text-xs uppercase tracking-wider">Tanz</span>
+        <span className="text-text-muted text-xs uppercase tracking-wider">Dance</span>
         <p>{fmt(dc.dance)}</p>
       </div>
       <div>
-        <span className="text-text-muted text-xs uppercase tracking-wider">Lehrer</span>
+        <span className="text-text-muted text-xs uppercase tracking-wider">Teachers</span>
         <p>{fmt(dc.teachers)}</p>
       </div>
       <div>
-        <span className="text-text-muted text-xs uppercase tracking-wider">Ort</span>
+        <span className="text-text-muted text-xs uppercase tracking-wider">Location</span>
         <p>
           {dc.location_url ? (
             <a href={dc.location_url} target="_blank" rel="noopener noreferrer" className="text-primary underline">{dc.location || dc.location_url}</a>
@@ -805,25 +864,25 @@ function ClassDetailView({ dc, sessions, classRegs, regCounts, onUpdate, addingR
         <p>{dc.max_follows}</p>
       </div>
       <div>
-        <span className="text-text-muted text-xs uppercase tracking-wider">Preis (EUR)</span>
+        <span className="text-text-muted text-xs uppercase tracking-wider">Price (EUR)</span>
         <p>{dc.price_eur != null ? `${dc.price_eur} €` : '—'}</p>
       </div>
       <div>
-        <span className="text-text-muted text-xs uppercase tracking-wider">Öffentlich</span>
-        <p>{dc.is_public ? 'Ja' : 'Nein'}</p>
+        <span className="text-text-muted text-xs uppercase tracking-wider">Public</span>
+        <p>{dc.is_public ? 'Yes' : 'No'}</p>
       </div>
       <div>
-        <span className="text-text-muted text-xs uppercase tracking-wider">Reg. öffnet</span>
+        <span className="text-text-muted text-xs uppercase tracking-wider">Registration opens</span>
         <p>{fmtDate(dc.registration_opens_at)}</p>
       </div>
       <div>
-        <span className="text-text-muted text-xs uppercase tracking-wider">Reg. schließt</span>
+        <span className="text-text-muted text-xs uppercase tracking-wider">Registration closes</span>
         <p>{fmtDate(dc.registration_closes_at)}</p>
       </div>
 
       {sessions.length > 0 && (
         <div className="md:col-span-2 mt-2">
-          <span className="text-text-muted text-xs uppercase tracking-wider">Termine</span>
+          <span className="text-text-muted text-xs uppercase tracking-wider">Sessions</span>
           <div className="mt-1 space-y-1">
             {sessions
               .sort((a, b) => (a.session_date ?? '').localeCompare(b.session_date ?? ''))
@@ -845,13 +904,13 @@ function ClassDetailView({ dc, sessions, classRegs, regCounts, onUpdate, addingR
 
     {/* Registrations */}
     <div>
-      <div className="flex items-center gap-3 mb-3">
-        <h4 className="text-text-muted text-xs uppercase tracking-wider font-semibold">Registrierungen</h4>
-        <div className="flex gap-2 text-xs">
-          {regCounts.confirmed > 0 && <span className="bg-green-100 text-green-700 px-1.5 py-0.5 rounded font-medium">{regCounts.confirmed} confirmed</span>}
-          {regCounts.pending > 0 && <span className="bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded font-medium">{regCounts.pending} pending</span>}
-          {regCounts.waitlisted > 0 && <span className="bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded font-medium">{regCounts.waitlisted} waitlisted</span>}
-          {regCounts.cancelled > 0 && <span className="bg-red-100 text-red-600 px-1.5 py-0.5 rounded font-medium">{regCounts.cancelled} cancelled</span>}
+      <div className="flex items-center gap-3 mb-3 flex-wrap">
+        <h4 className="eyebrow text-coral">Registrations</h4>
+        <div className="flex gap-1.5 text-[10px] flex-wrap">
+          {regCounts.confirmed > 0 && <span className="bg-teal/15 text-teal-dark px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">✓ {regCounts.confirmed} confirmed</span>}
+          {regCounts.pending > 0 && <span className="bg-accent/15 text-accent-dark px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">⏳ {regCounts.pending} pending</span>}
+          {regCounts.waitlisted > 0 && <span className="bg-slate-200/70 text-slate-600 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">⏸ {regCounts.waitlisted} waitlisted</span>}
+          {regCounts.cancelled > 0 && <span className="bg-coral/15 text-coral-dark px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">✕ {regCounts.cancelled} cancelled</span>}
         </div>
       </div>
       <InlineRegistrations
@@ -894,8 +953,8 @@ function ClassForm({
   title: string;
 }) {
   return (
-    <form onSubmit={handleSave} className="bg-surface rounded-xl shadow-md border-2 border-primary/20 p-6 space-y-6">
-      <h3 className="text-lg font-bold">{title}</h3>
+    <form onSubmit={handleSave} className="bg-surface/85 backdrop-blur rounded-2xl shadow-lift border border-coral/20 p-6 space-y-6">
+      <h3 className="font-display text-xl font-bold text-primary">{title}</h3>
 
       {/* ── Basic Info ── */}
       <fieldset className="space-y-4">
@@ -997,9 +1056,9 @@ function ClassForm({
         </div>
       </div>
 
-      <div className="flex justify-end gap-3 mt-6 border-t pt-4">
-        <button type="button" onClick={onCancel} className="px-4 py-2 text-sm text-text-muted hover:text-text transition-colors">Cancel</button>
-        <button type="submit" disabled={saving} className="bg-primary hover:bg-primary-light disabled:opacity-50 text-white font-medium px-6 py-2 rounded-lg transition-colors text-sm">
+      <div className="flex justify-end gap-3 mt-6 border-t border-primary/5 pt-4">
+        <button type="button" onClick={onCancel} className="px-4 py-2 text-sm font-semibold text-text-muted hover:text-text transition-colors">Cancel</button>
+        <button type="submit" disabled={saving} className="bg-gradient-to-br from-coral to-coral-dark hover:brightness-105 disabled:opacity-50 text-white font-semibold px-6 py-2 rounded-full transition-all text-sm shadow-[0_4px_14px_-4px_rgba(231,111,81,0.5)]">
           {saving ? 'Saving...' : 'Save'}
         </button>
       </div>

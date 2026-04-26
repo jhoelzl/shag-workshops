@@ -1,5 +1,6 @@
 ---
 // Admin pages don't use i18n — English only
+import '../styles/global.css';
 ---
 
 <!doctype html>
@@ -8,27 +9,9 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/svg+xml" href={`${import.meta.env.BASE_URL}favicon.svg`} />
-    <title>Admin | Collegiate Shag Salzburg</title>
+    <title>Admin | Amadeus Shagadeus</title>
   </head>
-  <body class="min-h-screen bg-bg text-text">
+  <body class="min-h-screen bg-bg text-text font-sans antialiased">
     <slot />
   </body>
 </html>
-
-<style is:global>
-  @import "tailwindcss";
-
-  @theme {
-    --color-primary: #1e3a5f;
-    --color-primary-light: #2d5a8e;
-    --color-accent: #e8a838;
-    --color-accent-dark: #c48a20;
-    --color-bg: #faf9f6;
-    --color-surface: #ffffff;
-    --color-text: #1a1a1a;
-    --color-text-muted: #6b7280;
-    --color-success: #059669;
-    --color-warning: #d97706;
-    --color-error: #dc2626;
-  }
-</style>
