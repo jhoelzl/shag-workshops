@@ -26,6 +26,7 @@ export default function RegistrationForm({ locale, danceClasses, supabaseFunctio
   const [partnerName, setPartnerName] = useState('');
   const [comment, setComment] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [isRoleInfoOpen, setIsRoleInfoOpen] = useState(false);
   const [results, setResults] = useState<WorkshopResult[]>([]);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -134,13 +135,32 @@ export default function RegistrationForm({ locale, danceClasses, supabaseFunctio
       <div className="mb-4">
         <div className="flex items-center gap-2 mb-2">
           <label className="block text-sm font-medium">{i18n.registration.role} <span className="text-coral">*</span></label>
-          <span
-            title={i18n.registration.role_info_text}
-            aria-label={i18n.registration.role_info_label}
-            className="inline-flex items-center justify-center w-5 h-5 rounded-full border border-teal/35 text-teal text-xs font-bold cursor-help"
+          <div
+            className="relative"
+            onMouseEnter={() => setIsRoleInfoOpen(true)}
+            onMouseLeave={() => setIsRoleInfoOpen(false)}
           >
-            i
-          </span>
+            <button
+              type="button"
+              aria-label={i18n.registration.role_info_label}
+              aria-expanded={isRoleInfoOpen}
+              aria-controls="role-info-tooltip"
+              onClick={() => setIsRoleInfoOpen((prev) => !prev)}
+              onBlur={() => setIsRoleInfoOpen(false)}
+              className="inline-flex items-center justify-center w-5 h-5 rounded-full border border-teal/35 text-teal text-xs font-bold cursor-pointer"
+            >
+              i
+            </button>
+            {isRoleInfoOpen && (
+              <div
+                id="role-info-tooltip"
+                role="tooltip"
+                className="absolute left-0 top-7 z-20 w-64 rounded-lg border border-teal/20 bg-white p-3 text-xs text-text-muted shadow-lg"
+              >
+                {i18n.registration.role_info_text}
+              </div>
+            )}
+          </div>
         </div>
         <div className="relative flex bg-bg-warm rounded-full p-1">
           <div
@@ -162,7 +182,6 @@ export default function RegistrationForm({ locale, danceClasses, supabaseFunctio
             {i18n.registration.role_follow}
           </button>
         </div>
-        <p className="mt-2 text-xs text-text-muted leading-relaxed">{i18n.registration.role_info_text}</p>
       </div>
 
       {/* Name */}

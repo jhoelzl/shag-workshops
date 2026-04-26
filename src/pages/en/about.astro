@@ -10,8 +10,6 @@ const levels = [
   { title: i18n.about.level_beginner_title, desc: i18n.about.level_beginner_desc, color: 'teal' },
   { title: i18n.about.level_beginner_improver_title, desc: i18n.about.level_beginner_improver_desc, color: 'teal' },
   { title: i18n.about.level_intermediate_title, desc: i18n.about.level_intermediate_desc, color: 'coral' },
-  { title: i18n.about.level_intermediate_advanced_title, desc: i18n.about.level_intermediate_advanced_desc, color: 'coral' },
-  { title: i18n.about.level_advanced_title, desc: i18n.about.level_advanced_desc, color: 'accent' },
 ];
 ---
 
@@ -26,6 +24,12 @@ const levels = [
       </div>
       <h2 class="font-display text-3xl font-bold text-primary mb-4">{i18n.about.intro_title}</h2>
       <p class="text-text-muted text-lg leading-relaxed max-w-2xl mx-auto">{i18n.about.intro_text}</p>
+    </section>
+
+    <!-- Who We Are -->
+    <section class="mb-16 bg-surface rounded-2xl p-8 border border-bg-warm">
+      <h2 class="font-display text-2xl font-bold text-primary mb-4">{i18n.about.who_we_title}</h2>
+      <p class="text-text-muted leading-relaxed">{i18n.about.who_we_text}</p>
     </section>
 
     <!-- What is Collegiate Shag -->
