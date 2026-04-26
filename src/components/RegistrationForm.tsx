@@ -43,13 +43,17 @@ export default function RegistrationForm({ locale, danceClasses, supabaseFunctio
       const className = dc ? (locale === 'de' ? dc.title_de : dc.title_en) : classId;
 
       try {
+        const headers: Record<string, string> = {
+          'Content-Type': 'application/json',
+        };
+        if (supabaseAnonKey) {
+          headers.apikey = supabaseAnonKey;
+          headers.Authorization = `Bearer ${supabaseAnonKey}`;
+        }
+
         const response = await fetch(`${supabaseFunctionsUrl}/register`, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            apikey: supabaseAnonKey,
-            Authorization: `Bearer ${supabaseAnonKey}`,
-          },
+          headers,
           body: JSON.stringify({
             dance_class_id: classId,
             role,
