@@ -8,11 +8,25 @@ interface Props {
   onUpdate: () => void;
 }
 
+interface AddForm {
+  name: string;
+  email: string;
+  role: 'lead' | 'follow';
+  partner_name: string;
+  comment: string;
+}
+
+const emptyForm: AddForm = { name: '', email: '', role: 'lead', partner_name: '', comment: '' };
+
 export default function RegistrationTable({ registrations, classes, onUpdate }: Props) {
   const [filterClassId, setFilterClassId] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [updating, setUpdating] = useState<Set<string>>(new Set());
+  const [showAdd, setShowAdd] = useState(false);
+  const [addForm, setAddForm] = useState<AddForm>(emptyForm);
+  const [addSubmitting, setAddSubmitting] = useState(false);
+  const [addError, setAddError] = useState<string | null>(null);
 
   const classMap = new Map(classes.map((c) => [c.id, c]));
 
@@ -52,6 +66,48 @@ export default function RegistrationTable({ registrations, classes, onUpdate }: 
       return next;
     });
     onUpdate();
+  }
+
+  async function submitAddParticipant(e: React.FormEvent) {
+    e.preventDefault();
+    if (filterClassId === 'all') return;
+    setAddError(null);
+    setAddSubmitting(true);
+
+    const { data: { session } } = await supabase.auth.getSession();
+    const functionsUrl = `${import.meta.env.PUBLIC_SUPABASE_URL}/functions/v1`;
+
+    try {
+      const res = await fetch(`${functionsUrl}/admin-register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token}`,
+        },
+        body: JSON.stringify({
+          dance_class_id: filterClassId,
+          name: addForm.name.trim(),
+          email: addForm.email.trim(),
+          role: addForm.role,
+          partner_name: addForm.partner_name.trim() || undefined,
+          comment: addForm.comment.trim() || undefined,
+          locale: 'de',
+          send_email: true,
+        }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setAddError(json?.error || 'Registration failed');
+        return;
+      }
+      setAddForm(emptyForm);
+      setShowAdd(false);
+      onUpdate();
+    } catch (err) {
+      setAddError(err instanceof Error ? err.message : 'Registration failed');
+    } finally {
+      setAddSubmitting(false);
+    }
   }
 
   async function bulkUpdateByRole(role: 'lead' | 'follow', newStatus: string) {
@@ -128,16 +184,106 @@ export default function RegistrationTable({ registrations, classes, onUpdate }: 
         </div>
       </div>
 
-      {/* Bulk Actions */}
+      {/* Bulk Actions + Add Participant */}
       {filterClassId !== 'all' && (
         <div className="flex flex-wrap gap-2 mb-4">
+          {!showAdd ? (
+            <button
+              onClick={() => { setShowAdd(true); setAddError(null); }}
+              className="text-xs bg-primary/10 hover:bg-primary/20 text-primary px-3 py-1.5 rounded transition-colors font-medium"
+            >
+              + Add Participant
+            </button>
+          ) : (
+            <button
+              onClick={() => { setShowAdd(false); setAddError(null); setAddForm(emptyForm); }}
+              className="text-xs bg-gray-100 hover:bg-gray-200 text-text px-3 py-1.5 rounded transition-colors font-medium"
+            >
+              Cancel
+            </button>
+          )}
           <button onClick={() => bulkUpdateByRole('lead', 'confirmed')} className="text-xs bg-green-100 hover:bg-green-200 text-success px-3 py-1.5 rounded transition-colors">
-            Confirm all pending Leads
+            Confirm pending Leads
           </button>
           <button onClick={() => bulkUpdateByRole('follow', 'confirmed')} className="text-xs bg-green-100 hover:bg-green-200 text-success px-3 py-1.5 rounded transition-colors">
-            Confirm all pending Follows
+            Confirm pending Follows
           </button>
         </div>
+      )}
+
+      {/* Add Participant Form */}
+      {filterClassId !== 'all' && showAdd && (
+        <form
+          onSubmit={submitAddParticipant}
+          className="bg-surface rounded-xl border border-gray-200 shadow-sm p-5 mb-6"
+        >
+          <h3 className="text-base font-semibold mb-4">Add Participant Manually</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <label className="block">
+              <span className="text-sm font-medium">Name *</span>
+              <input
+                type="text"
+                required
+                value={addForm.name}
+                onChange={(e) => setAddForm({ ...addForm, name: e.target.value })}
+                className="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
+              />
+            </label>
+            <label className="block">
+              <span className="text-sm font-medium">Email *</span>
+              <input
+                type="email"
+                required
+                value={addForm.email}
+                onChange={(e) => setAddForm({ ...addForm, email: e.target.value })}
+                className="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
+              />
+            </label>
+            <label className="block">
+              <span className="text-sm font-medium">Role *</span>
+              <select
+                value={addForm.role}
+                onChange={(e) => setAddForm({ ...addForm, role: e.target.value as 'lead' | 'follow' })}
+                className="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
+              >
+                <option value="lead">Lead</option>
+                <option value="follow">Follow</option>
+              </select>
+            </label>
+            <label className="block">
+              <span className="text-sm font-medium">Partner Name</span>
+              <input
+                type="text"
+                value={addForm.partner_name}
+                onChange={(e) => setAddForm({ ...addForm, partner_name: e.target.value })}
+                className="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
+              />
+            </label>
+            <label className="block md:col-span-2">
+              <span className="text-sm font-medium">Comment</span>
+              <input
+                type="text"
+                value={addForm.comment}
+                onChange={(e) => setAddForm({ ...addForm, comment: e.target.value })}
+                placeholder="e.g. Phone registration"
+                className="mt-1 w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
+              />
+            </label>
+          </div>
+          {addError && (
+            <p className="mt-3 text-sm text-error">{addError}</p>
+          )}
+          <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between">
+            <span className="text-xs text-text-muted">The participant will receive a confirmation email.</span>
+            <button
+              type="submit"
+              disabled={addSubmitting}
+              className="bg-primary hover:bg-primary/90 text-white text-sm font-semibold px-5 py-2.5 rounded-lg disabled:opacity-50 transition-colors"
+            >
+              {addSubmitting ? 'Saving...' : 'Register & Send Email'}
+            </button>
+          </div>
+        </form>
       )}
 
       {/* Table */}
