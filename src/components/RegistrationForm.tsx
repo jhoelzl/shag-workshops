@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import type { DanceClass } from '../lib/database.types';
 import type { Locale } from '../i18n/index';
 import de from '../i18n/de.json';
@@ -11,17 +11,15 @@ interface Props {
   danceClasses: DanceClass[];
   supabaseFunctionsUrl: string;
   supabaseAnonKey: string;
-  preselectedClassIds?: string[];
+  selectedClassIds: Set<string>;
+  onToggleClass: (id: string) => void;
 }
 
 type WorkshopResult = { classId: string; className: string; type: 'success' | 'error'; message: string };
 
-export default function RegistrationForm({ locale, danceClasses, supabaseFunctionsUrl, supabaseAnonKey, preselectedClassIds }: Props) {
+export default function RegistrationForm({ locale, danceClasses, supabaseFunctionsUrl, supabaseAnonKey, selectedClassIds, onToggleClass }: Props) {
   const i18n = translations[locale];
 
-  const [selectedClasses, setSelectedClasses] = useState<Set<string>>(
-    new Set(preselectedClassIds ?? [])
-  );
   const [role, setRole] = useState<'lead' | 'follow'>('lead');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -30,33 +28,16 @@ export default function RegistrationForm({ locale, danceClasses, supabaseFunctio
   const [submitting, setSubmitting] = useState(false);
   const [results, setResults] = useState<WorkshopResult[]>([]);
 
-  // Sync when preselectedClassIds changes (from card click in WorkshopPage)
-  useEffect(() => {
-    if (preselectedClassIds && preselectedClassIds.length > 0) {
-      setSelectedClasses(new Set(preselectedClassIds));
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [JSON.stringify(preselectedClassIds)]);
-
-  function toggleClass(id: string) {
-    setSelectedClasses((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  }
-
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (selectedClasses.size === 0) return;
+    if (selectedClassIds.size === 0) return;
 
     setSubmitting(true);
     setResults([]);
 
     const newResults: WorkshopResult[] = [];
 
-    for (const classId of Array.from(selectedClasses)) {
+    for (const classId of Array.from(selectedClassIds)) {
       const dc = danceClasses.find((c) => c.id === classId);
       const className = dc ? (locale === 'de' ? dc.title_de : dc.title_en) : classId;
 
@@ -103,17 +84,13 @@ export default function RegistrationForm({ locale, danceClasses, supabaseFunctio
 
     setResults(newResults);
 
-    // Clear personal details and deselect successfully registered workshops
+    // Deselect successfully registered workshops
     if (newResults.some((r) => r.type === 'success')) {
       setName('');
       setEmail('');
       setPartnerName('');
       setComment('');
-      setSelectedClasses((prev) => {
-        const next = new Set(prev);
-        newResults.filter((r) => r.type === 'success').forEach((r) => next.delete(r.classId));
-        return next;
-      });
+      newResults.filter((r) => r.type === 'success').forEach((r) => onToggleClass(r.classId));
     }
 
     setSubmitting(false);
@@ -129,7 +106,7 @@ export default function RegistrationForm({ locale, danceClasses, supabaseFunctio
         <div className="space-y-2">
           {danceClasses.map((dc) => {
             const title = locale === 'de' ? dc.title_de : dc.title_en;
-            const isChecked = selectedClasses.has(dc.id);
+            const isChecked = selectedClassIds.has(dc.id);
             return (
               <label
                 key={dc.id}
@@ -140,7 +117,7 @@ export default function RegistrationForm({ locale, danceClasses, supabaseFunctio
                 <input
                   type="checkbox"
                   checked={isChecked}
-                  onChange={() => toggleClass(dc.id)}
+                  onChange={() => onToggleClass(dc.id)}
                   className="w-4 h-4 rounded accent-teal shrink-0"
                 />
                 <span className="text-sm">
@@ -250,7 +227,7 @@ export default function RegistrationForm({ locale, danceClasses, supabaseFunctio
       {/* Submit */}
       <button
         type="submit"
-        disabled={submitting || selectedClasses.size === 0}
+        disabled={submitting || selectedClassIds.size === 0}
         className="w-full bg-coral hover:bg-coral-dark disabled:opacity-50 text-white font-semibold py-3 px-4 rounded-full transition-colors shadow-md shadow-coral/20"
       >
         {submitting ? i18n.registration.submitting : i18n.registration.submit}

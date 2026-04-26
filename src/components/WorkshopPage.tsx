@@ -302,7 +302,8 @@ export default function WorkshopPage({ locale }: { locale: Locale }) {
             danceClasses={openClasses}
             supabaseFunctionsUrl={supabaseFunctionsUrl}
             supabaseAnonKey={supabaseAnonKey}
-            preselectedClassIds={Array.from(selectedIds)}
+            selectedClassIds={selectedIds}
+            onToggleClass={toggleSelectedId}
           />
         </div>
       )}
