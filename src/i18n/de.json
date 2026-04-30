@@ -21,6 +21,7 @@
     "time": "Uhrzeit",
     "location": "Ort",
     "price": "Preis",
+    "cost": "Kosten",
     "spots_available": "Plätze frei",
     "leads": "Leads",
     "follows": "Follows",
