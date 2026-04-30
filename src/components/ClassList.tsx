@@ -139,11 +139,11 @@ export default function ClassList({ locale }: { locale: Locale }) {
         </div>
 
         {/* Description */}
-        {description && (
-          <div className="px-6 pb-3">
+        <div className="px-6 pb-3 min-h-[5.25rem]">
+          {description && (
             <div className="text-text-muted text-sm leading-relaxed [&_strong]:text-text" dangerouslySetInnerHTML={{ __html: simpleMarkdown(description) }} />
-          </div>
-        )}
+          )}
+        </div>
 
         {/* What to Bring */}
         {whatToBring && (
