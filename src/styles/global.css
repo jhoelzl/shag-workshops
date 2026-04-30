@@ -108,6 +108,30 @@ h1, h2, h3, h4 {
   0%, 100% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }
 }
+
+@keyframes logo-breathe {
+  0%, 100% {
+    transform: translate3d(0, 0, 0) rotate(-0.4deg) scale(1);
+    filter: drop-shadow(0 18px 30px rgba(15, 26, 48, 0.22));
+  }
+  50% {
+    transform: translate3d(0, -10px, 0) rotate(0.4deg) scale(1.03);
+    filter: drop-shadow(0 28px 40px rgba(15, 26, 48, 0.30));
+  }
+}
+
+.animate-logo-breathe {
+  animation: logo-breathe 4.8s ease-in-out infinite !important;
+  transform-origin: center;
+  will-change: transform, filter;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-logo-breathe {
+    animation: logo-breathe 8s ease-in-out infinite !important;
+  }
+}
+
 .text-gradient-warm {
   background: linear-gradient(120deg, #E76F51 0%, #d4a832 45%, #E76F51 100%);
   background-size: 200% 200%;
