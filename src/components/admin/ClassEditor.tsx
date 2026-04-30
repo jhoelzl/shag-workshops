@@ -632,7 +632,6 @@ function InlineRegistrations({
       };
       if (import.meta.env.PUBLIC_SUPABASE_ANON_KEY) {
         headers.apikey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY;
-        headers.Authorization = `Bearer ${import.meta.env.PUBLIC_SUPABASE_ANON_KEY}`;
       }
 
       const response = await fetch(`${functionsUrl}/register`, {
