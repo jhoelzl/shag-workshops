@@ -8,7 +8,8 @@
     "preview": "astro preview",
     "astro": "astro",
     "test": "vitest",
-    "test:run": "vitest run"
+    "test:run": "vitest run",
+    "flyer:export": "node scripts/export-flyer.mjs"
   },
   "description": "Collegiate Shag Workshops Salzburg",
   "dependencies": {
@@ -24,6 +25,7 @@
     "@astrojs/check": "^0.9.8",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
+    "playwright": "^1.59.1",
     "typescript": "^5.9.3",
     "vitest": "^4.1.4"
   }
