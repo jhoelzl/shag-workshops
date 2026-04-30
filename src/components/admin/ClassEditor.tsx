@@ -26,6 +26,7 @@ const EMPTY_CLASS = {
   dance: '',
   teachers: '',
   location: '',
+  location_details: '',
   location_url: '',
   max_leads: 10,
   max_follows: 10,
@@ -205,6 +206,7 @@ export default function ClassEditor({ classes, registrations, onUpdate }: Props)
       dance: editing.dance || null,
       teachers: editing.teachers || null,
       location: editing.location || null,
+      location_details: editing.location_details || null,
       location_url: editing.location_url || null,
       max_leads: editing.max_leads ?? 10,
       max_follows: editing.max_follows ?? 10,
@@ -860,6 +862,10 @@ function ClassDetailView({ dc, sessions, classRegs, regCounts, onUpdate, addingR
         </p>
       </div>
       <div>
+        <span className="text-text-muted text-xs uppercase tracking-wider">Location details</span>
+        <p>{fmt(dc.location_details)}</p>
+      </div>
+      <div>
         <span className="text-text-muted text-xs uppercase tracking-wider">Max Leads</span>
         <p>{dc.max_leads}</p>
       </div>
@@ -993,6 +999,7 @@ function ClassForm({
         <legend className="text-xs font-bold uppercase tracking-wider text-text-muted mb-2">Location & Pricing</legend>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <Input label="Location" value={editing.location ?? ''} onChange={(v) => setEditing({ ...editing, location: v })} />
+          <Input label="Location Details" value={editing.location_details ?? ''} onChange={(v) => setEditing({ ...editing, location_details: v })} placeholder="e.g. Ernst-Mach-Stra\u00dfe 39, 5023 Salzburg" />
           <Input label="Location URL (Google Maps)" value={editing.location_url ?? ''} onChange={(v) => setEditing({ ...editing, location_url: v })} placeholder="https://maps.google.com/..." />
           <div>
             <Input label="Price (EUR)" type="number" value={String(editing.price_eur ?? 0)} onChange={(v) => setEditing({ ...editing, price_eur: Number(v) })} />
