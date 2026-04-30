@@ -48,7 +48,6 @@ export default function RegistrationForm({ locale, danceClasses, supabaseFunctio
         };
         if (supabaseAnonKey) {
           headers.apikey = supabaseAnonKey;
-          headers.Authorization = `Bearer ${supabaseAnonKey}`;
         }
 
         const response = await fetch(`${supabaseFunctionsUrl}/register`, {
