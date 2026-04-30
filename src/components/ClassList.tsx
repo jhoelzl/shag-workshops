@@ -43,7 +43,12 @@ export default function ClassList({ locale }: { locale: Locale }) {
 
       const [{ data: counts }, { data: sessions }] = await Promise.all([
         supabase.from('class_registration_counts').select('*'),
-        supabase.from('class_sessions').select('*').in('dance_class_id', classIds).order('session_date', { ascending: true }),
+        supabase
+          .from('class_sessions')
+          .select('*')
+          .in('dance_class_id', classIds)
+          .order('session_date', { ascending: true })
+          .order('start_time', { ascending: true }),
       ]);
 
       const countsMap = new Map(counts?.map((c) => [c.dance_class_id, c]));
@@ -65,11 +70,18 @@ export default function ClassList({ locale }: { locale: Locale }) {
         };
       });
 
-      // Sort by first session date
+      // Sort classes chronologically by first session date and time.
       merged.sort((a, b) => {
-        const dateA = a.sessions?.[0]?.session_date ?? '';
-        const dateB = b.sessions?.[0]?.session_date ?? '';
-        return dateA.localeCompare(dateB);
+        const firstA = a.sessions?.[0];
+        const firstB = b.sessions?.[0];
+
+        if (!firstA && !firstB) return 0;
+        if (!firstA) return 1;
+        if (!firstB) return -1;
+
+        const firstDateTimeA = `${firstA.session_date}T${firstA.start_time}`;
+        const firstDateTimeB = `${firstB.session_date}T${firstB.start_time}`;
+        return firstDateTimeA.localeCompare(firstDateTimeB);
       });
 
       setClasses(merged.filter((dc) => {
@@ -127,11 +139,11 @@ export default function ClassList({ locale }: { locale: Locale }) {
         </div>
 
         {/* Description */}
-        {description && (
-          <div className="px-6 pb-3">
+        <div className="px-6 pb-3 min-h-[5.25rem]">
+          {description && (
             <div className="text-text-muted text-sm leading-relaxed [&_strong]:text-text" dangerouslySetInnerHTML={{ __html: simpleMarkdown(description) }} />
-          </div>
-        )}
+          )}
+        </div>
 
         {/* What to Bring */}
         {whatToBring && (
