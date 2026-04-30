@@ -8,7 +8,7 @@ const i18n = t(locale);
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 ---
 
-<BaseLayout title={i18n.nav.home} locale={locale}>
+<BaseLayout title="Collegiate Shag in Salzburg" locale={locale}>
   <!-- Hero Section — modern with gradient blobs -->
   <section class="relative overflow-hidden">
     <div class="blob bg-coral/35 w-[28rem] h-[28rem] -top-32 -left-32 animate-float-slow"></div>
@@ -28,7 +28,7 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
             <span class="block italic font-normal text-gradient-warm pb-2">Salzburg</span>
           </h1>
           <p class="text-text-muted text-lg sm:text-xl max-w-xl mx-auto lg:mx-0 mb-8 leading-relaxed">
-            {i18n.home.hero_subtitle} — Energetic swing dance classes for all levels.
+            {i18n.home.hero_subtitle} — Energetic swing dance classes for fast jazz music.
           </p>
           <div class="flex flex-wrap gap-3 justify-center lg:justify-start">
             <a href={`${base}/en/workshops/`} class="btn-primary">
