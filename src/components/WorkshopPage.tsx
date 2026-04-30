@@ -133,6 +133,50 @@ export default function WorkshopPage({ locale }: { locale: Locale }) {
   const supabaseFunctionsUrl = `${import.meta.env.PUBLIC_SUPABASE_URL}/functions/v1`;
   const supabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY;
 
+  function renderMetaBadges(dc: ClassWithCounts) {
+    if (!dc.location && dc.price_eur == null && !dc.is_donation) return null;
+
+    return (
+      <div className="flex flex-wrap gap-2">
+        {dc.location && (
+          <span className="inline-flex items-start gap-2 bg-white border border-gray-150 rounded-2xl px-3 py-2 shadow-sm">
+            <svg className="w-3.5 h-3.5 text-coral mt-0.5 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" /></svg>
+            <span className="leading-tight">
+              {dc.location_url ? (
+                <a href={dc.location_url} target="_blank" rel="noopener noreferrer" className="block font-semibold text-text hover:text-primary transition-colors" onClick={(e) => e.stopPropagation()}>
+                  {dc.location}
+                </a>
+              ) : (
+                <span className="block font-semibold text-text">{dc.location}</span>
+              )}
+              {dc.location_details && (
+                <span className="block text-[11px] text-text-muted mt-0.5">{dc.location_details}</span>
+              )}
+            </span>
+          </span>
+        )}
+
+        {dc.is_donation ? (
+          <span className="inline-flex items-start gap-2 bg-teal/8 border border-teal/20 rounded-2xl px-3 py-2 shadow-sm">
+            <span className="text-teal mt-0.5">♥</span>
+            <span className="leading-tight">
+              <span className="block font-semibold text-teal-dark">{locale === 'de' ? 'Gratis' : 'Free'}</span>
+              <span className="block text-[11px] text-teal-dark/80 mt-0.5">{locale === 'de' ? 'Freiwillige Spende' : 'Voluntary donation'}</span>
+            </span>
+          </span>
+        ) : dc.price_eur != null && (
+          <span className="inline-flex items-start gap-2 bg-white border border-gray-150 rounded-2xl px-3 py-2 shadow-sm">
+            <span className="text-teal font-bold text-base leading-none mt-0.5">€</span>
+            <span className="leading-tight">
+              <span className="block font-semibold text-text">{locale === 'de' ? 'Kosten' : 'Price'}</span>
+              <span className="block text-[11px] text-text-muted mt-0.5">{fmtCurrency(Number(dc.price_eur))}</span>
+            </span>
+          </span>
+        )}
+      </div>
+    );
+  }
+
   if (loading) {
     return (
       <div className="flex justify-center py-12">
@@ -261,33 +305,7 @@ export default function WorkshopPage({ locale }: { locale: Locale }) {
                   </div>
                 )}
 
-                {(dc.location || dc.price_eur != null || dc.is_donation) && (
-                  <div className="flex flex-wrap gap-2">
-                    {dc.location && (
-                      <span className="inline-flex items-center gap-1.5 bg-white border border-gray-150 rounded-full px-3.5 py-1.5 text-sm shadow-sm">
-                        <svg className="w-3.5 h-3.5 text-coral" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" /></svg>
-                        {dc.location_url ? (
-                          <a href={dc.location_url} target="_blank" rel="noopener noreferrer" className="font-medium text-text hover:text-primary transition-colors" onClick={(e) => e.stopPropagation()}>
-                            {dc.location}
-                          </a>
-                        ) : (
-                          <span className="font-medium text-text">{dc.location}</span>
-                        )}
-                      </span>
-                    )}
-                    {dc.is_donation ? (
-                      <span className="inline-flex items-center gap-1.5 bg-teal/8 border border-teal/15 rounded-full px-3.5 py-1.5 text-sm shadow-sm">
-                        <span className="text-teal">♥</span>
-                        <span className="font-semibold text-teal-dark">{locale === 'de' ? 'Freiwillige Spende' : 'Voluntary Donation'}</span>
-                      </span>
-                    ) : dc.price_eur != null && (
-                      <span className="inline-flex items-center gap-1.5 bg-white border border-gray-150 rounded-full px-3.5 py-1.5 text-sm shadow-sm">
-                        <span className="text-teal font-bold text-base leading-none">€</span>
-                        <span className="font-semibold text-text">{fmtCurrency(Number(dc.price_eur))}</span>
-                      </span>
-                    )}
-                  </div>
-                )}
+                {renderMetaBadges(dc)}
               </div>
 
               {/* Registration status */}
@@ -400,33 +418,7 @@ export default function WorkshopPage({ locale }: { locale: Locale }) {
                         </div>
                       )}
 
-                      {(dc.location || dc.price_eur != null || dc.is_donation) && (
-                        <div className="flex flex-wrap gap-2">
-                          {dc.location && (
-                            <span className="inline-flex items-center gap-1.5 bg-white border border-gray-150 rounded-full px-3.5 py-1.5 text-sm shadow-sm">
-                              <svg className="w-3.5 h-3.5 text-coral" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" /></svg>
-                              {dc.location_url ? (
-                                <a href={dc.location_url} target="_blank" rel="noopener noreferrer" className="font-medium text-text hover:text-primary transition-colors" onClick={(e) => e.stopPropagation()}>
-                                  {dc.location}
-                                </a>
-                              ) : (
-                                <span className="font-medium text-text">{dc.location}</span>
-                              )}
-                            </span>
-                          )}
-                          {dc.is_donation ? (
-                            <span className="inline-flex items-center gap-1.5 bg-teal/8 border border-teal/15 rounded-full px-3.5 py-1.5 text-sm shadow-sm">
-                              <span className="text-teal">♥</span>
-                              <span className="font-semibold text-teal-dark">{locale === 'de' ? 'Freiwillige Spende' : 'Voluntary Donation'}</span>
-                            </span>
-                          ) : dc.price_eur != null && (
-                            <span className="inline-flex items-center gap-1.5 bg-white border border-gray-150 rounded-full px-3.5 py-1.5 text-sm shadow-sm">
-                              <span className="text-teal font-bold text-base leading-none">€</span>
-                              <span className="font-semibold text-text">{fmtCurrency(Number(dc.price_eur))}</span>
-                            </span>
-                          )}
-                        </div>
-                      )}
+                      {renderMetaBadges(dc)}
                     </div>
                   </div>
                 )}
@@ -516,33 +508,7 @@ export default function WorkshopPage({ locale }: { locale: Locale }) {
                         </div>
                       )}
 
-                      {(dc.location || dc.price_eur != null || dc.is_donation) && (
-                        <div className="flex flex-wrap gap-2">
-                          {dc.location && (
-                            <span className="inline-flex items-center gap-1.5 bg-white border border-gray-150 rounded-full px-3.5 py-1.5 text-sm shadow-sm">
-                              <svg className="w-3.5 h-3.5 text-coral" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" /></svg>
-                              {dc.location_url ? (
-                                <a href={dc.location_url} target="_blank" rel="noopener noreferrer" className="font-medium text-text hover:text-primary transition-colors" onClick={(e) => e.stopPropagation()}>
-                                  {dc.location}
-                                </a>
-                              ) : (
-                                <span className="font-medium text-text">{dc.location}</span>
-                              )}
-                            </span>
-                          )}
-                          {dc.is_donation ? (
-                            <span className="inline-flex items-center gap-1.5 bg-teal/8 border border-teal/15 rounded-full px-3.5 py-1.5 text-sm shadow-sm">
-                              <span className="text-teal">♥</span>
-                              <span className="font-semibold text-teal-dark">{locale === 'de' ? 'Freiwillige Spende' : 'Voluntary Donation'}</span>
-                            </span>
-                          ) : dc.price_eur != null && (
-                            <span className="inline-flex items-center gap-1.5 bg-white border border-gray-150 rounded-full px-3.5 py-1.5 text-sm shadow-sm">
-                              <span className="text-teal font-bold text-base leading-none">€</span>
-                              <span className="font-semibold text-text">{fmtCurrency(Number(dc.price_eur))}</span>
-                            </span>
-                          )}
-                        </div>
-                      )}
+                      {renderMetaBadges(dc)}
                     </div>
                   </div>
                 )}

@@ -12,6 +12,7 @@ export interface Database {
           description_en: string | null;
           level: string | null;
           location: string | null;
+          location_details: string | null;
           location_url: string | null;
           max_leads: number;
           max_follows: number;
@@ -38,6 +39,7 @@ export interface Database {
           description_en?: string | null;
           level?: string | null;
           location?: string | null;
+          location_details?: string | null;
           location_url?: string | null;
           max_leads: number;
           max_follows: number;
@@ -63,6 +65,7 @@ export interface Database {
           description_en?: string | null;
           level?: string | null;
           location?: string | null;
+          location_details?: string | null;
           location_url?: string | null;
           max_leads?: number;
           max_follows?: number;
