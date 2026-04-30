@@ -165,11 +165,10 @@ export default function WorkshopPage({ locale }: { locale: Locale }) {
             </span>
           </span>
         ) : dc.price_eur != null && (
-          <span className="inline-flex items-start gap-2 bg-white border border-gray-150 rounded-2xl px-3 py-2 shadow-sm">
-            <span className="text-teal font-bold text-base leading-none mt-0.5">€</span>
+          <span className="inline-flex items-start bg-white border border-gray-150 rounded-2xl px-3 py-2 shadow-sm">
             <span className="leading-tight">
-              <span className="block font-semibold text-text">{locale === 'de' ? 'Kosten' : 'Price'}</span>
-              <span className="block text-[11px] text-text-muted mt-0.5">{fmtCurrency(Number(dc.price_eur))}</span>
+              <span className="block font-semibold text-text">{fmtCurrency(Number(dc.price_eur))}</span>
+              <span className="block text-[11px] text-text-muted">{i18n.workshops.cost}</span>
             </span>
           </span>
         )}
