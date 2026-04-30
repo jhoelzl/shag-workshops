@@ -30,7 +30,7 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
             <span class="block italic font-normal text-gradient-warm pb-2">Salzburg</span>
           </h1>
           <p class="text-text-muted text-lg sm:text-xl max-w-xl mx-auto lg:mx-0 mb-8 leading-relaxed">
-            Energiegeladene Swing-Tanzkurse für schnelle Jazz Musik.
+            {i18n.home.hero_subtitle}
           </p>
           <div class="flex flex-wrap gap-3 justify-center lg:justify-start">
             <a href={`${base}/de/workshops/`} class="btn-primary">
@@ -45,7 +45,7 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 
         <!-- Logo -->
         <div class="lg:col-span-6 flex justify-center lg:justify-end animate-fade-up" style="animation-delay: 0.15s">
-          <div class="relative">
+          <div class="relative animate-logo-breathe">
             <div class="absolute inset-0 -m-10 bg-gradient-to-br from-coral/30 via-accent/25 to-teal/30 blur-3xl rounded-full"></div>
             <img
               src={`${base}/shagadeus_logo.png`}
