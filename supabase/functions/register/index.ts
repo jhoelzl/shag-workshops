@@ -136,8 +136,11 @@ Deno.serve(async (req) => {
       const overrideTo = Deno.env.get('EMAIL_TO_OVERRIDE');
       const realTo = email.toLowerCase().trim();
       const toAddress = overrideTo || realTo;
+      const organizerRealTo = Deno.env.get('ORGANIZER_NOTIFICATION_EMAIL') || 'info@shagadeus.at';
+      const organizerToAddress = overrideTo || organizerRealTo;
       if (overrideTo) {
         console.log(`EMAIL_TO_OVERRIDE active — redirecting mail for ${realTo} to ${overrideTo}`);
+        console.log(`EMAIL_TO_OVERRIDE active — redirecting organizer mail for ${organizerRealTo} to ${overrideTo}`);
       }
 
       try {
@@ -166,6 +169,29 @@ Deno.serve(async (req) => {
         }
       } catch (e) {
         console.error('Resend send threw:', e instanceof Error ? e.message : String(e), 'from:', fromAddress, 'to:', toAddress);
+      }
+
+      try {
+        const { data: organizerSendData, error: organizerSendError } = await resend.emails.send({
+          from: fromAddress,
+          to: [organizerToAddress],
+          subject: `Neue Anmeldung: ${classTitle}`,
+          html: `<h2>Neue Workshop-Anmeldung</h2>
+                 <p><strong>Workshop:</strong> ${danceClass.title_de} / ${danceClass.title_en}</p>
+                 <p><strong>Name:</strong> ${name.trim()}</p>
+                 <p><strong>E-Mail:</strong> ${realTo}</p>
+                 <p><strong>Rolle:</strong> ${role === 'lead' ? 'Lead' : 'Follow'}</p>
+                 <p><strong>Status:</strong> ${status}</p>
+                 ${partner_name?.trim() ? `<p><strong>Partner:</strong> ${partner_name.trim()}</p>` : ''}
+                 ${comment?.trim() ? `<p><strong>Kommentar:</strong> ${comment.trim()}</p>` : ''}`,
+        });
+        if (organizerSendError) {
+          console.error('Resend organizer send error:', JSON.stringify(organizerSendError), 'from:', fromAddress, 'to:', organizerToAddress);
+        } else {
+          console.log('Resend organizer send ok:', JSON.stringify(organizerSendData), 'to:', organizerToAddress);
+        }
+      } catch (e) {
+        console.error('Resend organizer send threw:', e instanceof Error ? e.message : String(e), 'from:', fromAddress, 'to:', organizerToAddress);
       }
     }
 
