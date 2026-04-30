@@ -159,7 +159,7 @@ Deno.serve(async (req) => {
             : `<h2>Hello ${name.trim()}!</h2>
                <p>Your registration for <strong>${classTitle}</strong> as <strong>${role === 'lead' ? 'Lead' : 'Follow'}</strong> has been received.</p>
                ${status === 'waitlisted' ? '<p>⚠️ All spots are currently taken. You have been placed on the waitlist.</p>' : ''}
-               <p>The organizer will review and confirm your registration. You will receive another email then.</p>
+               <p>We will review and confirm your registration. You will then receive another email.</p>
                <p>Amadeus Shagadeus</p>`,
         });
         if (sendError) {
