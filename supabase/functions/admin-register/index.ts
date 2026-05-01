@@ -174,11 +174,11 @@ Deno.serve(async (req) => {
       const body = status === 'confirmed'
         ? (isDE
           ? `<h2>Hallo ${name.trim()}!</h2>
-             <p>Du wurdest für <strong>${classTitle}</strong> als <strong>${roleLabel}</strong> angemeldet und deine Teilnahme ist bereits <strong>bestätigt</strong>. 🎉</p>
+             <p>Du wurdest für <strong>${classTitle}</strong> als <strong>${roleLabel}</strong> angemeldet und deine Teilnahme ist bereits <strong>bestätigt</strong>.</p>
              <p>Wir freuen uns auf dich!</p>
              <p>Amadeus Shagadeus</p>`
           : `<h2>Hello ${name.trim()}!</h2>
-             <p>You have been registered for <strong>${classTitle}</strong> as <strong>${roleLabel}</strong> and your spot is already <strong>confirmed</strong>. 🎉</p>
+             <p>You have been registered for <strong>${classTitle}</strong> as <strong>${roleLabel}</strong> and your spot is already <strong>confirmed</strong>.</p>
              <p>We look forward to seeing you!</p>
              <p>Amadeus Shagadeus</p>`)
         : (isDE
