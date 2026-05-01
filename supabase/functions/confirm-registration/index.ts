@@ -126,11 +126,11 @@ Deno.serve(async (req) => {
       const bodies: Record<string, { de: string; en: string }> = {
         confirmed: {
           de: `<h2>Hallo ${registration.name}!</h2>
-               <p>Deine Anmeldung für <strong>${dc.title_de}</strong> wurde <strong>bestätigt</strong>! 🎉</p>
+               <p>Deine Anmeldung für <strong>${dc.title_de}</strong> wurde <strong>bestätigt</strong>!</p>
                <p>Wir freuen uns auf dich!</p>
                <p>Amadeus Shagadeus</p>`,
           en: `<h2>Hello ${registration.name}!</h2>
-               <p>Your registration for <strong>${dc.title_en}</strong> has been <strong>confirmed</strong>! 🎉</p>
+               <p>Your registration for <strong>${dc.title_en}</strong> has been <strong>confirmed</strong>!</p>
                <p>We look forward to seeing you!</p>
                <p>Amadeus Shagadeus</p>`,
         },
