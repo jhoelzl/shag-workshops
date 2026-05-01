@@ -7,15 +7,38 @@ import RegistrationTable from './RegistrationTable';
 
 type Tab = 'overview' | 'classes' | 'registrations';
 
+function getTabFromUrl(): Tab {
+  if (typeof window === 'undefined') return 'overview';
+  const params = new URLSearchParams(window.location.search);
+  const t = params.get('tab');
+  if (t === 'classes' || t === 'registrations' || t === 'overview') return t;
+  return 'overview';
+}
+
 export default function AdminDashboard() {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<Tab>('overview');
+  const [tab, setTabState] = useState<Tab>(getTabFromUrl);
   const [classes, setClasses] = useState<DanceClass[]>([]);
   const [registrations, setRegistrations] = useState<Registration[]>([]);
   const [registrationHistory, setRegistrationHistory] = useState<RegistrationHistory[]>([]);
   const [sessionsMap, setSessionsMap] = useState<Record<string, ClassSession[]>>({});
   const base = import.meta.env.BASE_URL?.replace(/\/$/, '') ?? '';
+
+  function setTab(newTab: Tab) {
+    const url = new URL(window.location.href);
+    url.searchParams.set('tab', newTab);
+    window.history.pushState({ tab: newTab }, '', url.toString());
+    setTabState(newTab);
+  }
+
+  useEffect(() => {
+    function onPopState(e: PopStateEvent) {
+      setTabState(getTabFromUrl());
+    }
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, []);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
