@@ -1289,11 +1289,12 @@ function GenerateButton({ onGenerate }: { onGenerate: (start: string, weeks: num
   );
 }
 
-function Input({ label, value, onChange, type = 'text', required, placeholder }: { label: string; value: string; onChange: (v: string) => void; type?: string; required?: boolean; placeholder?: string }) {
+function Input({ label, value, onChange, type = 'text', required, placeholder, hint }: { label: string; value: string; onChange: (v: string) => void; type?: string; required?: boolean; placeholder?: string; hint?: string }) {
   return (
     <div>
       <label className="block text-sm font-medium mb-1">{label}</label>
       <input type={type} value={value} onChange={(e) => onChange(e.target.value)} required={required} placeholder={placeholder} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none" />
+      {hint && <p className="text-xs text-text-muted mt-1">{hint}</p>}
     </div>
   );
 }
