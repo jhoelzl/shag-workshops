@@ -6,6 +6,7 @@ interface Props {
   registrations: Registration[];
   history: RegistrationHistory[];
   classes: DanceClass[];
+  currentUser: any;
   onUpdate: () => void;
 }
 
@@ -81,7 +82,7 @@ const TRANSITIONS: Record<Status, { to: Status; label: string }[]> = {
   ],
 };
 
-export default function RegistrationTable({ registrations, history, classes, onUpdate }: Props) {
+export default function RegistrationTable({ registrations, history, classes, currentUser, onUpdate }: Props) {
   const [filterClassId, setFilterClassId] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -493,10 +494,11 @@ export default function RegistrationTable({ registrations, history, classes, onU
                                         <span className="text-[11px] text-text-muted">{new Date(entry.created_at).toLocaleString('de-AT')}</span>
                                       </div>
                                       <p className="text-xs text-primary mt-1">{formatHistoryDetails(entry)}</p>
+                                      {(entry.event_type === 'email_sent' || entry.event_type === 'email_failed') && (() => { const id = getMetadataRecord(entry)?.id as string | undefined; return id ? <a href={`https://resend.com/emails/${id}`} target="_blank" rel="noopener noreferrer" className="text-[11px] text-teal-dark underline mt-0.5 inline-block">Resend Log →</a> : null; })()}
                                       {entry.note && <p className="text-[11px] text-text-muted mt-0.5">{entry.note}</p>}
                                     </div>
-                                    {entry.actor_user_id && (
-                                      <span className="text-[11px] text-text-muted">by {entry.actor_user_id.slice(0, 8)}...</span>
+                                    {getHistoryActorLabel(entry, currentUser) && (
+                                      <span className="text-[11px] text-text-muted">by {getHistoryActorLabel(entry, currentUser)}</span>
                                     )}
                                   </div>
                                 );
@@ -595,6 +597,32 @@ function formatHistoryDetails(entry: RegistrationHistory): string {
   }
 
   return entry.event_type;
+}
+
+function getUserDisplayLabel(user: any): string | null {
+  if (!user) return null;
+  const fullName = [user.user_metadata?.first_name, user.user_metadata?.last_name].filter(Boolean).join(' ').trim();
+  return user.user_metadata?.full_name || user.user_metadata?.name || user.user_metadata?.display_name || fullName || user.email || null;
+}
+
+function getMetadataRecord(entry: RegistrationHistory): Record<string, unknown> | null {
+  if (!entry.metadata || typeof entry.metadata !== 'object' || Array.isArray(entry.metadata)) {
+    return null;
+  }
+  return entry.metadata as Record<string, unknown>;
+}
+
+function getHistoryActorLabel(entry: RegistrationHistory, currentUser: any): string | null {
+  const metadata = getMetadataRecord(entry);
+  const actorName = typeof metadata?.actor_name === 'string' ? metadata.actor_name : null;
+  const actorEmail = typeof metadata?.actor_email === 'string' ? metadata.actor_email : null;
+  if (actorName) return actorName;
+  if (entry.actor_user_id && currentUser?.id === entry.actor_user_id) {
+    return getUserDisplayLabel(currentUser);
+  }
+  if (actorEmail) return actorEmail;
+  if (entry.actor_user_id) return `${entry.actor_user_id.slice(0, 8)}...`;
+  return null;
 }
 
 function Field({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
