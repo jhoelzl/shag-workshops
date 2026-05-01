@@ -43,6 +43,13 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     );
 
+    const insertHistory = async (entry: Record<string, unknown>) => {
+      const { error } = await supabase.from('registration_history').insert(entry);
+      if (error) {
+        console.error('History insert failed:', error);
+      }
+    };
+
     // Check if class exists and is open
     const { data: danceClass, error: classError } = await supabase
       .from('dance_classes')
@@ -123,10 +130,29 @@ Deno.serve(async (req) => {
       );
     }
 
+    await insertHistory({
+      registration_id: registration.id,
+      dance_class_id,
+      event_type: 'created',
+      old_status: null,
+      new_status: status,
+      triggered_by: 'public_registration',
+      note: 'Registration created via public form',
+    });
+
     // Send confirmation email via Resend
     const resendKey = Deno.env.get('RESEND_API_KEY');
     if (!resendKey) {
       console.warn('RESEND_API_KEY is not set — skipping email send');
+      await insertHistory({
+        registration_id: registration.id,
+        dance_class_id,
+        event_type: 'email_skipped',
+        triggered_by: 'public_registration',
+        email_type: 'participant_confirmation',
+        email_recipient: email.toLowerCase().trim(),
+        note: 'RESEND_API_KEY is not configured',
+      });
     }
     if (resendKey) {
       const resend = new Resend(resendKey);
@@ -138,6 +164,10 @@ Deno.serve(async (req) => {
       const toAddress = overrideTo || realTo;
       const organizerRealTo = Deno.env.get('ORGANIZER_NOTIFICATION_EMAIL') || 'info@shagadeus.at';
       const organizerToAddress = overrideTo || organizerRealTo;
+      const participantSubject = isDE
+        ? `Anmeldung eingegangen: ${classTitle}`
+        : `Registration received: ${classTitle}`;
+      const organizerSubject = `Neue Anmeldung: ${classTitle}`;
       if (overrideTo) {
         console.log(`EMAIL_TO_OVERRIDE active — redirecting mail for ${realTo} to ${overrideTo}`);
         console.log(`EMAIL_TO_OVERRIDE active — redirecting organizer mail for ${organizerRealTo} to ${overrideTo}`);
@@ -147,9 +177,7 @@ Deno.serve(async (req) => {
         const { data: sendData, error: sendError } = await resend.emails.send({
           from: fromAddress,
           to: [toAddress],
-          subject: isDE
-            ? `Anmeldung eingegangen: ${classTitle}`
-            : `Registration received: ${classTitle}`,
+          subject: participantSubject,
           html: isDE
             ? `<h2>Hallo ${name.trim()}!</h2>
                <p>Deine Anmeldung für <strong>${classTitle}</strong> als <strong>${role === 'lead' ? 'Lead' : 'Follow'}</strong> ist eingegangen.</p>
@@ -164,18 +192,49 @@ Deno.serve(async (req) => {
         });
         if (sendError) {
           console.error('Resend send error:', JSON.stringify(sendError), 'from:', fromAddress, 'to:', toAddress);
+          await insertHistory({
+            registration_id: registration.id,
+            dance_class_id,
+            event_type: 'email_failed',
+            triggered_by: 'public_registration',
+            email_type: 'participant_confirmation',
+            email_recipient: toAddress,
+            email_subject: participantSubject,
+            note: sendError.message || 'Participant email failed',
+            metadata: sendError,
+          });
         } else {
           console.log('Resend send ok:', JSON.stringify(sendData), 'to:', toAddress);
+          await insertHistory({
+            registration_id: registration.id,
+            dance_class_id,
+            event_type: 'email_sent',
+            triggered_by: 'public_registration',
+            email_type: 'participant_confirmation',
+            email_recipient: toAddress,
+            email_subject: participantSubject,
+            metadata: sendData,
+          });
         }
       } catch (e) {
         console.error('Resend send threw:', e instanceof Error ? e.message : String(e), 'from:', fromAddress, 'to:', toAddress);
+        await insertHistory({
+          registration_id: registration.id,
+          dance_class_id,
+          event_type: 'email_failed',
+          triggered_by: 'public_registration',
+          email_type: 'participant_confirmation',
+          email_recipient: toAddress,
+          email_subject: participantSubject,
+          note: e instanceof Error ? e.message : String(e),
+        });
       }
 
       try {
         const { data: organizerSendData, error: organizerSendError } = await resend.emails.send({
           from: fromAddress,
           to: [organizerToAddress],
-          subject: `Neue Anmeldung: ${classTitle}`,
+          subject: organizerSubject,
           html: `<h2>Neue Workshop-Anmeldung</h2>
                  <p><strong>Workshop:</strong> ${danceClass.title_de} / ${danceClass.title_en}</p>
                  <p><strong>Name:</strong> ${name.trim()}</p>
@@ -187,11 +246,42 @@ Deno.serve(async (req) => {
         });
         if (organizerSendError) {
           console.error('Resend organizer send error:', JSON.stringify(organizerSendError), 'from:', fromAddress, 'to:', organizerToAddress);
+          await insertHistory({
+            registration_id: registration.id,
+            dance_class_id,
+            event_type: 'email_failed',
+            triggered_by: 'public_registration',
+            email_type: 'organizer_notification',
+            email_recipient: organizerToAddress,
+            email_subject: organizerSubject,
+            note: organizerSendError.message || 'Organizer email failed',
+            metadata: organizerSendError,
+          });
         } else {
           console.log('Resend organizer send ok:', JSON.stringify(organizerSendData), 'to:', organizerToAddress);
+          await insertHistory({
+            registration_id: registration.id,
+            dance_class_id,
+            event_type: 'email_sent',
+            triggered_by: 'public_registration',
+            email_type: 'organizer_notification',
+            email_recipient: organizerToAddress,
+            email_subject: organizerSubject,
+            metadata: organizerSendData,
+          });
         }
       } catch (e) {
         console.error('Resend organizer send threw:', e instanceof Error ? e.message : String(e), 'from:', fromAddress, 'to:', organizerToAddress);
+        await insertHistory({
+          registration_id: registration.id,
+          dance_class_id,
+          event_type: 'email_failed',
+          triggered_by: 'public_registration',
+          email_type: 'organizer_notification',
+          email_recipient: organizerToAddress,
+          email_subject: organizerSubject,
+          note: e instanceof Error ? e.message : String(e),
+        });
       }
     }
 
