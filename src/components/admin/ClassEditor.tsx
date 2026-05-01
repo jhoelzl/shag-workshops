@@ -39,6 +39,9 @@ const EMPTY_CLASS = {
   registration_closes_at: '',
   is_public: false,
   is_donation: false,
+  is_preview: false,
+  preview_text_de: '',
+  preview_text_en: '',
   what_to_bring_de: '- bequeme Kleidung (und zusätzliche T-Shirt)\n- deine Lieblings-Tanzschuhe\n- Wasserflasche',
   what_to_bring_en: '- comfortable clothing (perhaps an extra shirt)\n- your favorite dance shoes\n- water bottle',
 };
@@ -219,8 +222,11 @@ export default function ClassEditor({ classes, registrations, history, currentUs
       registration_closes_at: editing.registration_closes_at || null,
       is_public: editing.is_public ?? false,
       is_donation: editing.is_donation ?? false,
+      is_preview: editing.is_preview ?? false,
       what_to_bring_de: editing.what_to_bring_de || null,
       what_to_bring_en: editing.what_to_bring_en || null,
+      preview_text_de: editing.preview_text_de || null,
+      preview_text_en: editing.preview_text_en || null,
     };
 
     let classId = editing.id;
@@ -947,6 +953,10 @@ function ClassDetailView({ dc, sessions, classRegs, regCounts, history, currentU
         <p>{dc.is_public ? 'Yes' : 'No'}</p>
       </div>
       <div>
+        <span className="text-text-muted text-xs uppercase tracking-wider">Preview Mode</span>
+        <p>{dc.is_preview ? 'Yes' : 'No'}</p>
+      </div>
+      <div>
         <span className="text-text-muted text-xs uppercase tracking-wider">Registration opens</span>
         <p>{fmtDate(dc.registration_opens_at)}</p>
       </div>
@@ -954,6 +964,14 @@ function ClassDetailView({ dc, sessions, classRegs, regCounts, history, currentU
         <span className="text-text-muted text-xs uppercase tracking-wider">Registration closes</span>
         <p>{fmtDate(dc.registration_closes_at)}</p>
       </div>
+
+      {(dc.preview_text_de || dc.preview_text_en) && (
+        <div className="md:col-span-2 mt-2">
+          <span className="text-text-muted text-xs uppercase tracking-wider">Preview Text</span>
+          {dc.preview_text_de && <p className="text-sm mt-0.5 bg-amber-50 border border-amber-200 rounded px-3 py-2"><span className="font-semibold">DE:</span> {dc.preview_text_de}</p>}
+          {dc.preview_text_en && <p className="text-sm mt-0.5 bg-amber-50 border border-amber-200 rounded px-3 py-2"><span className="font-semibold">EN:</span> {dc.preview_text_en}</p>}
+        </div>
+      )}
 
       {sessions.length > 0 && (
         <div className="md:col-span-2 mt-2">
@@ -1179,6 +1197,24 @@ function ClassForm({
             <input type="checkbox" id="is_public" checked={editing.is_public ?? false} onChange={(e) => setEditing({ ...editing, is_public: e.target.checked })} className="accent-primary" />
             <label htmlFor="is_public" className="text-sm">Public (visible on website)</label>
           </div>
+          <div className="flex items-center gap-2 pt-6">
+            <input type="checkbox" id="is_preview" checked={editing.is_preview ?? false} onChange={(e) => setEditing({ ...editing, is_preview: e.target.checked })} className="accent-primary" />
+            <label htmlFor="is_preview" className="text-sm">Preview mode (show preview text instead of sessions)</label>
+          </div>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Input
+            label="Preview Text (DE)"
+            value={editing.preview_text_de ?? ''}
+            onChange={(v) => setEditing({ ...editing, preview_text_de: v })}
+            hint='z.B. "Geplant für Mai 2026" — leer lassen um echte Sessions anzuzeigen'
+          />
+          <Input
+            label="Preview Text (EN)"
+            value={editing.preview_text_en ?? ''}
+            onChange={(v) => setEditing({ ...editing, preview_text_en: v })}
+            hint='e.g. "Planned for May 2026" — leave empty to show actual sessions'
+          />
         </div>
       </fieldset>
 

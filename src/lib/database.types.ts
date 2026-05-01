@@ -26,6 +26,9 @@ export interface Database {
           teachers: string | null;
           what_to_bring_de: string | null;
           what_to_bring_en: string | null;
+          preview_text_de: string | null;
+          preview_text_en: string | null;
+          is_preview: boolean;
           is_public: boolean;
           created_at: string;
           updated_at: string;
@@ -53,6 +56,9 @@ export interface Database {
           teachers?: string | null;
           what_to_bring_de?: string | null;
           what_to_bring_en?: string | null;
+          preview_text_de?: string | null;
+          preview_text_en?: string | null;
+          is_preview?: boolean;
           is_public?: boolean;
           created_at?: string;
           updated_at?: string;
@@ -79,6 +85,9 @@ export interface Database {
           teachers?: string | null;
           what_to_bring_de?: string | null;
           what_to_bring_en?: string | null;
+          preview_text_de?: string | null;
+          preview_text_en?: string | null;
+          is_preview?: boolean;
           is_public?: boolean;
           created_at?: string;
           updated_at?: string;

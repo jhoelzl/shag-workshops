@@ -129,11 +129,12 @@ export default function WorkshopPage({ locale }: { locale: Locale }) {
   const filteredClasses = filterLevel === 'all' ? classes : classes.filter((dc) => dc.level === filterLevel);
   const filteredOngoing = filterLevel === 'all' ? ongoingClasses : ongoingClasses.filter((dc) => dc.level === filterLevel);
   const filteredArchived = filterLevel === 'all' ? archivedClasses : archivedClasses.filter((dc) => dc.level === filterLevel);
-  const openClasses = classes.filter((dc) => getClassState(dc.sessions || [], dc.registration_opens_at, dc.registration_closes_at) === 'open');
+  const openClasses = classes.filter((dc) => !dc.is_preview && getClassState(dc.sessions || [], dc.registration_opens_at, dc.registration_closes_at) === 'open');
   const supabaseFunctionsUrl = `${import.meta.env.PUBLIC_SUPABASE_URL}/functions/v1`;
   const supabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY;
 
   function renderMetaBadges(dc: ClassWithCounts) {
+    if (dc.is_preview) return null;
     if (!dc.location && dc.price_eur == null && !dc.is_donation) return null;
 
     return (
@@ -226,17 +227,19 @@ export default function WorkshopPage({ locale }: { locale: Locale }) {
           const title = locale === 'de' ? dc.title_de : dc.title_en;
           const description = locale === 'de' ? dc.description_de : dc.description_en;
           const whatToBring = locale === 'de' ? dc.what_to_bring_de : dc.what_to_bring_en;
+          const previewText = locale === 'de' ? dc.preview_text_de : dc.preview_text_en;
           const isSelected = selectedIds.has(dc.id);
           const sessions = dc.sessions || [];
           const isPlanned = getClassState(sessions, dc.registration_opens_at, dc.registration_closes_at) === 'upcoming';
           const isOpen = getClassState(sessions, dc.registration_opens_at, dc.registration_closes_at) === 'open';
+          const isPreview = !!dc.is_preview;
 
           return (
             <div
               key={dc.id}
-              onClick={() => !isPlanned && toggleSelectedId(dc.id)}
+              onClick={() => !isPlanned && !isPreview && toggleSelectedId(dc.id)}
               className={`bg-surface rounded-2xl transition-all duration-300 border-2 overflow-hidden ${
-                isPlanned
+                isPlanned || isPreview
                   ? 'border-transparent shadow-sm'
                   : isSelected
                     ? 'border-teal shadow-lg -translate-y-0.5 cursor-pointer'
@@ -258,7 +261,10 @@ export default function WorkshopPage({ locale }: { locale: Locale }) {
                     {dc.level && (
                       <span className="text-xs bg-teal/10 text-teal-dark font-semibold px-3 py-1 rounded-full">{dc.level}</span>
                     )}
-                    {isSelected && !isPlanned && (
+                    {isPreview && (
+                      <span className="text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-700 px-2.5 py-1 rounded-full border border-amber-200">{locale === 'de' ? 'Vorschau' : 'Preview'}</span>
+                    )}
+                    {isSelected && !isPlanned && !isPreview && (
                       <span className="w-7 h-7 bg-teal text-white rounded-full flex items-center justify-center text-sm">✓</span>
                     )}
                   </div>
@@ -282,7 +288,16 @@ export default function WorkshopPage({ locale }: { locale: Locale }) {
 
               {/* Details */}
               <div className="px-5 pb-4 space-y-3">
-                {sessions.length > 0 && (
+                {dc.is_preview && previewText ? (
+                  <div className="rounded-xl border border-amber-200/80 bg-amber-50/60 px-4 py-3.5">
+                    <div className="flex items-start gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center shrink-0">
+                        <svg className="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" strokeWidth="2" /><path d="M16 2v4M8 2v4M3 10h18" strokeWidth="2" strokeLinecap="round" /></svg>
+                      </div>
+                      <p className="text-sm font-medium text-amber-800 self-center">{previewText}</p>
+                    </div>
+                  </div>
+                ) : sessions.length > 0 && (
                   <div className="rounded-xl border border-teal/12 bg-gradient-to-br from-white to-teal/[0.04] px-4 py-3.5">
                     <div className="flex items-start gap-3">
                       <div className="w-8 h-8 rounded-lg bg-teal/10 flex items-center justify-center shrink-0">
