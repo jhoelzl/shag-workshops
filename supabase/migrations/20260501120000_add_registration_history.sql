@@ -26,6 +26,9 @@ CREATE INDEX IF NOT EXISTS idx_registration_history_event_type
 
 ALTER TABLE public.registration_history ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Admin can view registration history"
+  ON public.registration_history;
+
 CREATE POLICY "Admin can view registration history"
   ON public.registration_history
   FOR SELECT
