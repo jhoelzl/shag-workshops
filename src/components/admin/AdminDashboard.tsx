@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
-import type { DanceClass, ClassSession, Registration } from '../../lib/database.types';
+import type { DanceClass, ClassSession, Registration, RegistrationHistory } from '../../lib/database.types';
 import { getClassState } from '../../lib/classState';
 import ClassEditor from './ClassEditor';
 import RegistrationTable from './RegistrationTable';
@@ -13,6 +13,7 @@ export default function AdminDashboard() {
   const [tab, setTab] = useState<Tab>('overview');
   const [classes, setClasses] = useState<DanceClass[]>([]);
   const [registrations, setRegistrations] = useState<Registration[]>([]);
+  const [registrationHistory, setRegistrationHistory] = useState<RegistrationHistory[]>([]);
   const [sessionsMap, setSessionsMap] = useState<Record<string, ClassSession[]>>({});
   const base = import.meta.env.BASE_URL?.replace(/\/$/, '') ?? '';
 
@@ -29,13 +30,15 @@ export default function AdminDashboard() {
   }, []);
 
   async function loadData() {
-    const [classRes, regRes, sessRes] = await Promise.all([
+    const [classRes, regRes, sessRes, historyRes] = await Promise.all([
       supabase.from('dance_classes').select('*').order('created_at', { ascending: false }),
       supabase.from('registrations').select('*').order('created_at', { ascending: false }),
       supabase.from('class_sessions').select('*').order('session_date', { ascending: true }),
+      supabase.from('registration_history').select('*').order('created_at', { ascending: false }),
     ]);
     if (classRes.data) setClasses(classRes.data);
     if (regRes.data) setRegistrations(regRes.data);
+    if (historyRes.data) setRegistrationHistory(historyRes.data);
     if (sessRes.data) {
       const map: Record<string, ClassSession[]> = {};
       for (const s of sessRes.data) {
@@ -153,6 +156,7 @@ export default function AdminDashboard() {
         {tab === 'registrations' && (
           <RegistrationTable
             registrations={registrations}
+            history={registrationHistory}
             classes={classes}
             onUpdate={loadData}
           />

@@ -57,6 +57,13 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     );
 
+    const insertHistory = async (entry: Record<string, unknown>) => {
+      const { error } = await supabase.from('registration_history').insert(entry);
+      if (error) {
+        console.error('History insert failed:', error);
+      }
+    };
+
     // Get registration with class info
     const { data: registration, error: regError } = await supabase
       .from('registrations')
@@ -83,6 +90,17 @@ Deno.serve(async (req) => {
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    await insertHistory({
+      registration_id,
+      dance_class_id: registration.dance_class_id,
+      event_type: 'status_changed',
+      old_status: registration.status,
+      new_status: new_status,
+      triggered_by: 'admin_status_change',
+      actor_user_id: user.id,
+      note: registration.status === new_status ? 'Status update requested with same value' : 'Status changed by admin',
+    });
 
     // Send email notification
     const resendKey = Deno.env.get('RESEND_API_KEY');
@@ -143,6 +161,7 @@ Deno.serve(async (req) => {
       const fromAddress = Deno.env.get('EMAIL_FROM') || 'Amadeus Shagadeus <onboarding@resend.dev>';
       const overrideTo = Deno.env.get('EMAIL_TO_OVERRIDE');
       const toAddress = overrideTo || registration.email;
+      const subject = subjects[new_status][lang];
       if (overrideTo) {
         console.log(`EMAIL_TO_OVERRIDE active — redirecting mail for ${registration.email} to ${overrideTo}`);
       }
@@ -151,17 +170,62 @@ Deno.serve(async (req) => {
         const { data: sendData, error: sendError } = await resend.emails.send({
           from: fromAddress,
           to: [toAddress],
-          subject: subjects[new_status][lang],
+          subject,
           html: bodies[new_status][lang],
         });
         if (sendError) {
           console.error('Resend send error:', JSON.stringify(sendError), 'from:', fromAddress, 'to:', toAddress);
+          await insertHistory({
+            registration_id,
+            dance_class_id: registration.dance_class_id,
+            event_type: 'email_failed',
+            triggered_by: 'admin_status_change',
+            actor_user_id: user.id,
+            email_type: 'participant_status_update',
+            email_recipient: toAddress,
+            email_subject: subject,
+            note: sendError.message || 'Status update email failed',
+            metadata: sendError,
+          });
         } else {
           console.log('Resend send ok:', JSON.stringify(sendData), 'to:', toAddress);
+          await insertHistory({
+            registration_id,
+            dance_class_id: registration.dance_class_id,
+            event_type: 'email_sent',
+            triggered_by: 'admin_status_change',
+            actor_user_id: user.id,
+            email_type: 'participant_status_update',
+            email_recipient: toAddress,
+            email_subject: subject,
+            metadata: sendData,
+          });
         }
       } catch (e) {
         console.error('Resend send threw:', e instanceof Error ? e.message : String(e), 'from:', fromAddress, 'to:', toAddress);
+        await insertHistory({
+          registration_id,
+          dance_class_id: registration.dance_class_id,
+          event_type: 'email_failed',
+          triggered_by: 'admin_status_change',
+          actor_user_id: user.id,
+          email_type: 'participant_status_update',
+          email_recipient: toAddress,
+          email_subject: subject,
+          note: e instanceof Error ? e.message : String(e),
+        });
       }
+    } else {
+      await insertHistory({
+        registration_id,
+        dance_class_id: registration.dance_class_id,
+        event_type: 'email_skipped',
+        triggered_by: 'admin_status_change',
+        actor_user_id: user.id,
+        email_type: 'participant_status_update',
+        email_recipient: registration.email,
+        note: 'RESEND_API_KEY is not configured',
+      });
     }
 
     return new Response(

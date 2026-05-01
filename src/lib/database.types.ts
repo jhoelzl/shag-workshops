@@ -153,6 +153,57 @@ export interface Database {
           created_at?: string;
         };
       };
+      registration_history: {
+        Row: {
+          id: string;
+          registration_id: string;
+          dance_class_id: string;
+          event_type: 'created' | 'status_changed' | 'email_sent' | 'email_failed' | 'email_skipped';
+          old_status: 'pending' | 'confirmed' | 'waitlisted' | 'cancelled' | null;
+          new_status: 'pending' | 'confirmed' | 'waitlisted' | 'cancelled' | null;
+          triggered_by: 'public_registration' | 'admin_registration' | 'admin_status_change' | 'system';
+          actor_user_id: string | null;
+          email_type: string | null;
+          email_recipient: string | null;
+          email_subject: string | null;
+          note: string | null;
+          metadata: Json | null;
+          created_at: string;
+        };
+        Relationships: [];
+        Insert: {
+          id?: string;
+          registration_id: string;
+          dance_class_id: string;
+          event_type: 'created' | 'status_changed' | 'email_sent' | 'email_failed' | 'email_skipped';
+          old_status?: 'pending' | 'confirmed' | 'waitlisted' | 'cancelled' | null;
+          new_status?: 'pending' | 'confirmed' | 'waitlisted' | 'cancelled' | null;
+          triggered_by?: 'public_registration' | 'admin_registration' | 'admin_status_change' | 'system';
+          actor_user_id?: string | null;
+          email_type?: string | null;
+          email_recipient?: string | null;
+          email_subject?: string | null;
+          note?: string | null;
+          metadata?: Json | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          registration_id?: string;
+          dance_class_id?: string;
+          event_type?: 'created' | 'status_changed' | 'email_sent' | 'email_failed' | 'email_skipped';
+          old_status?: 'pending' | 'confirmed' | 'waitlisted' | 'cancelled' | null;
+          new_status?: 'pending' | 'confirmed' | 'waitlisted' | 'cancelled' | null;
+          triggered_by?: 'public_registration' | 'admin_registration' | 'admin_status_change' | 'system';
+          actor_user_id?: string | null;
+          email_type?: string | null;
+          email_recipient?: string | null;
+          email_subject?: string | null;
+          note?: string | null;
+          metadata?: Json | null;
+          created_at?: string;
+        };
+      };
     };
     Views: {
       class_registration_counts: {
@@ -175,3 +226,4 @@ export interface Database {
 export type DanceClass = Database['public']['Tables']['dance_classes']['Row'];
 export type ClassSession = Database['public']['Tables']['class_sessions']['Row'];
 export type Registration = Database['public']['Tables']['registrations']['Row'];
+export type RegistrationHistory = Database['public']['Tables']['registration_history']['Row'];

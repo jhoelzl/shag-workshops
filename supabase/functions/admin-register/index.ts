@@ -75,6 +75,13 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     );
 
+    const insertHistory = async (entry: Record<string, unknown>) => {
+      const { error } = await supabase.from('registration_history').insert(entry);
+      if (error) {
+        console.error('History insert failed:', error);
+      }
+    };
+
     // Look up class
     const { data: danceClass, error: classError } = await supabase
       .from('dance_classes')
@@ -141,6 +148,17 @@ Deno.serve(async (req) => {
       );
     }
 
+    await insertHistory({
+      registration_id: registration.id,
+      dance_class_id,
+      event_type: 'created',
+      old_status: null,
+      new_status: status,
+      triggered_by: 'admin_registration',
+      actor_user_id: user.id,
+      note: 'Registration created manually by admin',
+    });
+
     // Send confirmation email (optional)
     const resendKey = Deno.env.get('RESEND_API_KEY');
     if (send_email !== false && resendKey) {
@@ -174,16 +192,76 @@ Deno.serve(async (req) => {
              <p>Amadeus Shagadeus</p>`);
 
       try {
-        await resend.emails.send({
+        const { data: sendData, error: sendError } = await resend.emails.send({
           from: Deno.env.get('EMAIL_FROM') || 'Amadeus Shagadeus <onboarding@resend.dev>',
           to: [normalizedEmail],
           subject,
           html: body,
         });
+        if (sendError) {
+          console.error('Email send failed:', sendError);
+          await insertHistory({
+            registration_id: registration.id,
+            dance_class_id,
+            event_type: 'email_failed',
+            triggered_by: 'admin_registration',
+            actor_user_id: user.id,
+            email_type: 'participant_confirmation',
+            email_recipient: normalizedEmail,
+            email_subject: subject,
+            note: sendError.message || 'Admin participant email failed',
+            metadata: sendError,
+          });
+        } else {
+          await insertHistory({
+            registration_id: registration.id,
+            dance_class_id,
+            event_type: 'email_sent',
+            triggered_by: 'admin_registration',
+            actor_user_id: user.id,
+            email_type: 'participant_confirmation',
+            email_recipient: normalizedEmail,
+            email_subject: subject,
+            metadata: sendData,
+          });
+        }
       } catch (mailErr) {
         // Do not fail the registration if email sending fails
         console.error('Email send failed:', mailErr);
+        await insertHistory({
+          registration_id: registration.id,
+          dance_class_id,
+          event_type: 'email_failed',
+          triggered_by: 'admin_registration',
+          actor_user_id: user.id,
+          email_type: 'participant_confirmation',
+          email_recipient: normalizedEmail,
+          email_subject: subject,
+          note: mailErr instanceof Error ? mailErr.message : String(mailErr),
+        });
       }
+    } else if (send_email === false) {
+      await insertHistory({
+        registration_id: registration.id,
+        dance_class_id,
+        event_type: 'email_skipped',
+        triggered_by: 'admin_registration',
+        actor_user_id: user.id,
+        email_type: 'participant_confirmation',
+        email_recipient: normalizedEmail,
+        note: 'Email sending disabled by admin input',
+      });
+    } else {
+      await insertHistory({
+        registration_id: registration.id,
+        dance_class_id,
+        event_type: 'email_skipped',
+        triggered_by: 'admin_registration',
+        actor_user_id: user.id,
+        email_type: 'participant_confirmation',
+        email_recipient: normalizedEmail,
+        note: 'RESEND_API_KEY is not configured',
+      });
     }
 
     return new Response(
