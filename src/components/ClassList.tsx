@@ -113,8 +113,10 @@ export default function ClassList({ locale }: { locale: Locale }) {
     const title = locale === 'de' ? dc.title_de : dc.title_en;
     const description = locale === 'de' ? dc.description_de : dc.description_en;
     const whatToBring = locale === 'de' ? dc.what_to_bring_de : dc.what_to_bring_en;
+    const previewText = locale === 'de' ? dc.preview_text_de : dc.preview_text_en;
     const sessions = dc.sessions || [];
     const classState = getClassState(sessions, dc.registration_opens_at, dc.registration_closes_at);
+    const isPreview = !!dc.is_preview;
 
     return (
       <div key={dc.id} className={`group bg-surface rounded-3xl border border-bg-warm shadow-soft hover:shadow-lift hover:-translate-y-0.5 transition-all duration-300 overflow-hidden ${classState === 'archived' ? 'opacity-60' : ''}`}>
@@ -132,9 +134,14 @@ export default function ClassList({ locale }: { locale: Locale }) {
                 <span className="text-[11px] font-bold uppercase tracking-wider bg-blue-100 text-blue-700 px-2.5 py-0.5 rounded-full mt-1 self-start">{i18n.workshops.ongoing}</span>
               )}
             </div>
-            {dc.level && (
-              <span className="text-[11px] uppercase tracking-wider bg-gradient-to-br from-teal/15 to-teal/5 text-teal-dark font-bold px-3 py-1 rounded-full shrink-0 border border-teal/15">{dc.level}</span>
-            )}
+            <div className="flex gap-2 shrink-0 items-center">
+              {isPreview && (
+                <span className="text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-700 px-2.5 py-1 rounded-full border border-amber-200">{locale === 'de' ? 'Vorschau' : 'Preview'}</span>
+              )}
+              {dc.level && (
+                <span className="text-[11px] uppercase tracking-wider bg-gradient-to-br from-teal/15 to-teal/5 text-teal-dark font-bold px-3 py-1 rounded-full border border-teal/15">{dc.level}</span>
+              )}
+            </div>
           </div>
         </div>
 
@@ -155,7 +162,16 @@ export default function ClassList({ locale }: { locale: Locale }) {
 
         {/* Details */}
         <div className="px-6 pb-5 space-y-3">
-          {sessions.length > 0 && (
+          {isPreview && previewText ? (
+            <div className="rounded-xl border border-amber-200/80 bg-amber-50/60 px-4 py-3.5">
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center shrink-0">
+                  <svg className="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" strokeWidth="2" /><path d="M16 2v4M8 2v4M3 10h18" strokeWidth="2" strokeLinecap="round" /></svg>
+                </div>
+                <p className="text-sm font-medium text-amber-800 self-center">{previewText}</p>
+              </div>
+            </div>
+          ) : sessions.length > 0 && (
             <div className="rounded-xl border border-teal/12 bg-gradient-to-br from-white to-teal/[0.04] px-4 py-3.5">
               <div className="flex items-start gap-3">
                 <div className="w-8 h-8 rounded-lg bg-teal/10 flex items-center justify-center shrink-0">
@@ -177,7 +193,7 @@ export default function ClassList({ locale }: { locale: Locale }) {
             </div>
           )}
 
-          {(dc.location || dc.price_eur != null || dc.is_donation) && (
+          {!isPreview && (dc.location || dc.price_eur != null || dc.is_donation) && (
             <div className="flex flex-wrap gap-2">
               {dc.location && (
                 <span className="inline-flex items-start gap-2 bg-white border border-gray-150 rounded-2xl px-3 py-2 shadow-sm">
@@ -222,7 +238,7 @@ export default function ClassList({ locale }: { locale: Locale }) {
             {i18n.workshops.registration_opens} {new Date(dc.registration_opens_at).toLocaleString(dtLocale, { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false })}
           </div>
         )}
-        {classState === 'open' && (
+        {classState === 'open' && !isPreview && (
           <>
             {dc.registration_closes_at && (
               <div className="px-6 py-3 text-sm font-medium bg-gray-50 text-text-muted border-t border-gray-100">
