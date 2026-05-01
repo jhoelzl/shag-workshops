@@ -1,4 +1,4 @@
-import { Fragment, useState, useEffect, useMemo } from 'react';
+import { Fragment, useState, useEffect, useMemo, useRef } from 'react';
 import { supabase } from '../../lib/supabase';
 import type { DanceClass, ClassSession, Registration, RegistrationHistory, Database } from '../../lib/database.types';
 import { getClassState, type ClassState } from '../../lib/classState';
@@ -63,6 +63,16 @@ const STATUS_OPTIONS: { value: ClassState | 'all'; label: string }[] = [
   { value: 'archived', label: '⚫ Archived' },
 ];
 
+function setUrlParam(key: string, value: string | null) {
+  const url = new URL(window.location.href);
+  if (value == null) {
+    url.searchParams.delete(key);
+  } else {
+    url.searchParams.set(key, value);
+  }
+  window.history.pushState(null, '', url.toString());
+}
+
 export default function ClassEditor({ classes, registrations, history, currentUser, onUpdate }: Props) {
   const [editing, setEditing] = useState<Partial<DanceClass> | null>(null);
   const [sessions, setSessions] = useState<SessionDraft[]>([]);
@@ -70,6 +80,7 @@ export default function ClassEditor({ classes, registrations, history, currentUs
   const [classSessionsMap, setClassSessionsMap] = useState<Record<string, ClassSession[]>>({});
   const [expandedClassId, setExpandedClassId] = useState<string | null>(null);
   const [viewClassId, setViewClassId] = useState<string | null>(null);
+  const urlInitDone = useRef(false);
   const [filterLevel, setFilterLevel] = useState<string>('all');
   const [filterDance, setFilterDance] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<ClassState | 'all'>('all');
@@ -92,6 +103,47 @@ export default function ClassEditor({ classes, registrations, history, currentUs
       }
     }
     loadSessions();
+  }, [classes]);
+
+  // Initialize state from URL once classes are available
+  useEffect(() => {
+    if (urlInitDone.current || classes.length === 0) return;
+    urlInitDone.current = true;
+    const params = new URLSearchParams(window.location.search);
+    const editParam = params.get('edit');
+    const viewParam = params.get('view');
+    if (editParam === 'new') {
+      setEditing({ ...EMPTY_CLASS });
+      setSessions([]);
+    } else if (editParam) {
+      const dc = classes.find((c) => c.id === editParam);
+      if (dc) {
+        setEditing({ ...dc });
+      }
+    }
+    if (viewParam) setViewClassId(viewParam);
+  }, [classes]);
+
+  // Sync back/forward browser navigation
+  useEffect(() => {
+    function onPopState() {
+      const params = new URLSearchParams(window.location.search);
+      const editParam = params.get('edit');
+      const viewParam = params.get('view');
+      if (!editParam) {
+        setEditing(null);
+        setSessions([]);
+      } else if (editParam === 'new') {
+        setEditing({ ...EMPTY_CLASS });
+        setSessions([]);
+      } else {
+        const dc = classes.find((c) => c.id === editParam);
+        if (dc) setEditing({ ...dc });
+      }
+      setViewClassId(viewParam);
+    }
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
   }, [classes]);
 
   const regCountsMap = useMemo(() => {
@@ -133,6 +185,8 @@ export default function ClassEditor({ classes, registrations, history, currentUs
 
   function duplicateClass(dc: DanceClass) {
     const existing = classSessionsMap[dc.id] || [];
+    setUrlParam('edit', 'new');
+    setUrlParam('view', null);
     setEditing({
       ...dc,
       id: undefined,
@@ -150,6 +204,8 @@ export default function ClassEditor({ classes, registrations, history, currentUs
 
   function startEditing(dc?: DanceClass) {
     if (dc) {
+      setUrlParam('edit', dc.id);
+      setUrlParam('view', null);
       setEditing({ ...dc });
       const existing = classSessionsMap[dc.id] || [];
       setSessions(existing.map((s) => ({
@@ -160,6 +216,8 @@ export default function ClassEditor({ classes, registrations, history, currentUs
         note: s.note || '',
       })));
     } else {
+      setUrlParam('edit', 'new');
+      setUrlParam('view', null);
       setEditing({ ...EMPTY_CLASS });
       setSessions([]);
     }
@@ -271,6 +329,7 @@ export default function ClassEditor({ classes, registrations, history, currentUs
     }
 
     setSaving(false);
+    setUrlParam('edit', null);
     setEditing(null);
     onUpdate();
   }
@@ -388,7 +447,7 @@ export default function ClassEditor({ classes, registrations, history, currentUs
             generateWeeklyDates={generateWeeklyDates}
             handleSave={handleSave}
             saving={saving}
-            onCancel={() => setEditing(null)}
+            onCancel={() => { setUrlParam('edit', null); setEditing(null); }}
             title="New Class"
           />
         </div>
@@ -418,14 +477,14 @@ export default function ClassEditor({ classes, registrations, history, currentUs
                   generateWeeklyDates={generateWeeklyDates}
                   handleSave={handleSave}
                   saving={saving}
-                  onCancel={() => setEditing(null)}
+                  onCancel={() => { setUrlParam('edit', null); setEditing(null); }}
                   title={`Edit: ${dc.title_de}`}
                 />
               ) : (
                 <div className={`bg-surface/80 backdrop-blur rounded-2xl border shadow-soft transition-all ${editing ? 'opacity-40 pointer-events-none' : 'border-primary/5 hover:shadow-lift hover:-translate-y-0.5'}`}>
                   <div
                     className="p-4 cursor-pointer"
-                    onClick={() => setViewClassId(isViewing ? null : dc.id)}
+                    onClick={() => { const next = isViewing ? null : dc.id; setUrlParam('view', next); setViewClassId(next); }}
                   >
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1 min-w-0">
