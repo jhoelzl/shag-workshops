@@ -1,11 +1,13 @@
-import { useState, useEffect, useMemo } from 'react';
+import { Fragment, useState, useEffect, useMemo } from 'react';
 import { supabase } from '../../lib/supabase';
-import type { DanceClass, ClassSession, Registration, Database } from '../../lib/database.types';
+import type { DanceClass, ClassSession, Registration, RegistrationHistory, Database } from '../../lib/database.types';
 import { getClassState, type ClassState } from '../../lib/classState';
 
 interface Props {
   classes: DanceClass[];
   registrations: Registration[];
+  history: RegistrationHistory[];
+  currentUser: any;
   onUpdate: () => void;
 }
 
@@ -58,7 +60,7 @@ const STATUS_OPTIONS: { value: ClassState | 'all'; label: string }[] = [
   { value: 'archived', label: '⚫ Archived' },
 ];
 
-export default function ClassEditor({ classes, registrations, onUpdate }: Props) {
+export default function ClassEditor({ classes, registrations, history, currentUser, onUpdate }: Props) {
   const [editing, setEditing] = useState<Partial<DanceClass> | null>(null);
   const [sessions, setSessions] = useState<SessionDraft[]>([]);
   const [saving, setSaving] = useState(false);
@@ -468,7 +470,7 @@ export default function ClassEditor({ classes, registrations, onUpdate }: Props)
 
                   {isViewing && (
                     <div className="border-t border-primary/5 bg-bg-warm/20 px-5 py-5">
-                      <ClassDetailView dc={dc} sessions={classSessions} classRegs={classRegs} regCounts={counts} onUpdate={onUpdate} addingRegFor={addingRegFor} setAddingRegFor={setAddingRegFor} />
+                      <ClassDetailView dc={dc} sessions={classSessions} classRegs={classRegs} regCounts={counts} history={history} currentUser={currentUser} onUpdate={onUpdate} addingRegFor={addingRegFor} setAddingRegFor={setAddingRegFor} />
                     </div>
                   )}
 
@@ -476,7 +478,9 @@ export default function ClassEditor({ classes, registrations, onUpdate }: Props)
                     <div className="border-t border-primary/5 bg-bg-warm/20 rounded-b-2xl">
                       <InlineRegistrations
                         classRegs={classRegs}
+                        history={history}
                         danceClass={dc}
+                        currentUser={currentUser}
                         onUpdate={onUpdate}
                         addingRegFor={addingRegFor}
                         setAddingRegFor={setAddingRegFor}
@@ -574,22 +578,37 @@ function TransitionButton({ to, label, disabled, onClick }: { to: RegStatus; lab
 
 function InlineRegistrations({
   classRegs,
+  history = [],
   danceClass,
+  currentUser,
   onUpdate,
   addingRegFor,
   setAddingRegFor,
 }: {
   classRegs: Registration[];
+  history: RegistrationHistory[];
   danceClass: DanceClass;
+  currentUser: any;
   onUpdate: () => void;
   addingRegFor: string | null;
   setAddingRegFor: (v: string | null) => void;
 }) {
   const [updating, setUpdating] = useState<Set<string>>(new Set());
   const [openMenu, setOpenMenu] = useState<string | null>(null);
+  const [openHistory, setOpenHistory] = useState<string | null>(null);
   const [manualReg, setManualReg] = useState({ name: '', email: '', role: 'lead' as 'lead' | 'follow', partner_name: '', comment: '' });
   const [manualSaving, setManualSaving] = useState(false);
   const [manualError, setManualError] = useState('');
+  const historyByRegistration = useMemo(() => {
+    const map = new Map<string, RegistrationHistory[]>();
+    for (const entry of history) {
+      if (!map.has(entry.registration_id)) {
+        map.set(entry.registration_id, []);
+      }
+      map.get(entry.registration_id)!.push(entry);
+    }
+    return map;
+  }, [history]);
 
   const sorted = [...classRegs].sort((a, b) => {
     const order: Record<string, number> = { confirmed: 0, pending: 1, waitlisted: 2, cancelled: 3 };
@@ -740,7 +759,7 @@ function InlineRegistrations({
                 <th className="py-2.5 px-3">Current Status</th>
                 <th className="py-2.5 px-3">Date</th>
                 <th className="py-2.5 px-3">Change Status</th>
-                <th className="py-2.5 px-3 w-10"></th>
+                <th className="py-2.5 px-3 text-right">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -748,50 +767,95 @@ function InlineRegistrations({
                 const isUpdating = updating.has(reg.id);
                 const status = reg.status as RegStatus;
                 const transitions = REG_TRANSITIONS[status] ?? [];
+                const entries = historyByRegistration.get(reg.id) || [];
+                const isHistoryOpen = openHistory === reg.id;
                 return (
-                  <tr key={reg.id} className="border-t border-primary/5 hover:bg-white/80 transition-colors">
-                    <td className="py-2.5 px-3 font-semibold text-primary">{reg.name}</td>
-                    <td className="py-2.5 px-3 text-text-muted">{reg.email}</td>
-                    <td className="py-2.5 px-3">
-                      <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${reg.role === 'lead' ? 'bg-primary/8 text-primary' : 'bg-coral/15 text-coral-dark'}`}>
-                        {reg.role === 'lead' ? 'Lead' : 'Follow'}
-                      </span>
-                    </td>
-                    <td className="py-2.5 px-3 text-text-muted">{reg.partner_name || '—'}</td>
-                    <td className="py-2.5 px-3">
-                      <RegStatusPill status={status} />
-                    </td>
-                    <td className="py-2.5 px-3 text-text-muted text-xs tabular-nums">{new Date(reg.created_at).toLocaleDateString('de-AT')}</td>
-                    <td className="py-2.5 px-3">
-                      <div className="flex flex-wrap gap-1">
-                        {transitions.map((t) => (
-                          <TransitionButton key={t.to} to={t.to} label={t.label} disabled={isUpdating} onClick={() => updateStatus(reg.id, t.to)} />
-                        ))}
-                      </div>
-                    </td>
-                    <td className="py-2.5 px-3 relative">
-                      <button
-                        onClick={() => setOpenMenu(openMenu === reg.id ? null : reg.id)}
-                        className="text-text-muted hover:text-primary p-1 rounded-full hover:bg-primary/5 transition"
-                        title="More actions"
-                      >
-                        ⋯
-                      </button>
-                      {openMenu === reg.id && (
-                        <>
-                          <div className="fixed inset-0 z-10" onClick={() => setOpenMenu(null)} />
-                          <div className="absolute right-2 top-8 z-20 bg-white rounded-xl shadow-lift border border-primary/10 py-1 min-w-[180px]">
-                            <button
-                              onClick={() => deleteRegistration(reg)}
-                              className="w-full text-left text-xs font-semibold text-coral-dark hover:bg-coral/10 px-3 py-2 transition"
-                            >
-                              🗑 Delete permanently
-                            </button>
-                          </div>
-                        </>
-                      )}
-                    </td>
-                  </tr>
+                  <Fragment key={reg.id}>
+                    <tr className="border-t border-primary/5 hover:bg-white/80 transition-colors">
+                      <td className="py-2.5 px-3 font-semibold text-primary">{reg.name}</td>
+                      <td className="py-2.5 px-3 text-text-muted">{reg.email}</td>
+                      <td className="py-2.5 px-3">
+                        <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${reg.role === 'lead' ? 'bg-primary/8 text-primary' : 'bg-coral/15 text-coral-dark'}`}>
+                          {reg.role === 'lead' ? 'Lead' : 'Follow'}
+                        </span>
+                      </td>
+                      <td className="py-2.5 px-3 text-text-muted">{reg.partner_name || '—'}</td>
+                      <td className="py-2.5 px-3">
+                        <RegStatusPill status={status} />
+                      </td>
+                      <td className="py-2.5 px-3 text-text-muted text-xs tabular-nums">{new Date(reg.created_at).toLocaleDateString('de-AT')}</td>
+                      <td className="py-2.5 px-3">
+                        <div className="flex flex-wrap gap-1">
+                          {transitions.map((t) => (
+                            <TransitionButton key={t.to} to={t.to} label={t.label} disabled={isUpdating} onClick={() => updateStatus(reg.id, t.to)} />
+                          ))}
+                        </div>
+                      </td>
+                      <td className="py-2.5 px-3 relative">
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => setOpenHistory(isHistoryOpen ? null : reg.id)}
+                            className="text-[11px] font-semibold px-2.5 py-1 rounded-full border border-primary/10 bg-primary/5 hover:bg-primary/10 text-primary/80 transition-colors"
+                            disabled={isUpdating}
+                          >
+                            History ({entries.length})
+                          </button>
+                          <button
+                            onClick={() => setOpenMenu(openMenu === reg.id ? null : reg.id)}
+                            className="text-text-muted hover:text-primary p-1 rounded-full hover:bg-primary/5 transition"
+                            title="More actions"
+                          >
+                            ⋯
+                          </button>
+                        </div>
+                        {openMenu === reg.id && (
+                          <>
+                            <div className="fixed inset-0 z-10" onClick={() => setOpenMenu(null)} />
+                            <div className="absolute right-2 top-8 z-20 bg-white rounded-xl shadow-lift border border-primary/10 py-1 min-w-[180px]">
+                              <button
+                                onClick={() => deleteRegistration(reg)}
+                                className="w-full text-left text-xs font-semibold text-coral-dark hover:bg-coral/10 px-3 py-2 transition"
+                              >
+                                🗑 Delete permanently
+                              </button>
+                            </div>
+                          </>
+                        )}
+                      </td>
+                    </tr>
+                    {isHistoryOpen && (
+                      <tr className="border-t border-primary/5 bg-bg-warm/20">
+                        <td colSpan={8} className="px-3 py-3">
+                          {entries.length === 0 ? (
+                            <p className="text-xs text-text-muted">No history entries yet for this registration.</p>
+                          ) : (
+                            <div className="space-y-2">
+                              {entries.slice(0, 12).map((entry) => {
+                                const tone = HISTORY_EVENT_TONE[entry.event_type];
+                                return (
+                                  <div key={entry.id} className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 bg-white/70 border border-primary/10 rounded-xl px-3 py-2.5">
+                                    <div>
+                                      <div className="flex flex-wrap items-center gap-2">
+                                        <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${tone}`}>{formatHistoryEventLabel(entry)}</span>
+                                        <span className="text-[11px] text-text-muted">{new Date(entry.created_at).toLocaleString('de-AT')}</span>
+                                      </div>
+                                      <p className="text-xs text-primary mt-1">{formatHistoryDetails(entry)}</p>
+                                      {(entry.event_type === 'email_sent' || entry.event_type === 'email_failed') && (() => { const id = getMetadataRecord(entry)?.id as string | undefined; return id ? <a href={`https://resend.com/emails/${id}`} target="_blank" rel="noopener noreferrer" className="text-[11px] text-teal-dark underline mt-0.5 inline-block">Resend Log →</a> : null; })()}
+                                      {entry.note && <p className="text-[11px] text-text-muted mt-0.5">{entry.note}</p>}
+                                    </div>
+                                    {getHistoryActorLabel(entry, currentUser) && (
+                                      <span className="text-[11px] text-text-muted">by {getHistoryActorLabel(entry, currentUser)}</span>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                              {entries.length > 12 && <p className="text-[11px] text-text-muted">Showing latest 12 of {entries.length} entries.</p>}
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
                 );
               })}
             </tbody>
@@ -804,11 +868,13 @@ function InlineRegistrations({
   );
 }
 
-function ClassDetailView({ dc, sessions, classRegs, regCounts, onUpdate, addingRegFor, setAddingRegFor }: {
+function ClassDetailView({ dc, sessions, classRegs, regCounts, history, currentUser, onUpdate, addingRegFor, setAddingRegFor }: {
   dc: DanceClass;
   sessions: ClassSession[];
   classRegs: Registration[];
   regCounts: { leads: number; follows: number; pending: number; confirmed: number; waitlisted: number; cancelled: number };
+  history: RegistrationHistory[];
+  currentUser: any;
   onUpdate: () => void;
   addingRegFor: string | null;
   setAddingRegFor: (v: string | null) => void;
@@ -924,7 +990,9 @@ function ClassDetailView({ dc, sessions, classRegs, regCounts, onUpdate, addingR
       </div>
       <InlineRegistrations
         classRegs={classRegs}
+        history={history}
         danceClass={dc}
+        currentUser={currentUser}
         onUpdate={onUpdate}
         addingRegFor={addingRegFor}
         setAddingRegFor={setAddingRegFor}
@@ -932,6 +1000,77 @@ function ClassDetailView({ dc, sessions, classRegs, regCounts, onUpdate, addingR
     </div>
     </div>
   );
+}
+
+const HISTORY_EVENT_TONE: Record<RegistrationHistory['event_type'], string> = {
+  created: 'bg-primary/10 text-primary',
+  status_changed: 'bg-accent/20 text-accent-dark',
+  email_sent: 'bg-teal/15 text-teal-dark',
+  email_failed: 'bg-coral/15 text-coral-dark',
+  email_skipped: 'bg-slate-200 text-slate-600',
+};
+
+function formatHistoryEventLabel(entry: RegistrationHistory): string {
+  switch (entry.event_type) {
+    case 'created':
+      return 'Created';
+    case 'status_changed':
+      return 'Status Changed';
+    case 'email_sent':
+      return 'Email Sent';
+    case 'email_failed':
+      return 'Email Failed';
+    case 'email_skipped':
+      return 'Email Skipped';
+    default:
+      return entry.event_type;
+  }
+}
+
+function formatHistoryDetails(entry: RegistrationHistory): string {
+  if (entry.event_type === 'status_changed') {
+    const oldStatus = entry.old_status || 'unknown';
+    const newStatus = entry.new_status || 'unknown';
+    return `Status: ${oldStatus} -> ${newStatus}`;
+  }
+
+  if (entry.event_type === 'created') {
+    return `Registration created with status ${entry.new_status || 'unknown'} (${entry.triggered_by.replaceAll('_', ' ')})`;
+  }
+
+  if (entry.event_type === 'email_sent' || entry.event_type === 'email_failed' || entry.event_type === 'email_skipped') {
+    const emailType = entry.email_type || 'email';
+    const recipient = entry.email_recipient ? ` to ${entry.email_recipient}` : '';
+    return `${emailType.replaceAll('_', ' ')}${recipient}`;
+  }
+
+  return entry.event_type;
+}
+
+function getUserDisplayLabel(user: any): string | null {
+  if (!user) return null;
+  const fullName = [user.user_metadata?.first_name, user.user_metadata?.last_name].filter(Boolean).join(' ').trim();
+  return user.user_metadata?.full_name || user.user_metadata?.name || user.user_metadata?.display_name || fullName || user.email || null;
+}
+
+function getMetadataRecord(entry: RegistrationHistory): Record<string, unknown> | null {
+  if (!entry.metadata || typeof entry.metadata !== 'object' || Array.isArray(entry.metadata)) {
+    return null;
+  }
+  return entry.metadata as Record<string, unknown>;
+}
+
+function getHistoryActorLabel(entry: RegistrationHistory, currentUser: any): string | null {
+  const metadata = getMetadataRecord(entry);
+  const actorName = typeof metadata?.actor_name === 'string' ? metadata.actor_name : null;
+  const actorEmail = typeof metadata?.actor_email === 'string' ? metadata.actor_email : null;
+  if (actorName) return actorName;
+  if (entry.actor_user_id && currentUser?.id === entry.actor_user_id) {
+    return getUserDisplayLabel(currentUser);
+  }
+  if (actorEmail) return actorEmail;
+  if (entry.actor_user_id) return `${entry.actor_user_id.slice(0, 8)}...`;
+  return null;
 }
 
 function ClassForm({

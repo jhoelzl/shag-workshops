@@ -150,7 +150,7 @@ export default function AdminDashboard() {
         )}
 
         {tab === 'classes' && (
-          <ClassEditor classes={classes} registrations={registrations} onUpdate={loadData} />
+          <ClassEditor classes={classes} registrations={registrations} history={registrationHistory} currentUser={user} onUpdate={loadData} />
         )}
 
         {tab === 'registrations' && (
@@ -158,6 +158,7 @@ export default function AdminDashboard() {
             registrations={registrations}
             history={registrationHistory}
             classes={classes}
+            currentUser={user}
             onUpdate={loadData}
           />
         )}
@@ -224,9 +225,6 @@ function OverviewTab({
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
         <div>
           <p className="eyebrow text-coral mb-1">Dashboard</p>
-          <h1 className="font-display text-3xl sm:text-4xl font-bold tracking-tight text-primary">
-            Welcome <span className="text-gradient-warm">back</span>
-          </h1>
           <p className="text-sm text-text-muted mt-1">
             {stats.pending > 0
               ? `${stats.pending} registration${stats.pending > 1 ? 's are' : ' is'} waiting for your confirmation.`
