@@ -252,8 +252,8 @@ export default function WorkshopPage({ locale }: { locale: Locale }) {
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       {dc.dance && <span className="text-[11px] font-bold uppercase tracking-widest text-accent-dark">{dc.dance}</span>}
-                      {dc.dance && dc.teachers && <span className="text-text-muted/30">·</span>}
-                      {dc.teachers && <span className="text-[11px] font-medium text-text-muted tracking-wide">{dc.teachers}</span>}
+                      {dc.dance && dc.teachers && !isPreview && <span className="text-text-muted/30">·</span>}
+                      {dc.teachers && !isPreview && <span className="text-[11px] font-medium text-text-muted tracking-wide">{dc.teachers}</span>}
                     </div>
                     <h3 className="font-display text-xl font-bold text-primary leading-tight">{title}</h3>
                   </div>
