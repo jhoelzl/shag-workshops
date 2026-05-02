@@ -190,7 +190,7 @@ export default function WorkshopPage({ locale }: { locale: Locale }) {
   }
 
   return (
-    <div>
+    <div className="pt-2">
     {/* Level filter */}
     {availableLevels.length > 1 && (
       <div className="flex flex-wrap items-center justify-center gap-2 mb-8">
@@ -212,9 +212,9 @@ export default function WorkshopPage({ locale }: { locale: Locale }) {
       </div>
     )}
 
-    <div className="grid gap-8 lg:grid-cols-5">
+    <div className="grid grid-cols-1 gap-8 lg:grid-cols-5">
       {/* Class list */}
-      <div className="lg:col-span-3 space-y-4">
+      <div className="min-w-0 lg:col-span-3 space-y-4">
         {filteredClasses.length === 0 && (
           <div className="bg-surface rounded-2xl border border-bg-warm p-6 text-center">
             <p className="font-semibold text-primary">{i18n.workshops.no_current_workshops}</p>
@@ -257,7 +257,7 @@ export default function WorkshopPage({ locale }: { locale: Locale }) {
                     </div>
                     <h3 className="font-display text-xl font-bold text-primary leading-tight">{title}</h3>
                   </div>
-                  <div className="flex gap-2 items-center shrink-0">
+                  <div className="mt-2 flex gap-2 items-start shrink-0">
                     {dc.level && (
                       <span className="text-xs bg-teal/10 text-teal-dark font-semibold px-3 py-1 rounded-full">{dc.level}</span>
                     )}
@@ -343,7 +343,7 @@ export default function WorkshopPage({ locale }: { locale: Locale }) {
 
       {/* Registration form (sticky on desktop) — only for open classes */}
       {openClasses.length > 0 && (
-        <div className="lg:col-span-2 lg:sticky lg:top-24 lg:self-start">
+        <div className="min-w-0 lg:col-span-2 lg:sticky lg:top-24 lg:self-start">
           <RegistrationForm
             locale={locale}
             danceClasses={openClasses}
@@ -387,7 +387,7 @@ export default function WorkshopPage({ locale }: { locale: Locale }) {
                       </div>
                       <h4 className="font-display font-semibold text-text">{title}</h4>
                     </div>
-                    <div className="flex gap-2 items-center shrink-0">
+                    <div className="mt-2 flex gap-2 items-start shrink-0">
                       {dc.level && (
                         <span className="text-xs bg-teal/10 text-teal-dark font-medium px-3 py-1 rounded-full">{dc.level}</span>
                       )}
@@ -477,7 +477,7 @@ export default function WorkshopPage({ locale }: { locale: Locale }) {
                       </div>
                       <h4 className="font-display font-semibold text-text">{title}</h4>
                     </div>
-                    <div className="flex gap-2 items-center shrink-0">
+                    <div className="mt-2 flex gap-2 items-start shrink-0">
                       {dc.level && (
                         <span className="text-xs bg-gray-100 text-text-muted font-medium px-3 py-1 rounded-full">{dc.level}</span>
                       )}
