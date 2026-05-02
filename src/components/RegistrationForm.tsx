@@ -101,7 +101,7 @@ export default function RegistrationForm({ locale, danceClasses, supabaseFunctio
   }
 
   return (
-    <form onSubmit={handleSubmit} className="bg-surface rounded-2xl shadow-lg border border-bg-warm p-6 max-w-lg">
+    <form onSubmit={handleSubmit} className="w-full bg-surface rounded-2xl shadow-lg border border-bg-warm p-6 max-w-lg">
       <h2 className="font-display text-2xl font-bold text-primary mb-6">{i18n.registration.title}</h2>
 
       {/* Dance Class Selection */}
