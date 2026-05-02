@@ -36,7 +36,8 @@
     "what_to_bring": "What to bring",
     "filter_all_levels": "All Levels",
     "no_current_workshops": "There are currently no workshops available.",
-    "no_current_workshops_for_level": "There are currently no workshops available for this level."
+    "no_current_workshops_for_level": "There are currently no workshops available for this level.",
+    "preview_come_back": "Check back later!"
   },
   "registration": {
     "title": "Registration",

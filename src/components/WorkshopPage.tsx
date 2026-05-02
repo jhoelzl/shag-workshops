@@ -294,7 +294,10 @@ export default function WorkshopPage({ locale }: { locale: Locale }) {
                       <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center shrink-0">
                         <svg className="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" strokeWidth="2" /><path d="M16 2v4M8 2v4M3 10h18" strokeWidth="2" strokeLinecap="round" /></svg>
                       </div>
-                      <p className="text-sm font-medium text-amber-800 self-center">{previewText}</p>
+                      <div className="self-center">
+                        <p className="text-sm font-medium text-amber-800">{previewText}</p>
+                        <p className="text-sm text-amber-800 mt-0.5">{i18n.workshops.preview_come_back}</p>
+                      </div>
                     </div>
                   </div>
                 ) : sessions.length > 0 && (
