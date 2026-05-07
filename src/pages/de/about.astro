@@ -52,7 +52,7 @@ const levels = [
         </div>
       </div>
       <div class="md:col-span-3 text-center md:text-left">
-        <p class="eyebrow text-teal mb-2">Hello!</p>
+        <p class="eyebrow text-teal mb-2">Hallo!</p>
         <h2 class="font-display text-3xl sm:text-4xl font-bold text-primary mb-4 tracking-tight">{i18n.about.who_we_title}</h2>
         <p class="text-text-muted leading-relaxed text-lg">{i18n.about.who_we_text}</p>
       </div>
@@ -106,23 +106,18 @@ const levels = [
     <!-- Levels -->
     <section>
       <div class="text-center mb-10">
-        <p class="eyebrow text-teal mb-2">Skill</p>
+        <p class="eyebrow text-teal mb-2">Niveau</p>
         <h2 class="font-display text-3xl sm:text-4xl font-bold text-primary mb-3 tracking-tight">{i18n.about.levels_title}</h2>
         <span class="section-divider"><span class="text-accent">✦</span></span>
       </div>
 
       <div class="grid gap-4 md:grid-cols-3">
-        {levels.map((level, i) => (
+        {levels.map((level) => (
           <div class={`group relative bg-surface rounded-3xl p-6 border border-bg-warm shadow-soft hover:shadow-lift hover:-translate-y-0.5 transition-all duration-300 overflow-hidden`}>
             <div class={`absolute -top-10 -right-10 w-32 h-32 rounded-full blur-2xl opacity-50 transition-opacity group-hover:opacity-80 ${
               level.color === 'teal' ? 'bg-teal/15' : level.color === 'coral' ? 'bg-coral/15' : 'bg-accent/15'
             }`}></div>
             <div class="relative">
-              <div class={`inline-flex items-center justify-center w-11 h-11 rounded-2xl font-display font-black text-xl mb-4 text-white shadow-soft ${
-                level.color === 'teal' ? 'bg-gradient-to-br from-teal to-teal-dark' : level.color === 'coral' ? 'bg-gradient-to-br from-coral to-coral-dark' : 'bg-gradient-to-br from-accent to-accent-dark'
-              }`}>
-                {i + 1}
-              </div>
               <h3 class="font-display text-xl font-bold text-primary mb-2 tracking-tight">{level.title}</h3>
               <p class="text-text-muted leading-relaxed text-sm">{level.desc}</p>
             </div>
