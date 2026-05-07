@@ -197,34 +197,43 @@ export default function ClassList({ locale }: { locale: Locale }) {
           )}
 
           {!isPreview && (dc.location || dc.price_eur != null || dc.is_donation) && (
-            <div className="flex flex-wrap gap-2">
-              {dc.location && (
-                <span className="inline-flex items-start gap-2 bg-white border border-gray-150 rounded-2xl px-3 py-2 shadow-sm">
+            <div className="flex flex-wrap lg:flex-nowrap items-start gap-2">
+              {dc.location && (dc.location_url ? (
+                <a
+                  href={dc.location_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-start gap-2 bg-white border border-gray-150 rounded-2xl px-3 py-2 shadow-sm hover:border-primary/40 transition-colors lg:flex-1 lg:min-w-0"
+                >
                   <svg className="w-3.5 h-3.5 text-coral mt-0.5 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" /></svg>
-                  <span className="leading-tight">
-                    {dc.location_url ? (
-                      <a href={dc.location_url} target="_blank" rel="noopener noreferrer" className="block font-semibold text-text hover:text-primary transition-colors">
-                        {dc.location}
-                      </a>
-                    ) : (
-                      <span className="block font-semibold text-text">{dc.location}</span>
+                  <span className="leading-tight min-w-0">
+                    <span className="block font-semibold text-text hover:text-primary transition-colors">{dc.location}</span>
+                    {dc.location_details && (
+                      <span className="block text-[11px] text-text-muted mt-0.5 whitespace-nowrap truncate">{dc.location_details}</span>
                     )}
-                      {dc.location_details && (
-                        <span className="block text-[11px] text-text-muted mt-0.5">{dc.location_details}</span>
-                      )}
+                  </span>
+                </a>
+              ) : (
+                <span className="inline-flex items-start gap-2 bg-white border border-gray-150 rounded-2xl px-3 py-2 shadow-sm lg:flex-1 lg:min-w-0">
+                  <svg className="w-3.5 h-3.5 text-coral mt-0.5 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" /></svg>
+                  <span className="leading-tight min-w-0">
+                    <span className="block font-semibold text-text">{dc.location}</span>
+                    {dc.location_details && (
+                      <span className="block text-[11px] text-text-muted mt-0.5 whitespace-nowrap truncate">{dc.location_details}</span>
+                    )}
                   </span>
                 </span>
-              )}
+              ))}
               {dc.is_donation ? (
-                <span className="inline-flex items-start gap-2 bg-teal/8 border border-teal/20 rounded-2xl px-3 py-2 shadow-sm">
+                <span className="inline-flex items-start gap-2 bg-teal/8 border border-teal/20 rounded-2xl px-3 py-2 shadow-sm shrink-0">
                   <span className="text-teal mt-0.5">♥</span>
                   <span className="leading-tight">
-                    <span className="block font-semibold text-teal-dark">{locale === 'de' ? 'Gratis' : 'Free'}</span>
-                    <span className="block text-[11px] text-teal-dark/80 mt-0.5">{locale === 'de' ? 'Freiwillige Spende' : 'Voluntary donation'}</span>
+                    <span className="block font-semibold text-teal-dark">{locale === 'de' ? 'Freiwillige Spende' : 'Voluntary donation'}</span>
+                    <span className="block text-[11px] text-teal-dark/80 mt-0.5">{locale === 'de' ? 'Zur Deckung der Saalmiete' : 'To help cover the studio rental'}</span>
                   </span>
                 </span>
               ) : dc.price_eur != null && (
-                <span className="inline-flex items-start bg-white border border-gray-150 rounded-2xl px-3 py-2 shadow-sm">
+                <span className="inline-flex items-start bg-white border border-gray-150 rounded-2xl px-3 py-2 shadow-sm shrink-0">
                   <span className="leading-tight">
                     <span className="block font-semibold text-text">{fmtCurrency(Number(dc.price_eur))}</span>
                     <span className="block text-[11px] text-text-muted">{i18n.workshops.cost}</span>
@@ -266,7 +275,7 @@ export default function ClassList({ locale }: { locale: Locale }) {
   return (
     <div>
       {classes.length > 0 && (
-        <div className="grid gap-6 sm:grid-cols-2">
+        <div className="grid gap-6 lg:grid-cols-2">
           {classes.map(renderClassCard)}
         </div>
       )}
@@ -277,7 +286,7 @@ export default function ClassList({ locale }: { locale: Locale }) {
             <h3 className="font-display text-lg font-bold text-text-muted">{i18n.workshops.archive}</h3>
             <span className="h-px flex-1 bg-text-muted/20"></span>
           </div>
-          <div className="grid gap-6 sm:grid-cols-2">
+          <div className="grid gap-6 lg:grid-cols-2">
             {archivedClasses.map(renderClassCard)}
           </div>
         </div>
