@@ -1,0 +1,517 @@
+---
+// A5 printable flyer / give-away — editorial swing-poster redesign
+// Open at /flyer/ — print at 100% on A5 (or 2-up on A4)
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+---
+
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Flyer · Amadeus Shagadeus</title>
+    <link rel="icon" type="image/svg+xml" href={`${base}/favicon.svg`} />
+    <link rel="stylesheet" href="/src/styles/global.css" />
+    <style>
+      :root {
+        --ink:   #0f1a30;
+        --ink-2: #2a3145;
+        --paper: #FBF6EE;
+        --paper-warm: #F3E7D2;
+        --coral: #E76F51;
+        --teal:  #2A9D8F;
+        --teal-d:#1f7a70;
+        --gold:  #d4a832;
+        --muted: #5b6273;
+      }
+
+      @page { size: A5; margin: 0; }
+      html, body { margin: 0; padding: 0; background: #2b2f45; }
+      body { font-family: 'Inter', system-ui, sans-serif; color: var(--ink); }
+
+      /* ------- canvas ------- */
+      .flyer {
+        width: 148mm;
+        height: 210mm;
+        margin: 12mm auto;
+        position: relative;
+        overflow: hidden;
+        background:
+          radial-gradient(at 10% 0%,   rgba(231,111,81,0.18) 0px, transparent 45%),
+          radial-gradient(at 90% 5%,   rgba(42,157,143,0.16) 0px, transparent 45%),
+          radial-gradient(at 50% 100%, rgba(212,168,50,0.14) 0px, transparent 50%),
+          var(--paper);
+        box-shadow: 0 30px 60px -20px rgba(0,0,0,0.4);
+        border-radius: 4mm;
+      }
+
+      /* subtle paper grain via gradients */
+      .grain {
+        position: absolute; inset: 0; pointer-events: none; z-index: 0;
+        background-image:
+          repeating-linear-gradient(0deg, rgba(15,26,48,0.018) 0 1px, transparent 1px 3px),
+          repeating-linear-gradient(90deg, rgba(15,26,48,0.018) 0 1px, transparent 1px 3px);
+        mix-blend-mode: multiply;
+      }
+
+      .content {
+        position: relative; z-index: 2;
+        padding: 8mm 9mm 7mm;
+        height: 100%;
+        box-sizing: border-box;
+        display: flex; flex-direction: column;
+      }
+
+      /* ------- hero ------- */
+      .hero {
+        display: grid;
+        grid-template-columns: 1fr 62mm;
+        gap: 6mm;
+        align-items: end;
+        margin-top: 3mm;
+      }
+      .hero-text { padding-bottom: 1mm; }
+
+      .kicker {
+        display: inline-block;
+        font-family: 'Fraunces', Georgia, serif;
+        font-size: 11pt;
+        font-weight: 800;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--coral);
+        margin-bottom: 2mm;
+      }
+      .kicker .sep {
+        display: inline-block;
+        width: 8mm; height: 1px;
+        background: var(--coral);
+        vertical-align: middle;
+        margin: 0 2mm 1mm 0;
+      }
+
+      .title {
+        font-family: 'Fraunces', Georgia, serif;
+        font-weight: 900;
+        font-size: 38pt;
+        line-height: 0.92;
+        letter-spacing: -0.02em;
+        color: var(--ink);
+        margin: 0;
+      }
+      .title .line2 {
+        display: block;
+        font-style: italic;
+        font-weight: 500;
+        font-size: 26pt;
+        letter-spacing: -0.005em;
+        color: var(--teal-d);
+        margin-top: 1mm;
+      }
+
+      .lead { display: none; }
+
+      /* hero photo as a polaroid-ish frame */
+      .photo {
+        position: relative;
+        background: #fff;
+        padding: 2mm 2mm 7mm;
+        border-radius: 1.5mm;
+        box-shadow:
+          0 1px 2px rgba(15,26,48,0.06),
+          0 14px 28px -12px rgba(15,26,48,0.35);
+        transform: rotate(2deg);
+      }
+      .photo img {
+        display: block;
+        width: 100%;
+        height: 52mm;
+        object-fit: cover;
+        object-position: 70% 28%;
+        border-radius: 1mm;
+      }
+      .photo .caption {
+        position: absolute;
+        left: 0; right: 0; bottom: 1.5mm;
+        text-align: center;
+        font-family: 'Fraunces', Georgia, serif;
+        font-style: italic;
+        font-size: 8pt;
+        color: var(--ink-2);
+        letter-spacing: 0.02em;
+      }
+      .photo .stamp {
+        position: absolute;
+        top: -8mm; left: -10mm; right: auto;
+        width: 38mm; height: 38mm;
+        border-radius: 0;
+        background: none;
+        display: flex; align-items: center; justify-content: center;
+        transform: rotate(-9deg);
+        box-shadow: none;
+        padding: 0;
+        box-sizing: border-box;
+        overflow: visible;
+      }
+      /* soft cream halo behind the stamp logo for clearer separation */
+      .photo .stamp::before {
+        content: '';
+        position: absolute;
+        inset: 4mm;
+        background: radial-gradient(closest-side, rgba(251,246,238,0.92), rgba(251,246,238,0) 70%);
+        z-index: 0;
+      }
+      .photo .stamp img {
+        position: relative;
+        z-index: 1;
+        width: 100%; height: 100%;
+        object-fit: contain;
+        border-radius: 0;
+        filter: drop-shadow(0 4px 10px rgba(15,26,48,0.55));
+      }
+
+      /* ------- meta strip ------- */
+      .meta-strip {
+        margin-top: 4mm;
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        align-items: center;
+        gap: 4mm;
+        font-family: 'Inter', sans-serif;
+        font-size: 8pt;
+        color: var(--ink);
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        font-weight: 700;
+      }
+      .meta-strip .rule {
+        height: 1px;
+        background: linear-gradient(to right, transparent, var(--ink) 20%, var(--ink) 80%, transparent);
+        opacity: 0.55;
+      }
+      .meta-strip .pill {
+        background: var(--ink);
+        color: var(--paper);
+        padding: 1.6mm 3mm;
+        border-radius: 999px;
+        letter-spacing: 0.18em;
+      }
+
+      /* ------- tickets / courses ------- */
+      .tickets {
+        margin-top: 3mm;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 4mm;
+      }
+      .ticket {
+        position: relative;
+        background: #fff;
+        border-radius: 2.5mm;
+        overflow: hidden;
+        box-shadow:
+          0 1px 2px rgba(15,26,48,0.05),
+          0 12px 26px -14px rgba(15,26,48,0.3);
+        display: flex; flex-direction: column;
+      }
+      /* perforation line */
+      .ticket::before {
+        content: '';
+        position: absolute;
+        left: 4mm; right: 4mm;
+        top: 26mm;
+        height: 1px;
+        background-image: linear-gradient(to right, var(--ink) 50%, transparent 50%);
+        background-size: 2mm 1px;
+        background-repeat: repeat-x;
+        opacity: 0.35;
+      }
+      /* punch holes on perforation */
+      .ticket::after {
+        content: '';
+        position: absolute;
+        top: 24.5mm;
+        left: -2mm; right: -2mm;
+        height: 4mm;
+        background:
+          radial-gradient(circle at left center, var(--paper) 0 2mm, transparent 2.1mm),
+          radial-gradient(circle at right center, var(--paper) 0 2mm, transparent 2.1mm);
+      }
+      .ticket .head {
+        padding: 4mm 4mm 3mm;
+        background: linear-gradient(135deg, rgba(231,111,81,0.10), rgba(212,168,50,0.10));
+        border-bottom: 1px solid rgba(15,26,48,0.06);
+      }
+      .ticket .head .row {
+        display: flex; justify-content: space-between; align-items: center;
+        margin-bottom: 1.5mm;
+      }
+      .ticket .label {
+        font-family: 'Inter', sans-serif;
+        font-size: 7pt;
+        font-weight: 800;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--coral);
+      }
+      .ticket .level {
+        font-size: 7pt;
+        font-weight: 700;
+        background: var(--ink);
+        color: var(--paper);
+        padding: 1.2mm 2.8mm;
+        border-radius: 999px;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+      }
+      .ticket h3 {
+        font-family: 'Fraunces', Georgia, serif;
+        font-size: 14pt;
+        font-weight: 800;
+        line-height: 1.05;
+        letter-spacing: -0.01em;
+        color: var(--ink);
+        margin: 0;
+        white-space: nowrap;
+      }
+
+      .ticket .body {
+        padding: 3mm 4mm 3mm;
+        font-size: 9pt;
+        line-height: 1.4;
+        color: var(--ink-2);
+        flex: 1;
+      }
+
+      .ticket .when-where {
+        margin-top: auto;
+        background: linear-gradient(180deg, #efe5d3 0%, #e6d7bd 100%);
+        border-top: 1px solid rgba(15,26,48,0.10);
+        padding: 3mm 4mm 3.5mm;
+        display: flex; flex-direction: column; gap: 1.4mm;
+      }
+      .ww-row { display: flex; align-items: center; justify-content: center; gap: 2.2mm; font-size: 9pt; line-height: 1.25; color: var(--ink); font-weight: 600; }
+      .ww-icon { width: 4mm; height: 4mm; flex: 0 0 4mm; display: inline-flex; }
+      .ww-icon svg { width: 100%; height: 100%; }
+      .ww-row.calendar .ww-icon { color: var(--teal-d); }
+      .ww-row.location .ww-icon { color: var(--coral); }
+      .ww-time {
+        font-family: 'Fraunces', Georgia, serif;
+        font-weight: 700;
+        font-size: 11pt;
+        letter-spacing: 0.01em;
+        color: var(--ink);
+      }
+
+      /* shared venue line */
+      .venue {
+        margin-top: 3mm;
+        display: flex; align-items: center; justify-content: center; gap: 2.5mm;
+        font-family: 'Inter', sans-serif;
+        font-size: 10pt;
+        font-weight: 700;
+        color: var(--ink);
+        letter-spacing: 0.04em;
+      }
+      .venue-icon { width: 4mm; height: 4mm; color: var(--coral); }
+
+      /* ------- donation banner ------- */
+      .donation {
+        margin-top: 2mm;
+        text-align: center;
+        font-family: 'Fraunces', Georgia, serif;
+        font-style: italic;
+        font-size: 10pt;
+        color: var(--teal-d);
+      }
+      .donation strong {
+        font-style: normal;
+        font-weight: 800;
+        color: var(--ink);
+        letter-spacing: 0.04em;
+      }
+
+      /* ------- footer ------- */
+      .footer {
+        margin-top: auto;
+        padding-top: 3mm;
+        border-top: 1px solid rgba(15,26,48,0.12);
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 5mm;
+        align-items: center;
+      }
+      .footer .info {
+        font-size: 9pt;
+        color: var(--ink-2);
+        line-height: 1.35;
+      }
+      .footer .info .label {
+        font-family: 'Inter', sans-serif;
+        font-size: 7pt;
+        font-weight: 800;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        color: var(--coral);
+        margin-bottom: 1mm;
+      }
+      .footer .info .url {
+        font-family: 'Fraunces', Georgia, serif;
+        font-weight: 800;
+        font-size: 16pt;
+        color: var(--ink);
+        letter-spacing: -0.01em;
+        line-height: 1;
+        margin-top: 1.5mm;
+      }
+      .footer .logo { display: none; }
+      .footer .qr {
+        background: #fff;
+        padding: 2mm 2mm 1.5mm;
+        border-radius: 2mm;
+        box-shadow: 0 6px 16px -8px rgba(15,26,48,0.25);
+        display: flex; flex-direction: column; align-items: center; gap: 1mm;
+      }
+      .footer .qr img { width: 20mm; height: 20mm; display: block; }
+      .footer .qr span {
+        font-family: 'JetBrains Mono', monospace;
+        font-weight: 600;
+        font-size: 6.5pt;
+        color: var(--ink);
+      }
+
+      /* ------- print + UI helpers ------- */
+      @media print {
+        body { background: #fff; }
+        .flyer { margin: 0; box-shadow: none; border-radius: 0; }
+        .print-hint { display: none !important; }
+      }
+
+      .print-hint {
+        position: fixed; top: 12px; right: 12px; z-index: 10;
+        display: flex; gap: 8px; align-items: center;
+        background: var(--ink); color: #fff;
+        padding: 8px 10px 8px 14px;
+        font-size: 12px; border-radius: 8px;
+        font-family: 'Inter', sans-serif;
+        box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+      }
+      .print-hint button {
+        background: #fff; color: var(--ink);
+        border: 0; padding: 6px 12px; border-radius: 6px;
+        font-size: 12px; font-weight: 600; font-family: inherit;
+        cursor: pointer;
+      }
+      .print-hint button:hover { background: var(--gold); }
+    </style>
+  </head>
+  <body>
+    <div class="print-hint">
+      <span>A5 Flyer</span>
+      <button id="btn-pdf" type="button" title="Druck-Dialog → Als PDF speichern">PDF (Print)</button>
+      <span style="opacity:0.6; font-size:11px;" title="für pixelgenauen Export: npm run flyer:export">npm run flyer:export</span>
+    </div>
+
+    <div class="flyer">
+      <div class="grain"></div>
+
+      <div class="content">
+        <!-- hero -->
+        <section class="hero">
+          <div class="hero-text">
+            <span class="kicker"><span class="sep"></span>Swing-Tanzkurs</span>
+            <h1 class="title">
+              Collegiate Shag
+              <span class="line2">tanzen zu schneller Jazz-Musik</span>
+            </h1>
+            <p class="lead">Energiegeladen, verspielt, ansteckend – komm vorbei und probiere es aus.</p>
+          </div>
+          <div class="photo">
+            <img src={`${base}/vera-josef.webp`} alt="Tanzpaar beim Collegiate Shag" />
+            <div class="stamp">
+              <img src={`${base}/shagadeus_logo.png`} alt="Amadeus Shagadeus" />
+            </div>
+            <div class="caption">Vera & Josef</div>
+          </div>
+        </section>
+
+        <!-- meta strip -->
+        <div class="meta-strip">
+          <span class="pill">2 Aktuelle Workshops</span>
+          <span class="rule"></span>
+          <span>Donnerstag · 18. Juni 2026</span>
+        </div>
+
+        <!-- tickets -->
+        <section class="tickets">
+          <article class="ticket">
+            <div class="head">
+              <div class="row">
+                <span class="label">Beginner</span>
+                <span class="level">Einstieg</span>
+              </div>
+              <h3>Eine kleine Shagmusik</h3>
+            </div>
+            <div class="body">
+              Du hast noch nie Shag getanzt und möchtest es kennenlernen? In diesem Kurs lernst du die Grundlagen und einfache Figuren.
+            </div>
+            <div class="when-where">
+              <div class="ww-row time">
+                <span class="ww-time">18:00 – 18:55</span>
+              </div>
+            </div>
+          </article>
+
+          <article class="ticket">
+            <div class="head">
+              <div class="row">
+                <span class="label">Improver</span>
+                <span class="level">Aufbau</span>
+              </div>
+              <h3>Shag Me Amadeus</h3>
+            </div>
+            <div class="body">
+              Du bist bereits mit den Grundschritten in verschiedenen Positionen vertraut. In diesem Kurs erweitern wir unser Figuren-Repertoire.
+            </div>
+            <div class="when-where">
+              <div class="ww-row time">
+                <span class="ww-time">19:00 – 19:55</span>
+              </div>
+            </div>
+          </article>
+        </section>
+
+        <!-- location + donation -->
+        <div class="venue">
+          <svg class="venue-icon" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/></svg>
+          <span>Pfarrsaal, Pfarre St. Severin · 5023 Salzburg</span>
+        </div>
+        <div class="donation">
+          <strong>Freiwillige Spende</strong> · zur Deckung der Saalmiete
+        </div>
+
+        <!-- footer -->
+        <div class="footer">
+          <div class="info">
+            <div class="label">Anmeldung & Infos</div>
+            Weitere Termine, Details und Anmeldung online.
+            <div class="url">shagadeus.at</div>
+          </div>
+
+          <div class="qr">
+            <img
+              src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&margin=0&data=https%3A%2F%2Fshagadeus.at%2Fde%2Fworkshops%2F"
+              alt="QR Code zu shagadeus.at"
+            />
+            <span>shagadeus.at</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script type="module">
+      const btnPdf = document.getElementById('btn-pdf');
+      btnPdf?.addEventListener('click', () => window.print());
+    </script>
+  </body>
+</html>

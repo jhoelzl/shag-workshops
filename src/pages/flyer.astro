@@ -42,7 +42,7 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
         z-index: 0;
       }
 
-      .flyer .content { position: relative; z-index: 1; padding: 14mm 9mm 10mm; height: 100%; box-sizing: border-box; display: flex; flex-direction: column; }
+      .flyer .content { position: relative; z-index: 1; padding: 14mm 9mm 15mm; height: 100%; box-sizing: border-box; display: flex; flex-direction: column; }
 
       .eyebrow {
         font-size: 8pt;
@@ -76,7 +76,7 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
         font-weight: 900;
         letter-spacing: 0.01em;
         text-transform: uppercase;
-        color: #0f1a30;
+        color: #C8392B;
         margin-bottom: 1.8mm;
         line-height: 1;
       }
@@ -135,10 +135,26 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 
       .divider {
         display: flex; align-items: center; gap: 4mm;
-        margin: 1mm 0 5mm;
+        margin: -3mm 0 5mm;
       }
       .divider .line { flex: 1; height: 1px; background: linear-gradient(to right, transparent, rgba(15,26,48,0.18), transparent); }
       .divider .star { color: #d4a832; font-size: 14pt; }
+
+      .courses-meta {
+        margin: 0 0 3.5mm;
+        display: flex;
+        justify-content: center;
+      }
+      .courses-meta .pill {
+        background: #0f1a30;
+        color: #fff;
+        font-size: 8pt;
+        font-weight: 700;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        border-radius: 999px;
+        padding: 1.6mm 3.4mm;
+      }
 
       .courses { display: grid; grid-template-columns: 1fr 1fr; gap: 4mm; }
       .courses-note {
@@ -245,6 +261,28 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
         margin-bottom: 2mm;
       }
 
+      .venue {
+        margin-top: 3mm;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 2.5mm;
+        font-size: 10pt;
+        font-weight: 700;
+        color: #0f1a30;
+      }
+      .venue-icon {
+        width: 4mm;
+        height: 4mm;
+        min-width: 4mm;
+        min-height: 4mm;
+        max-width: 4mm;
+        max-height: 4mm;
+        flex: 0 0 4mm;
+        display: block;
+        color: #E76F51;
+      }
+
       .footer {
         margin-top: auto;
         padding-top: 5mm;
@@ -253,7 +291,7 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
         gap: 4mm;
       }
       .footer .left { font-size: 9pt; color: #161a23; line-height: 1.35; }
-      .footer .left strong { color: #0f1a30; }
+      .footer .left strong { color: #C8392B; }
       .footer .footer-url {
         margin-top: 2.5mm;
         font-family: 'Fraunces', Georgia, serif;
@@ -353,6 +391,10 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
           <span class="line"></span>
         </div>
 
+        <div class="courses-meta">
+          <span class="pill">Donnerstag · 18. Juni 2026</span>
+        </div>
+
         <!-- Courses -->
         <div class="courses">
           <div class="card">
@@ -368,12 +410,8 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
             </div>
             <div class="when-where">
               <div class="ww-row">
-                <span class="ww-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span>
-                <span class="ww-text">Do., 18. Juni · 18:00–18:55</span>
-              </div>
-              <div class="ww-row">
-                <span class="ww-icon"><svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/></svg></span>
-                <span class="ww-text">Pfarre St. Severin, Salzburg</span>
+                <span class="ww-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>
+                <span class="ww-text">18:00–18:55</span>
               </div>
             </div>
           </div>
@@ -391,15 +429,15 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
             </div>
             <div class="when-where">
               <div class="ww-row">
-                <span class="ww-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span>
-                <span class="ww-text">Do., 18. Juni · 19:00–19:55</span>
-              </div>
-              <div class="ww-row">
-                <span class="ww-icon"><svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/></svg></span>
-                <span class="ww-text">Pfarre St. Severin, Salzburg</span>
+                <span class="ww-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>
+                <span class="ww-text">19:00–19:55</span>
               </div>
             </div>
           </div>
+        </div>
+        <div class="venue">
+          <svg class="venue-icon" viewBox="0 0 20 20" width="4mm" height="4mm" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/></svg>
+          <span>Pfarrsaal, Pfarre St. Severin · 5023 Salzburg</span>
         </div>
         <div class="courses-note">Freiwillige Spende zur Deckung der Saalmiete</div>
 
@@ -407,7 +445,7 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
         <div class="footer">
           <div class="left">
             <strong>Anmeldung & Infos</strong><br/>
-            Besuche die Website für alle Termine.
+            Weitere Termine, Details und Anmeldung online.
             <div class="footer-url">shagadeus.at</div>
           </div>
           <div class="qr">
