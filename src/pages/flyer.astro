@@ -63,11 +63,29 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
       .headline {
         font-family: 'Fraunces', Georgia, serif;
         font-weight: 900;
-        font-size: 38pt;
+        font-size: 31pt;
         line-height: 0.95;
         color: #0f1a30;
         letter-spacing: -0.015em;
         margin: 6mm 0 2mm;
+      }
+      .headline .kicker {
+        display: block;
+        font-family: 'Fraunces', Georgia, serif;
+        font-size: 17pt;
+        font-weight: 900;
+        letter-spacing: 0.01em;
+        text-transform: uppercase;
+        color: #0f1a30;
+        margin-bottom: 1.8mm;
+        line-height: 1;
+      }
+      .headline .main {
+        display: block;
+        color: #0f1a30;
+      }
+      .headline .main .accent {
+        color: #0f1a30;
       }
       .headline .italic {
         font-style: italic;
@@ -90,15 +108,15 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
         margin: 0 0 6mm;
       }
 
-      .hero-row { display: flex; align-items: center; gap: 5mm; }
+      .hero-row { display: flex; align-items: flex-start; gap: 4mm; }
       .hero-text { flex: 1; }
       .logo-wrap {
-        flex: 0 0 80mm;
+        flex: 0 0 68mm;
         position: relative;
         display: flex;
         align-items: center;
         justify-content: center;
-        margin-left: -15mm;
+        margin-left: 0;
       }
       .logo-glow {
         position: absolute; inset: -10mm;
@@ -107,7 +125,7 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
       }
       .logo-wrap img {
         position: relative;
-        width: 80mm;
+        width: 68mm;
         height: auto;
         transform: rotate(-3deg);
         filter: drop-shadow(0 10px 16px rgba(15,26,48,0.25));
@@ -121,6 +139,13 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
       .divider .star { color: #d4a832; font-size: 14pt; }
 
       .courses { display: grid; grid-template-columns: 1fr 1fr; gap: 4mm; }
+      .courses-note {
+        margin-top: 2.8mm;
+        text-align: center;
+        font-size: 9pt;
+        color: #1f7a70;
+        font-weight: 600;
+      }
       .card {
         background: #ffffff;
         border-radius: 3mm;
@@ -308,12 +333,8 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
         <!-- Hero -->
         <div class="hero-row">
           <div class="hero-text">
-            <h1 class="headline">
-              Collegiate<br/>
-              Shag<br/>
-              <span class="italic">Salzburg</span>
-            </h1>
-            <p class="sub">Energiegeladene Swing-Tanzkurse für schnelle Jazz-Musik.</p>
+            <h1 class="headline"><span class="kicker">Swing-Tanzkurs</span><span class="main">Collegiate<br/><span class="accent">Shag</span></span></h1>
+            <p class="sub">Tanzen zu schneller Jazz-Musik.</p>
           </div>
           <div class="logo-wrap">
             <div class="logo-glow"></div>
@@ -339,10 +360,8 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
               </div>
               <h3>Eine kleine Shagmusik</h3>
               <div class="meta">
-                <div class="row"><strong>Vorkenntnisse:</strong><span>keine</span></div>
-                <div class="row"><strong>Inhalt:</strong><span>Grundschritte & einfache Figuren</span></div>
+                <div class="row">Du hast noch nie Shag getanzt und möchtest es kennenlernen? In diesem Kurs lernst du die Grundlagen und einfache Figuren.</div>
               </div>
-              <div class="price">Freiwillige Spende<br />Zur Deckung der Saalmiete</div>
             </div>
             <div class="when-where">
               <div class="ww-row">
@@ -364,10 +383,8 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
               </div>
               <h3>Shag Me Amadeus</h3>
               <div class="meta">
-                <div class="row"><strong>Vorkenntnisse:</strong><span>Grundschritte in geschlossener und offener Position</span></div>
-                <div class="row"><strong>Inhalt:</strong><span>Neue Figuren und Breaks</span></div>
+                <div class="row">Du bist bereits mit den Grundschritten in geschlossener, Side-by-Side- und offener Position vertraut. In diesem Kurs erweitern wir unser Figuren Repertoire.</div>
               </div>
-              <div class="price">Freiwillige Spende<br />Zur Deckung der Saalmiete</div>
             </div>
             <div class="when-where">
               <div class="ww-row">
@@ -381,6 +398,7 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
             </div>
           </div>
         </div>
+        <div class="courses-note">Freiwillige Spende zur Deckung der Saalmiete</div>
 
         <!-- Footer -->
         <div class="footer">
