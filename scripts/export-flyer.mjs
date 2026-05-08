@@ -15,6 +15,16 @@ import { spawn } from 'node:child_process';
 const customUrl = process.argv[2];
 const url = customUrl || 'http://localhost:4321/flyer/';
 const outDir = resolve(process.cwd(), 'dist-flyer');
+const routeSegment = (() => {
+  try {
+    const { pathname } = new URL(url);
+    const segment = pathname.split('/').filter(Boolean)[0] || 'flyer';
+    return segment.replace(/[^a-z0-9-]/gi, '').toLowerCase() || 'flyer';
+  } catch {
+    return 'flyer';
+  }
+})();
+const fileSuffix = routeSegment === 'flyer' ? '' : `-${routeSegment}`;
 
 await mkdir(outDir, { recursive: true });
 
@@ -98,7 +108,7 @@ await flyer.waitFor();
 const box = await flyer.boundingBox();
 if (!box) throw new Error('Flyer element not found');
 
-const pngPath = resolve(outDir, 'shagadeus-flyer.png');
+const pngPath = resolve(outDir, `shagadeus-flyer${fileSuffix}.png`);
 await page.screenshot({
   path: pngPath,
   clip: { x: box.x, y: box.y, width: box.width, height: box.height },
@@ -107,7 +117,7 @@ await page.screenshot({
 console.log(`✓ PNG → ${pngPath}`);
 
 // PDF: embed the exported PNG to guarantee pixel-identical output
-const pdfPath = resolve(outDir, 'shagadeus-flyer.pdf');
+const pdfPath = resolve(outDir, `shagadeus-flyer${fileSuffix}.pdf`);
 const pdfPage = await context.newPage();
 const pngBuffer = await readFile(pngPath);
 const pngDataUrl = `data:image/png;base64,${pngBuffer.toString('base64')}`;
