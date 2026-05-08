@@ -1,0 +1,111 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { t } from '../../i18n/index';
+
+const locale = 'de';
+const i18n = t(locale);
+---
+
+<BaseLayout title="Datenschutzerklärung" locale={locale} currentPath="/datenschutz/">
+  <div class="max-w-3xl mx-auto px-6 py-16">
+    <h1 class="font-display text-4xl font-bold text-primary mb-10">Datenschutzerklärung</h1>
+
+    <section class="bg-surface rounded-2xl p-8 border border-bg-warm space-y-6 text-text-muted leading-relaxed">
+
+      <div>
+        <h2 class="font-display text-xl font-semibold text-primary mb-2">1. Verantwortlicher</h2>
+        <p>
+          Josef Hölzl<br />
+          Forellenweg 42<br />
+          5300 Hallwang<br />
+          Österreich<br />
+          E-Mail: <a href="mailto:info@shagadeus.at" class="text-accent hover:underline">info@shagadeus.at</a>
+        </p>
+      </div>
+
+      <div>
+        <h2 class="font-display text-xl font-semibold text-primary mb-2">2. Welche Daten wir erheben</h2>
+        <p>
+          Bei der Anmeldung zu einem Workshop erheben wir folgende personenbezogene Daten:
+        </p>
+        <ul class="list-disc list-inside mt-2 space-y-1">
+          <li>Vorname und Nachname</li>
+          <li>E-Mail-Adresse</li>
+          <li>Gewählter Workshop (Kursname, Datum)</li>
+          <li>Tanzrolle (Lead / Follow)</li>
+        </ul>
+      </div>
+
+      <div>
+        <h2 class="font-display text-xl font-semibold text-primary mb-2">3. Zweck der Verarbeitung</h2>
+        <p>
+          Deine Daten werden ausschließlich zur Durchführung der Workshop-Anmeldung verwendet:
+          Bestätigung deiner Anmeldung, Kommunikation bei Änderungen oder Absagen sowie Organisation der Kurse.
+        </p>
+      </div>
+
+      <div>
+        <h2 class="font-display text-xl font-semibold text-primary mb-2">4. Rechtsgrundlage</h2>
+        <p>
+          Die Verarbeitung erfolgt auf Basis von Art. 6 Abs. 1 lit. b DSGVO
+          (Vertragserfüllung bzw. vorvertragliche Maßnahmen auf Anfrage der betroffenen Person).
+        </p>
+      </div>
+
+      <div>
+        <h2 class="font-display text-xl font-semibold text-primary mb-2">5. Speicherdauer</h2>
+        <p>
+          Deine Daten werden nach Abschluss des jeweiligen Workshops gelöscht, spätestens jedoch
+          nach 6 Monaten, sofern keine gesetzlichen Aufbewahrungspflichten bestehen.
+        </p>
+      </div>
+
+      <div>
+        <h2 class="font-display text-xl font-semibold text-primary mb-2">6. Auftragsverarbeiter</h2>
+        <p>
+          Zur Speicherung der Daten nutzen wir <strong>Supabase</strong> (Supabase Inc., 970 Toa Payoh North, Singapur).
+          Die Daten werden auf Servern in der Europäischen Union gespeichert. Mit Supabase besteht ein
+          Auftragsverarbeitungsvertrag gemäß Art. 28 DSGVO.
+        </p>
+      </div>
+
+      <div>
+        <h2 class="font-display text-xl font-semibold text-primary mb-2">7. Deine Rechte</h2>
+        <p>Du hast folgende Rechte bezüglich deiner gespeicherten Daten:</p>
+        <ul class="list-disc list-inside mt-2 space-y-1">
+          <li><strong>Auskunft</strong> (Art. 15 DSGVO): Du kannst jederzeit Auskunft über deine gespeicherten Daten verlangen.</li>
+          <li><strong>Berichtigung</strong> (Art. 16 DSGVO): Du kannst unrichtige Daten korrigieren lassen.</li>
+          <li><strong>Löschung</strong> (Art. 17 DSGVO): Du kannst die Löschung deiner Daten verlangen.</li>
+          <li><strong>Einschränkung</strong> (Art. 18 DSGVO): Du kannst die Verarbeitung einschränken lassen.</li>
+          <li><strong>Widerspruch</strong> (Art. 21 DSGVO): Du kannst der Verarbeitung widersprechen.</li>
+        </ul>
+        <p class="mt-2">
+          Für Anfragen wende dich bitte an:
+          <a href="mailto:info@shagadeus.at" class="text-accent hover:underline">info@shagadeus.at</a>
+        </p>
+      </div>
+
+      <div>
+        <h2 class="font-display text-xl font-semibold text-primary mb-2">8. Beschwerderecht</h2>
+        <p>
+          Du hast das Recht, bei der österreichischen Datenschutzbehörde eine Beschwerde einzureichen:
+        </p>
+        <p class="mt-2">
+          Österreichische Datenschutzbehörde<br />
+          Barichgasse 40–42<br />
+          1030 Wien<br />
+          <a href="https://www.dsb.gv.at" class="text-accent hover:underline" target="_blank" rel="noopener noreferrer">www.dsb.gv.at</a>
+        </p>
+      </div>
+
+      <div>
+        <h2 class="font-display text-xl font-semibold text-primary mb-2">9. Cookies</h2>
+        <p>
+          Diese Website verwendet ausschließlich technisch notwendige Cookies (z. B. für die Authentifizierung).
+          Es werden keine Tracking- oder Marketing-Cookies eingesetzt.
+        </p>
+      </div>
+
+    </section>
+  </div>
+</BaseLayout>
