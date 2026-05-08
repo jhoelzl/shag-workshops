@@ -1,0 +1,110 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { t } from '../../i18n/index';
+
+const locale = 'en';
+const i18n = t(locale);
+---
+
+<BaseLayout title="Privacy Policy" locale={locale} currentPath="/privacy/">
+  <div class="max-w-3xl mx-auto px-6 py-16">
+    <h1 class="font-display text-4xl font-bold text-primary mb-10">Privacy Policy</h1>
+
+    <section class="bg-surface rounded-2xl p-8 border border-bg-warm space-y-6 text-text-muted leading-relaxed">
+
+      <div>
+        <h2 class="font-display text-xl font-semibold text-primary mb-2">1. Controller</h2>
+        <p>
+          Josef Hölzl<br />
+          Forellenweg 42<br />
+          5300 Hallwang<br />
+          Austria<br />
+          Email: <a href="mailto:info@shagadeus.at" class="text-accent hover:underline">info@shagadeus.at</a>
+        </p>
+      </div>
+
+      <div>
+        <h2 class="font-display text-xl font-semibold text-primary mb-2">2. Data We Collect</h2>
+        <p>When registering for a workshop, we collect the following personal data:</p>
+        <ul class="list-disc list-inside mt-2 space-y-1">
+          <li>First and last name</li>
+          <li>Email address</li>
+          <li>Selected workshop (name, date)</li>
+          <li>Dance role (Lead / Follow)</li>
+        </ul>
+      </div>
+
+      <div>
+        <h2 class="font-display text-xl font-semibold text-primary mb-2">3. Purpose of Processing</h2>
+        <p>
+          Your data is used exclusively to process your workshop registration:
+          confirming your registration, communicating changes or cancellations,
+          and organising the classes.
+        </p>
+      </div>
+
+      <div>
+        <h2 class="font-display text-xl font-semibold text-primary mb-2">4. Legal Basis</h2>
+        <p>
+          Processing is based on Art. 6(1)(b) GDPR
+          (performance of a contract or pre-contractual measures at the request of the data subject).
+        </p>
+      </div>
+
+      <div>
+        <h2 class="font-display text-xl font-semibold text-primary mb-2">5. Retention Period</h2>
+        <p>
+          Your data will be deleted after the respective workshop concludes, and no later than
+          6 months thereafter, unless statutory retention obligations apply.
+        </p>
+      </div>
+
+      <div>
+        <h2 class="font-display text-xl font-semibold text-primary mb-2">6. Data Processor</h2>
+        <p>
+          We use <strong>Supabase</strong> (Supabase Inc., 970 Toa Payoh North, Singapore) to store data.
+          Data is stored on servers within the European Union. A data processing agreement
+          pursuant to Art. 28 GDPR is in place with Supabase.
+        </p>
+      </div>
+
+      <div>
+        <h2 class="font-display text-xl font-semibold text-primary mb-2">7. Your Rights</h2>
+        <p>You have the following rights regarding your stored data:</p>
+        <ul class="list-disc list-inside mt-2 space-y-1">
+          <li><strong>Access</strong> (Art. 15 GDPR): You may request information about your stored data at any time.</li>
+          <li><strong>Rectification</strong> (Art. 16 GDPR): You may request correction of inaccurate data.</li>
+          <li><strong>Erasure</strong> (Art. 17 GDPR): You may request deletion of your data.</li>
+          <li><strong>Restriction</strong> (Art. 18 GDPR): You may request restriction of processing.</li>
+          <li><strong>Objection</strong> (Art. 21 GDPR): You may object to the processing of your data.</li>
+        </ul>
+        <p class="mt-2">
+          To exercise these rights, please contact:
+          <a href="mailto:info@shagadeus.at" class="text-accent hover:underline">info@shagadeus.at</a>
+        </p>
+      </div>
+
+      <div>
+        <h2 class="font-display text-xl font-semibold text-primary mb-2">8. Right to Lodge a Complaint</h2>
+        <p>
+          You have the right to lodge a complaint with the Austrian Data Protection Authority:
+        </p>
+        <p class="mt-2">
+          Österreichische Datenschutzbehörde<br />
+          Barichgasse 40–42<br />
+          1030 Vienna, Austria<br />
+          <a href="https://www.dsb.gv.at" class="text-accent hover:underline" target="_blank" rel="noopener noreferrer">www.dsb.gv.at</a>
+        </p>
+      </div>
+
+      <div>
+        <h2 class="font-display text-xl font-semibold text-primary mb-2">9. Cookies</h2>
+        <p>
+          This website uses only technically necessary cookies (e.g. for authentication).
+          No tracking or marketing cookies are used.
+        </p>
+      </div>
+
+    </section>
+  </div>
+</BaseLayout>

@@ -1,6 +1,6 @@
 ---
 import type { Locale } from '../i18n/index';
-import { t, getLocalizedPath, getAlternateLocale } from '../i18n/index';
+import { t, getLocalizedPath, getAlternateLocale, translatePath } from '../i18n/index';
 import '../styles/global.css';
 
 interface Props {
@@ -12,6 +12,7 @@ interface Props {
 const { title, locale, currentPath = '' } = Astro.props;
 const i18n = t(locale);
 const altLocale = getAlternateLocale(locale);
+const altPath = translatePath(currentPath, locale);
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 ---
 
@@ -46,7 +47,7 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
           <a href={`${base}/${locale}/`} class="hidden sm:inline-block px-3 py-2 text-sm font-medium text-text/80 hover:text-primary rounded-full transition-colors">
             {i18n.nav.home}
           </a>
-          <a href={`${base}/${locale}/about/`} class="hidden sm:inline-block px-3 py-2 text-sm font-medium text-text/80 hover:text-primary rounded-full transition-colors">
+          <a href={locale === 'de' ? `${base}/${locale}/ueber-uns/` : `${base}/${locale}/about/`} class="hidden sm:inline-block px-3 py-2 text-sm font-medium text-text/80 hover:text-primary rounded-full transition-colors">
             {i18n.nav.about}
           </a>
           <a
@@ -57,7 +58,7 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
           </a>
           <a
-            href={`${base}/${altLocale}${currentPath}`}
+            href={`${base}/${altLocale}${altPath}`}
             class="ml-1 inline-flex items-center justify-center min-w-[2.25rem] h-9 border border-primary/15 hover:border-primary/30 text-primary/80 hover:text-primary rounded-full px-2 text-[11px] font-bold tracking-wider transition-colors"
           >
             {i18n.nav.language}
@@ -89,9 +90,10 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 
           <nav class="flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm">
             <a href={`${base}/${locale}/`} class="text-white/60 hover:text-white transition-colors">{i18n.nav.home}</a>
-            <a href={`${base}/${locale}/about/`} class="text-white/60 hover:text-white transition-colors">{i18n.nav.about}</a>
+            <a href={locale === 'de' ? `${base}/${locale}/ueber-uns/` : `${base}/${locale}/about/`} class="text-white/60 hover:text-white transition-colors">{i18n.nav.about}</a>
             <a href={`${base}/${locale}/workshops/`} class="text-white/60 hover:text-white transition-colors">{locale === 'de' ? 'Workshops' : 'Workshops'}</a>
-            <a href={`${base}/${locale}/impressum/`} class="text-white/60 hover:text-white transition-colors">{i18n.footer.imprint}</a>
+            <a href={locale === 'de' ? `${base}/${locale}/impressum/` : `${base}/${locale}/imprint/`} class="text-white/60 hover:text-white transition-colors">{i18n.footer.imprint}</a>
+            <a href={locale === 'de' ? `${base}/${locale}/datenschutz/` : `${base}/${locale}/privacy/`} class="text-white/60 hover:text-white transition-colors">{i18n.footer.privacy}</a>
           </nav>
         </div>
       </div>
