@@ -569,7 +569,11 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
       .print-hint button:hover { background: var(--cream); }
     </style>
   </head>
-  <body>
+  <body style="visibility:hidden">
+    <div id="auth-gate" style="position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#FFF8F0;z-index:9999;visibility:visible">
+      <div style="width:2rem;height:2rem;border:4px solid rgba(0,0,0,0.1);border-top-color:#1a2744;border-radius:50%;animation:spin .8s linear infinite"></div>
+      <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+    </div>
     <div class="print-hint">
       <span>A5 Flyer · Art Deco</span>
       <button id="btn-pdf" type="button" title="Druck-Dialog → Als PDF speichern">PDF (Print)</button>
@@ -688,7 +692,30 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
       </div>
     </div>
 
-    <script type="module">
+    <script>
+      import { supabase } from '../lib/supabase';
+      const base = import.meta.env.BASE_URL?.replace(/\/$/, '') ?? '';
+      const returnTo = `${window.location.pathname}${window.location.search}`;
+      const showFlyer = () => {
+        document.body.style.visibility = 'visible';
+        document.getElementById('auth-gate')?.remove();
+      };
+      const redirectToLogin = () => {
+        window.location.href = `${base}/admin/login/?returnTo=${encodeURIComponent(returnTo)}`;
+      };
+
+      supabase.auth.getUser()
+        .then(({ data: { user }, error }) => {
+          if (error || !user) {
+            redirectToLogin();
+            return;
+          }
+          showFlyer();
+        })
+        .catch(() => {
+          redirectToLogin();
+        });
+
       const btnPdf = document.getElementById('btn-pdf');
       btnPdf?.addEventListener('click', () => window.print());
     </script>
