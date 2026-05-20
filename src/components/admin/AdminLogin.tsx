@@ -47,7 +47,7 @@ export default function AdminLogin() {
       className="relative z-10 bg-surface/85 backdrop-blur-md rounded-2xl shadow-lift border border-primary/5 p-8 w-full max-w-sm animate-fade-up"
     >
       <div className="text-center mb-6">
-        <p className="eyebrow text-coral mb-2">Shagadeus Studio</p>
+        <p className="eyebrow text-coral mb-2">Admin</p>
         <h1 className="font-display text-3xl font-bold tracking-tight text-primary">
           Admin <span className="text-gradient-warm">Login</span>
         </h1>
