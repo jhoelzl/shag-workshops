@@ -53,12 +53,17 @@ export function htmlToText(html: string): string {
   s = s.replace(/<\s*(br)\s*\/?\s*>/gi, '\n');
   s = s.replace(/<\/\s*(p|div|h[1-6]|li|tr)\s*>/gi, '\n\n');
   s = s.replace(/<\s*li[^>]*>/gi, '• ');
-  // Strip remaining tags
-  s = s.replace(/<[^>]+>/g, '');
-  // Decode common HTML entities
+  // Strip remaining tags; repeat until stable so that nested/overlapping
+  // tag-like sequences (e.g. "<<script>script>") cannot survive a single pass.
+  let prev: string;
+  do {
+    prev = s;
+    s = s.replace(/<[^>]*>/g, '');
+  } while (s !== prev);
+  // Decode common HTML entities. &amp; is decoded LAST so that already-decoded
+  // entities (e.g. "&amp;lt;" → "&lt;") are not double-unescaped into "<".
   s = s
     .replace(/&nbsp;/g, ' ')
-    .replace(/&amp;/g, '&')
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')
     .replace(/&quot;/g, '"')
@@ -71,7 +76,8 @@ export function htmlToText(html: string): string {
     .replace(/&Uuml;/g, 'Ü')
     .replace(/&szlig;/g, 'ß')
     .replace(/&#(\d+);/g, (_m, n) => String.fromCodePoint(parseInt(n, 10)))
-    .replace(/&#x([0-9a-fA-F]+);/g, (_m, n) => String.fromCodePoint(parseInt(n, 16)));
+    .replace(/&#x([0-9a-fA-F]+);/g, (_m, n) => String.fromCodePoint(parseInt(n, 16)))
+    .replace(/&amp;/g, '&');
   // Collapse whitespace
   s = s.replace(/[ \t]+/g, ' ');
   s = s.replace(/\n{3,}/g, '\n\n');
