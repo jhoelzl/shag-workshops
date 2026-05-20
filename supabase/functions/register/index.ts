@@ -1,5 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { Resend } from 'https://esm.sh/resend@4';
+import { REPLY_TO, htmlToText, wrapHtml } from '../_shared/email.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -173,22 +174,26 @@ Deno.serve(async (req) => {
         console.log(`EMAIL_TO_OVERRIDE active — redirecting organizer mail for ${organizerRealTo} to ${overrideTo}`);
       }
 
+      const participantBody = isDE
+        ? `<h2 style="margin:0 0 16px;font-size:20px;">Hallo ${name.trim()}!</h2>
+           <p>Deine Anmeldung für <strong>${classTitle}</strong> als <strong>${role === 'lead' ? 'Lead' : 'Follow'}</strong> ist eingegangen.</p>
+           ${status === 'waitlisted' ? '<p>Aktuell sind alle Plätze belegt. Du stehst auf der Warteliste.</p>' : ''}
+           <p>Wir werden deine Anmeldung prüfen und bestätigen. Du erhältst dann eine weitere E-Mail.</p>
+           <p>Vera & Josef</p>`
+        : `<h2 style="margin:0 0 16px;font-size:20px;">Hello ${name.trim()}!</h2>
+           <p>Your registration for <strong>${classTitle}</strong> as <strong>${role === 'lead' ? 'Lead' : 'Follow'}</strong> has been received.</p>
+           ${status === 'waitlisted' ? '<p>All spots are currently taken. You have been placed on the waitlist.</p>' : ''}
+           <p>We will review and confirm your registration. You will then receive another email.</p>
+           <p>Vera & Josef</p>`;
+
       try {
         const { data: sendData, error: sendError } = await resend.emails.send({
           from: fromAddress,
           to: [toAddress],
+          replyTo: REPLY_TO,
           subject: participantSubject,
-          html: isDE
-            ? `<h2>Hallo ${name.trim()}!</h2>
-               <p>Deine Anmeldung für <strong>${classTitle}</strong> als <strong>${role === 'lead' ? 'Lead' : 'Follow'}</strong> ist eingegangen.</p>
-               ${status === 'waitlisted' ? '<p>Aktuell sind alle Plätze belegt. Du stehst auf der Warteliste.</p>' : ''}
-               <p>Wir werden deine Anmeldung prüfen und bestätigen. Du erhältst dann eine weitere E-Mail.</p>
-               <p>Vera & Josef</p>`
-            : `<h2>Hello ${name.trim()}!</h2>
-               <p>Your registration for <strong>${classTitle}</strong> as <strong>${role === 'lead' ? 'Lead' : 'Follow'}</strong> has been received.</p>
-               ${status === 'waitlisted' ? '<p>All spots are currently taken. You have been placed on the waitlist.</p>' : ''}
-               <p>We will review and confirm your registration. You will then receive another email.</p>
-               <p>Vera & Josef</p>`,
+          html: wrapHtml(participantBody, { title: participantSubject, preheader: isDE ? `Anmeldung für ${classTitle} eingegangen.` : `Registration for ${classTitle} received.` }),
+          text: htmlToText(participantBody),
         });
         if (sendError) {
           console.error('Resend send error:', JSON.stringify(sendError), 'from:', fromAddress, 'to:', toAddress);
@@ -230,19 +235,23 @@ Deno.serve(async (req) => {
         });
       }
 
+      const organizerBody = `<h2 style="margin:0 0 16px;font-size:20px;">Neue Workshop-Anmeldung</h2>
+         <p><strong>Workshop:</strong> ${danceClass.title_de} / ${danceClass.title_en}</p>
+         <p><strong>Name:</strong> ${name.trim()}</p>
+         <p><strong>E-Mail:</strong> ${realTo}</p>
+         <p><strong>Rolle:</strong> ${role === 'lead' ? 'Lead' : 'Follow'}</p>
+         <p><strong>Status:</strong> ${status}</p>
+         ${partner_name?.trim() ? `<p><strong>Partner:</strong> ${partner_name.trim()}</p>` : ''}
+         ${comment?.trim() ? `<p><strong>Kommentar:</strong> ${comment.trim()}</p>` : ''}`;
+
       try {
         const { data: organizerSendData, error: organizerSendError } = await resend.emails.send({
           from: fromAddress,
           to: [organizerToAddress],
+          replyTo: realTo,
           subject: organizerSubject,
-          html: `<h2>Neue Workshop-Anmeldung</h2>
-                 <p><strong>Workshop:</strong> ${danceClass.title_de} / ${danceClass.title_en}</p>
-                 <p><strong>Name:</strong> ${name.trim()}</p>
-                 <p><strong>E-Mail:</strong> ${realTo}</p>
-                 <p><strong>Rolle:</strong> ${role === 'lead' ? 'Lead' : 'Follow'}</p>
-                 <p><strong>Status:</strong> ${status}</p>
-                 ${partner_name?.trim() ? `<p><strong>Partner:</strong> ${partner_name.trim()}</p>` : ''}
-                 ${comment?.trim() ? `<p><strong>Kommentar:</strong> ${comment.trim()}</p>` : ''}`,
+          html: wrapHtml(organizerBody, { title: organizerSubject }),
+          text: htmlToText(organizerBody),
         });
         if (organizerSendError) {
           console.error('Resend organizer send error:', JSON.stringify(organizerSendError), 'from:', fromAddress, 'to:', organizerToAddress);

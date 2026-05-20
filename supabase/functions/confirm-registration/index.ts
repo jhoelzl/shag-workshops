@@ -1,5 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { Resend } from 'https://esm.sh/resend@4';
+import { REPLY_TO, htmlToText, wrapHtml } from '../_shared/email.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -167,11 +168,14 @@ Deno.serve(async (req) => {
       }
 
       try {
+        const body = bodies[new_status][lang];
         const { data: sendData, error: sendError } = await resend.emails.send({
           from: fromAddress,
           to: [toAddress],
+          replyTo: REPLY_TO,
           subject,
-          html: bodies[new_status][lang],
+          html: wrapHtml(body, { title: subject }),
+          text: htmlToText(body),
         });
         if (sendError) {
           console.error('Resend send error:', JSON.stringify(sendError), 'from:', fromAddress, 'to:', toAddress);
