@@ -120,7 +120,6 @@ export default function AdminDashboard() {
             </span>
             <div className="flex flex-col leading-tight">
               <span className="font-display text-lg font-bold text-primary tracking-tight">Admin</span>
-              <span className="eyebrow text-coral/80 text-[0.6rem]">Shagadeus Studio</span>
             </div>
           </div>
           <div className="flex items-center gap-3">
