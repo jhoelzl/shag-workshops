@@ -181,14 +181,14 @@ Deno.serve(async (req) => {
           html: isDE
             ? `<h2>Hallo ${name.trim()}!</h2>
                <p>Deine Anmeldung für <strong>${classTitle}</strong> als <strong>${role === 'lead' ? 'Lead' : 'Follow'}</strong> ist eingegangen.</p>
-               ${status === 'waitlisted' ? '<p>⚠️ Aktuell sind alle Plätze belegt. Du stehst auf der Warteliste.</p>' : ''}
+               ${status === 'waitlisted' ? '<p>Aktuell sind alle Plätze belegt. Du stehst auf der Warteliste.</p>' : ''}
                <p>Wir werden deine Anmeldung prüfen und bestätigen. Du erhältst dann eine weitere E-Mail.</p>
-               <p>Amadeus Shagadeus</p>`
+               <p>Vera & Josef</p>`
             : `<h2>Hello ${name.trim()}!</h2>
                <p>Your registration for <strong>${classTitle}</strong> as <strong>${role === 'lead' ? 'Lead' : 'Follow'}</strong> has been received.</p>
-               ${status === 'waitlisted' ? '<p>⚠️ All spots are currently taken. You have been placed on the waitlist.</p>' : ''}
+               ${status === 'waitlisted' ? '<p>All spots are currently taken. You have been placed on the waitlist.</p>' : ''}
                <p>We will review and confirm your registration. You will then receive another email.</p>
-               <p>Amadeus Shagadeus</p>`,
+               <p>Vera & Josef</p>`,
         });
         if (sendError) {
           console.error('Resend send error:', JSON.stringify(sendError), 'from:', fromAddress, 'to:', toAddress);
