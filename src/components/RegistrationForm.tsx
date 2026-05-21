@@ -354,6 +354,9 @@ export default function RegistrationForm({ locale, danceClasses, supabaseFunctio
           value={name}
           onChange={(e) => setName(e.target.value)}
           required
+          autoComplete="name"
+          autoCapitalize="words"
+          spellCheck={false}
           className="w-full border border-bg-warm rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-teal/30 focus:border-teal outline-none bg-bg/50"
         />
       </div>
@@ -367,6 +370,12 @@ export default function RegistrationForm({ locale, danceClasses, supabaseFunctio
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
+          autoComplete="email"
+          inputMode="email"
+          autoCapitalize="off"
+          autoCorrect="off"
+          spellCheck={false}
+          pattern="[^\s@]+@[^\s@]+\.[^\s@]+"
           className="w-full border border-bg-warm rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-teal/30 focus:border-teal outline-none bg-bg/50"
         />
       </div>
@@ -407,6 +416,9 @@ export default function RegistrationForm({ locale, danceClasses, supabaseFunctio
           type="text"
           value={partnerName}
           onChange={(e) => setPartnerName(e.target.value)}
+          autoComplete="off"
+          autoCapitalize="words"
+          spellCheck={false}
           className="w-full border border-bg-warm rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-teal/30 focus:border-teal outline-none bg-bg/50"
         />
       </div>
