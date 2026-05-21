@@ -110,7 +110,7 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen">
-      {/* Admin Header — modern, soft, matches frontend */}
+      {/* Admin Header - modern, soft, matches frontend */}
       <header className="sticky top-0 z-40 backdrop-blur-md bg-bg/80 border-b border-primary/5">
         <div className="max-w-6xl mx-auto px-5 sm:px-6 py-3.5 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
@@ -238,7 +238,7 @@ function OverviewTab({
 
   const recentRegs = registrations.slice(0, 8).map((r) => ({
     ...r,
-    className: classes.find((c) => c.id === r.dance_class_id)?.title_de || '—',
+    className: classes.find((c) => c.id === r.dance_class_id)?.title_de || '-',
   }));
 
   return (
@@ -250,7 +250,7 @@ function OverviewTab({
           <p className="text-sm text-text-muted mt-1">
             {stats.pending > 0
               ? `${stats.pending} registration${stats.pending > 1 ? 's are' : ' is'} waiting for your confirmation.`
-              : 'All caught up — no open actions.'}
+              : 'All caught up - no open actions.'}
           </p>
         </div>
       </div>

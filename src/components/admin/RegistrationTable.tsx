@@ -407,14 +407,14 @@ export default function RegistrationTable({ registrations, history, classes, cur
                         <div className="font-semibold text-primary">{reg.name}</div>
                         <div className="text-xs text-text-muted">{reg.email}</div>
                       </td>
-                      <td className="py-3 px-4 text-text-muted text-xs max-w-[180px] truncate">{dc?.title_de ?? '—'}</td>
+                      <td className="py-3 px-4 text-text-muted text-xs max-w-[180px] truncate">{dc?.title_de ?? '-'}</td>
                       <td className="py-3 px-4">
                         <span className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full ${reg.role === 'lead' ? 'bg-primary/8 text-primary' : 'bg-coral/10 text-coral-dark'}`}>
                           <span className={`w-1.5 h-1.5 rounded-full ${reg.role === 'lead' ? 'bg-primary' : 'bg-coral'}`} />
                           {reg.role === 'lead' ? 'Lead' : 'Follow'}
                         </span>
                       </td>
-                      <td className="py-3 px-4 text-text-muted text-xs">{reg.partner_name || '—'}</td>
+                      <td className="py-3 px-4 text-text-muted text-xs">{reg.partner_name || '-'}</td>
                       <td className="py-3 px-4">
                         <span className={`inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full ${meta.bg} ${meta.text} ring-1 ${meta.ring}`}>
                           <span>{meta.icon}</span>

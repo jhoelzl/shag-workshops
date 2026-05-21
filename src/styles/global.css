@@ -1,9 +1,9 @@
-/* Google Fonts — modern pairing: Fraunces (expressive serif) + Inter (clean sans) */
+/* Google Fonts - modern pairing: Fraunces (expressive serif) + Inter (clean sans) */
 @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;0,9..144,900;1,9..144,400;1,9..144,700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap');
 
 @import "tailwindcss";
 
-/* Custom theme — refined retro-modern palette */
+/* Custom theme - refined retro-modern palette */
 @theme {
   --color-primary: #0f1a30;
   --color-primary-light: #1f2d4a;
