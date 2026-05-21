@@ -1,14 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
-import type { DanceClass } from '../lib/database.types';
+import type { DanceClass, ClassSession } from '../lib/database.types';
 import type { Locale } from '../i18n/index';
 import de from '../i18n/de.json';
 import en from '../i18n/en.json';
+import AddToCalendar from './AddToCalendar';
 
 const translations = { de, en };
 
 interface Props {
   locale: Locale;
-  danceClasses: DanceClass[];
+  danceClasses: (DanceClass & { sessions?: ClassSession[] })[];
   supabaseFunctionsUrl: string;
   supabaseAnonKey: string;
   selectedClassIds: Set<string>;
@@ -179,9 +180,12 @@ export default function RegistrationForm({ locale, danceClasses, supabaseFunctio
   }, [allSucceeded]);
 
   if (allSucceeded) {
-    const workshopNames = results.map((r) => r.className);
+    const successResults = results.filter((r) => r.type === 'success');
+    const registeredClasses = successResults
+      .map((r) => danceClasses.find((dc) => dc.id === r.classId))
+      .filter((dc): dc is DanceClass & { sessions?: ClassSession[] } => Boolean(dc));
     const subtitle =
-      workshopNames.length === 1
+      successResults.length === 1
         ? i18n.registration.confirmation_subtitle_one
         : i18n.registration.confirmation_subtitle_many;
 
@@ -226,17 +230,25 @@ export default function RegistrationForm({ locale, danceClasses, supabaseFunctio
 
         {/* Registered workshops */}
         <ul className="mb-6 space-y-1.5">
-          {workshopNames.map((n, i) => (
-            <li
-              key={i}
-              className="flex items-center gap-2 bg-teal/5 border border-teal/20 rounded-xl px-3 py-2 text-sm font-medium text-teal-dark"
-            >
-              <svg className="w-4 h-4 text-teal shrink-0" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24" aria-hidden="true">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-              </svg>
-              {n}
-            </li>
-          ))}
+          {registeredClasses.map((dc) => {
+            const title = locale === 'de' ? dc.title_de : dc.title_en;
+            const sessions = dc.sessions ?? [];
+            const hasSessions = sessions.some((s) => s.session_date && s.start_time && s.end_time);
+            return (
+              <li
+                key={dc.id}
+                className="flex items-center gap-2 bg-teal/5 border border-teal/20 rounded-xl px-3 py-2 text-sm font-medium text-teal-dark"
+              >
+                <svg className="w-4 h-4 text-teal shrink-0" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+                <span className="flex-1 min-w-0 truncate">{title}</span>
+                {hasSessions && (
+                  <AddToCalendar danceClass={dc} sessions={sessions} locale={locale} variant="icon" menuAlign="right" />
+                )}
+              </li>
+            );
+          })}
         </ul>
 
         {/* Stepper */}
