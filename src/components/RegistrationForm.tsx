@@ -25,6 +25,8 @@ export default function RegistrationForm({ locale, danceClasses, supabaseFunctio
   const [email, setEmail] = useState('');
   const [partnerName, setPartnerName] = useState('');
   const [comment, setComment] = useState('');
+  const [privacyConsent, setPrivacyConsent] = useState(false);
+  const [privacyError, setPrivacyError] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [isRoleInfoOpen, setIsRoleInfoOpen] = useState(false);
   const [isPartnerInfoOpen, setIsPartnerInfoOpen] = useState(false);
@@ -57,6 +59,10 @@ export default function RegistrationForm({ locale, danceClasses, supabaseFunctio
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (selectedClassIds.size === 0) return;
+    if (!privacyConsent) {
+      setPrivacyError(true);
+      return;
+    }
 
     setSubmitting(true);
     setResults([]);
@@ -119,6 +125,7 @@ export default function RegistrationForm({ locale, danceClasses, supabaseFunctio
       setEmail('');
       setPartnerName('');
       setComment('');
+      setPrivacyConsent(false);
       newResults.filter((r) => r.type === 'success').forEach((r) => onToggleClass(r.classId));
     }
 
@@ -434,6 +441,42 @@ export default function RegistrationForm({ locale, danceClasses, supabaseFunctio
           ))}
         </div>
       )}
+
+      {/* Privacy consent */}
+      <div className="mb-4">
+        <label className="flex items-start gap-2.5 cursor-pointer text-sm text-text">
+          <input
+            type="checkbox"
+            checked={privacyConsent}
+            onChange={(e) => {
+              setPrivacyConsent(e.target.checked);
+              if (e.target.checked) setPrivacyError(false);
+            }}
+            className={`w-4 h-4 mt-0.5 rounded accent-teal shrink-0 ${privacyError ? 'outline outline-2 outline-error rounded' : ''}`}
+            aria-invalid={privacyError}
+            aria-describedby={privacyError ? 'privacy-consent-error' : undefined}
+          />
+          <span className="leading-snug">
+            {i18n.registration.privacy_consent_before}
+            <a
+              href={locale === 'de' ? '/de/datenschutz' : '/en/privacy'}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary underline hover:text-primary-dark"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {i18n.registration.privacy_consent_link}
+            </a>
+            {i18n.registration.privacy_consent_after}
+            <span className="text-coral"> *</span>
+          </span>
+        </label>
+        {privacyError && (
+          <p id="privacy-consent-error" className="mt-1.5 text-xs text-error" role="alert">
+            {i18n.registration.privacy_consent_required}
+          </p>
+        )}
+      </div>
 
       {/* Submit */}
       <button
