@@ -58,7 +58,7 @@
     "role_follow": "Follow",
     "role_info_label": "Info about Lead and Follow",
     "role_info_text": "During the workshop, you should choose one role. Lead initiates movement patterns. Follow responds and shapes the movement together.",
-    "name": "Name",
+    "name": "Full name",
     "email": "Email",
     "partner_name": "Partner name (optional)",
     "partner_info_label": "Info about Partner",
