@@ -67,21 +67,19 @@ export default function RegistrationForm({ locale, danceClasses, supabaseFunctio
     setSubmitting(true);
     setResults([]);
 
-    const newResults: WorkshopResult[] = [];
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    if (supabaseAnonKey) {
+      headers.apikey = supabaseAnonKey;
+    }
 
-    for (const classId of Array.from(selectedClassIds)) {
-      const dc = danceClasses.find((c) => c.id === classId);
-      const className = dc ? (locale === 'de' ? dc.title_de : dc.title_en) : classId;
+    const classIds = Array.from(selectedClassIds);
 
-      try {
-        const headers: Record<string, string> = {
-          'Content-Type': 'application/json',
-        };
-        if (supabaseAnonKey) {
-          headers.apikey = supabaseAnonKey;
-        }
-
-        const response = await fetch(`${supabaseFunctionsUrl}/register`, {
+    // Fire all registration requests in parallel for better perceived performance
+    const settled = await Promise.allSettled(
+      classIds.map((classId) =>
+        fetch(`${supabaseFunctionsUrl}/register`, {
           method: 'POST',
           headers,
           body: JSON.stringify({
@@ -93,29 +91,39 @@ export default function RegistrationForm({ locale, danceClasses, supabaseFunctio
             comment: comment.trim() || null,
             locale,
           }),
-        });
+        }).then(async (response) => {
+          const data = await response.json().catch(() => ({}));
+          return { response, data };
+        })
+      )
+    );
 
-        const data = await response.json();
+    const newResults: WorkshopResult[] = settled.map((outcome, idx) => {
+      const classId = classIds[idx];
+      const dc = danceClasses.find((c) => c.id === classId);
+      const className = dc ? (locale === 'de' ? dc.title_de : dc.title_en) : classId;
 
-        if (!response.ok) {
-          let message: string;
-          if (data.code === 'DUPLICATE') {
-            message = i18n.registration.error_duplicate;
-          } else if (data.code === 'CLOSED') {
-            message = i18n.registration.error_closed;
-          } else if (data.code === 'VALIDATION') {
-            message = i18n.registration.error_validation;
-          } else {
-            message = data.message || data.error || i18n.registration.error_generic;
-          }
-          newResults.push({ classId, className, type: 'error', message });
-        } else {
-          newResults.push({ classId, className, type: 'success', message: i18n.registration.success_message });
-        }
-      } catch {
-        newResults.push({ classId, className, type: 'error', message: i18n.registration.error_generic });
+      if (outcome.status === 'rejected') {
+        return { classId, className, type: 'error', message: i18n.registration.error_generic };
       }
-    }
+
+      const { response, data } = outcome.value;
+      if (!response.ok) {
+        let message: string;
+        if (data.code === 'DUPLICATE') {
+          message = i18n.registration.error_duplicate;
+        } else if (data.code === 'CLOSED') {
+          message = i18n.registration.error_closed;
+        } else if (data.code === 'VALIDATION') {
+          message = i18n.registration.error_validation;
+        } else {
+          message = data.message || data.error || i18n.registration.error_generic;
+        }
+        return { classId, className, type: 'error', message };
+      }
+
+      return { classId, className, type: 'success', message: i18n.registration.success_message };
+    });
 
     setResults(newResults);
 
