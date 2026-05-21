@@ -203,11 +203,16 @@ export default function ClassList({ locale }: { locale: Locale }) {
                   href={dc.location_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-start gap-2 bg-white border border-gray-150 rounded-2xl px-3 py-2 shadow-sm hover:border-primary/40 transition-colors lg:flex-1 lg:min-w-0"
+                  title={locale === 'de' ? 'Auf Google Maps öffnen' : 'Open in Google Maps'}
+                  aria-label={`${dc.location} – ${locale === 'de' ? 'auf Google Maps öffnen' : 'open in Google Maps'}`}
+                  className="group inline-flex items-start gap-2 bg-white border border-gray-150 rounded-2xl px-3 py-2 shadow-sm hover:border-primary hover:bg-primary/5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 transition-all lg:flex-1 lg:min-w-0"
                 >
                   <svg className="w-3.5 h-3.5 text-coral mt-0.5 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" /></svg>
-                  <span className="leading-tight min-w-0">
-                    <span className="block font-semibold text-text hover:text-primary transition-colors">{dc.location}</span>
+                  <span className="leading-tight min-w-0 flex-1">
+                    <span className="font-semibold text-text group-hover:text-primary transition-colors inline-flex items-center gap-1">
+                      {dc.location}
+                      <svg className="w-3 h-3 text-text-muted group-hover:text-primary transition-colors shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M14 5h5v5M19 5l-9 9M5 5h4M5 5v14h14v-4" /></svg>
+                    </span>
                     {dc.location_details && (
                       <span className="block text-[11px] text-text-muted mt-0.5 whitespace-nowrap truncate">{dc.location_details}</span>
                     )}
