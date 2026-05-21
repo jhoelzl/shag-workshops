@@ -39,6 +39,15 @@
     "no_current_workshops_for_level": "Für dieses Level sind aktuell keine Workshops verfügbar.",
     "preview_come_back": "Komm später noch mal vorbei!"
   },
+  "calendar": {
+    "add_to_calendar": "Zum Kalender hinzufügen",
+    "google": "Google Kalender",
+    "google_hint_single": "Direkt zu deinem Google-Konto hinzufügen",
+    "google_hint_multi": "Ersten Termin hinzufügen – weitere via .ics",
+    "ics": "Apple, Outlook & andere",
+    "ics_hint_single": ".ics-Datei herunterladen",
+    "ics_hint_multi": ".ics mit allen {count} Terminen"
+  },
   "registration": {
     "title": "Anmeldung",
     "dance_class": "Workshop",

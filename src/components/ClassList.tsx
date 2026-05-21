@@ -6,6 +6,7 @@ import type { DanceClass, ClassSession } from '../lib/database.types';
 import type { Locale } from '../i18n/index';
 import de from '../i18n/de.json';
 import en from '../i18n/en.json';
+import AddToCalendar from './AddToCalendar';
 
 const translations = { de, en };
 
@@ -177,9 +178,7 @@ export default function ClassList({ locale }: { locale: Locale }) {
           ) : sessions.length > 0 && (
             <div className="rounded-xl border border-teal/12 bg-gradient-to-br from-white to-teal/[0.04] px-4 py-3.5">
               <div className="flex items-start gap-3">
-                <div className="w-8 h-8 rounded-lg bg-teal/10 flex items-center justify-center shrink-0">
-                  <svg className="w-4 h-4 text-teal" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" strokeWidth="2" /><path d="M16 2v4M8 2v4M3 10h18" strokeWidth="2" strokeLinecap="round" /></svg>
-                </div>
+                <AddToCalendar danceClass={dc} sessions={sessions} locale={locale} variant="icon" />
                 <div className="text-sm flex-1">
                   <span className="font-semibold text-text">{sessions.length} {sessions.length === 1 ? i18n.workshops.session : i18n.workshops.sessions}:</span>
                   <div className="mt-1.5 space-y-1 text-text-muted">
