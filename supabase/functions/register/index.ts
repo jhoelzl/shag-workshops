@@ -144,7 +144,7 @@ Deno.serve(async (req) => {
     // Send confirmation email via Resend
     const resendKey = Deno.env.get('RESEND_API_KEY');
     if (!resendKey) {
-      console.warn('RESEND_API_KEY is not set — skipping email send');
+      console.warn('RESEND_API_KEY is not set - skipping email send');
       await insertHistory({
         registration_id: registration.id,
         dance_class_id,
@@ -170,8 +170,8 @@ Deno.serve(async (req) => {
         : `Registration received: ${classTitle}`;
       const organizerSubject = `Neue Anmeldung: ${classTitle}`;
       if (overrideTo) {
-        console.log(`EMAIL_TO_OVERRIDE active — redirecting mail for ${realTo} to ${overrideTo}`);
-        console.log(`EMAIL_TO_OVERRIDE active — redirecting organizer mail for ${organizerRealTo} to ${overrideTo}`);
+        console.log(`EMAIL_TO_OVERRIDE active - redirecting mail for ${realTo} to ${overrideTo}`);
+        console.log(`EMAIL_TO_OVERRIDE active - redirecting organizer mail for ${organizerRealTo} to ${overrideTo}`);
       }
 
       const participantBody = isDE

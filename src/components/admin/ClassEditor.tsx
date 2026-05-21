@@ -844,7 +844,7 @@ function InlineRegistrations({
                           {reg.role === 'lead' ? 'Lead' : 'Follow'}
                         </span>
                       </td>
-                      <td className="py-2.5 px-3 text-text-muted">{reg.partner_name || '—'}</td>
+                      <td className="py-2.5 px-3 text-text-muted">{reg.partner_name || '-'}</td>
                       <td className="py-2.5 px-3">
                         <RegStatusPill status={status} />
                       </td>
@@ -944,9 +944,9 @@ function ClassDetailView({ dc, sessions, classRegs, regCounts, history, currentU
   addingRegFor: string | null;
   setAddingRegFor: (v: string | null) => void;
 }) {
-  const fmt = (v: string | null | undefined) => v || '—';
+  const fmt = (v: string | null | undefined) => v || '-';
   const fmtDate = (v: string | null | undefined) => {
-    if (!v) return '—';
+    if (!v) return '-';
     return new Date(v).toLocaleString('de-DE', { dateStyle: 'medium', timeStyle: 'short' });
   };
 
@@ -1005,7 +1005,7 @@ function ClassDetailView({ dc, sessions, classRegs, regCounts, history, currentU
       </div>
       <div>
         <span className="text-text-muted text-xs uppercase tracking-wider">Price (EUR)</span>
-        <p>{dc.price_eur != null ? `${dc.price_eur} €` : '—'}</p>
+        <p>{dc.price_eur != null ? `${dc.price_eur} €` : '-'}</p>
       </div>
       <div>
         <span className="text-text-muted text-xs uppercase tracking-wider">Public</span>
@@ -1041,7 +1041,7 @@ function ClassDetailView({ dc, sessions, classRegs, regCounts, history, currentU
               .map((s, i) => (
                 <div key={s.id || i} className="flex items-center gap-3 text-sm bg-white rounded px-3 py-1.5 border border-gray-100">
                   <span className="font-medium">
-                    {s.session_date ? new Date(s.session_date + 'T00:00:00').toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' }) : '—'}
+                    {s.session_date ? new Date(s.session_date + 'T00:00:00').toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' }) : '-'}
                   </span>
                   <span className="text-text-muted">
                     {s.start_time?.slice(0, 5) || '?'} – {s.end_time?.slice(0, 5) || '?'}
@@ -1190,14 +1190,14 @@ function ClassForm({
           <div>
             <label className="block text-sm font-medium mb-1">Dance</label>
             <select value={editing.dance ?? ''} onChange={(e) => setEditing({ ...editing, dance: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
-              <option value="">—</option>
+              <option value="">-</option>
               {DANCES.map((d) => <option key={d} value={d}>{d}</option>)}
             </select>
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">Level</label>
             <select value={editing.level ?? ''} onChange={(e) => setEditing({ ...editing, level: e.target.value })} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
-              <option value="">—</option>
+              <option value="">-</option>
               {LEVELS.map((l) => <option key={l} value={l}>{l}</option>)}
             </select>
           </div>
@@ -1266,13 +1266,13 @@ function ClassForm({
             label="Preview Text (DE)"
             value={editing.preview_text_de ?? ''}
             onChange={(v) => setEditing({ ...editing, preview_text_de: v })}
-            hint='z.B. "Geplant für Mai 2026" — leer lassen um echte Sessions anzuzeigen'
+            hint='z.B. "Geplant für Mai 2026" - leer lassen um echte Sessions anzuzeigen'
           />
           <Input
             label="Preview Text (EN)"
             value={editing.preview_text_en ?? ''}
             onChange={(v) => setEditing({ ...editing, preview_text_en: v })}
-            hint='e.g. "Planned for May 2026" — leave empty to show actual sessions'
+            hint='e.g. "Planned for May 2026" - leave empty to show actual sessions'
           />
         </div>
       </fieldset>

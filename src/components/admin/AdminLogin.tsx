@@ -28,13 +28,13 @@ export default function AdminLogin() {
       let redirect = safeDefault;
       if (returnTo) {
         try {
-          // Parse as URL to sanitize — prevents javascript: scheme and open redirects
+          // Parse as URL to sanitize - prevents javascript: scheme and open redirects
           const url = new URL(returnTo, window.location.origin);
           if (url.origin === window.location.origin && url.pathname.startsWith(`${base}/`)) {
             redirect = url.pathname;
           }
         } catch {
-          // Invalid URL — use safe default
+          // Invalid URL - use safe default
         }
       }
       window.location.href = redirect;

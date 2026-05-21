@@ -351,7 +351,7 @@ export default function WorkshopPage({ locale }: { locale: Locale }) {
         })}
       </div>
 
-      {/* Registration form (sticky on desktop) — only for open classes */}
+      {/* Registration form (sticky on desktop) - only for open classes */}
       {openClasses.length > 0 && (
         <div className="min-w-0 lg:col-span-2 lg:sticky lg:top-24 lg:self-start">
           <RegistrationForm

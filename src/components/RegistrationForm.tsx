@@ -27,6 +27,7 @@ export default function RegistrationForm({ locale, danceClasses, supabaseFunctio
   const [comment, setComment] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [isRoleInfoOpen, setIsRoleInfoOpen] = useState(false);
+  const [isPartnerInfoOpen, setIsPartnerInfoOpen] = useState(false);
   const [results, setResults] = useState<WorkshopResult[]>([]);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -215,7 +216,35 @@ export default function RegistrationForm({ locale, danceClasses, supabaseFunctio
 
       {/* Partner Name */}
       <div className="mb-4">
-        <label htmlFor="partner_name" className="block text-sm font-medium mb-1">{i18n.registration.partner_name}</label>
+        <div className="flex items-center gap-2 mb-1">
+          <label htmlFor="partner_name" className="block text-sm font-medium">{i18n.registration.partner_name}</label>
+          <div
+            className="relative"
+            onMouseEnter={() => setIsPartnerInfoOpen(true)}
+            onMouseLeave={() => setIsPartnerInfoOpen(false)}
+          >
+            <button
+              type="button"
+              aria-label={i18n.registration.partner_info_label}
+              aria-expanded={isPartnerInfoOpen}
+              aria-controls="partner-info-tooltip"
+              onClick={() => setIsPartnerInfoOpen((prev) => !prev)}
+              onBlur={() => setIsPartnerInfoOpen(false)}
+              className="inline-flex items-center justify-center w-5 h-5 rounded-full border border-teal/35 text-teal text-xs font-bold cursor-pointer"
+            >
+              i
+            </button>
+            {isPartnerInfoOpen && (
+              <div
+                id="partner-info-tooltip"
+                role="tooltip"
+                className="absolute left-0 top-7 z-20 w-64 rounded-lg border border-teal/20 bg-white p-3 text-xs text-text-muted shadow-lg"
+              >
+                {i18n.registration.partner_info_text}
+              </div>
+            )}
+          </div>
+        </div>
         <input
           id="partner_name"
           type="text"
