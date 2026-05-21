@@ -55,8 +55,8 @@ supabase functions serve
 ```
 
 Required edge function env vars (set in `supabase/.env`):
-- `RESEND_API_KEY` — API key from [resend.com](https://resend.com)
-- `EMAIL_FROM` — Sender address (e.g., `Shag Salzburg <noreply@yourdomain.com>`)
+- `RESEND_API_KEY` - API key from [resend.com](https://resend.com)
+- `EMAIL_FROM` - Sender address (e.g., `Shag Salzburg <noreply@yourdomain.com>`)
 
 ## Deployment
 

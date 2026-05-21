@@ -164,7 +164,7 @@ Deno.serve(async (req) => {
       const toAddress = overrideTo || registration.email;
       const subject = subjects[new_status][lang];
       if (overrideTo) {
-        console.log(`EMAIL_TO_OVERRIDE active — redirecting mail for ${registration.email} to ${overrideTo}`);
+        console.log(`EMAIL_TO_OVERRIDE active - redirecting mail for ${registration.email} to ${overrideTo}`);
       }
 
       try {
