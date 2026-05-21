@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { DanceClass } from '../lib/database.types';
 import type { Locale } from '../i18n/index';
 import de from '../i18n/de.json';
@@ -29,6 +29,30 @@ export default function RegistrationForm({ locale, danceClasses, supabaseFunctio
   const [isRoleInfoOpen, setIsRoleInfoOpen] = useState(false);
   const [isPartnerInfoOpen, setIsPartnerInfoOpen] = useState(false);
   const [results, setResults] = useState<WorkshopResult[]>([]);
+
+  // Dev-only preview: open the page with ?preview=confirmation to see the success view
+  useEffect(() => {
+    if (!import.meta.env.DEV) return;
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('preview') === 'confirmation') {
+      const mock = danceClasses.slice(0, Math.max(1, Math.min(2, danceClasses.length))).map((dc) => ({
+        classId: dc.id,
+        className: locale === 'de' ? dc.title_de : dc.title_en,
+        type: 'success' as const,
+        message: i18n.registration.success_message,
+      }));
+      if (mock.length === 0) {
+        mock.push({
+          classId: 'preview',
+          className: locale === 'de' ? 'Beispiel-Workshop' : 'Sample workshop',
+          type: 'success',
+          message: i18n.registration.success_message,
+        });
+      }
+      setResults(mock);
+    }
+  }, [danceClasses, locale, i18n]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -99,6 +123,132 @@ export default function RegistrationForm({ locale, danceClasses, supabaseFunctio
     }
 
     setSubmitting(false);
+  }
+
+  // Show full confirmation view when all submissions succeeded
+  const allSucceeded = results.length > 0 && results.every((r) => r.type === 'success');
+  if (allSucceeded) {
+    const workshopNames = results.map((r) => r.className);
+    const subtitle =
+      workshopNames.length === 1
+        ? i18n.registration.confirmation_subtitle_one
+        : i18n.registration.confirmation_subtitle_many;
+
+    return (
+      <div className="w-full bg-surface rounded-2xl shadow-lg border border-bg-warm p-6 max-w-lg">
+        {/* Animated green check */}
+        <div className="flex justify-center mb-5">
+          <div className="relative">
+            <span className="absolute inset-0 rounded-full bg-success/15 animate-ping" aria-hidden="true"></span>
+            <div className="relative w-16 h-16 rounded-full bg-success/15 flex items-center justify-center">
+              <svg
+                className="w-9 h-9 text-success"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="3"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M5 13l4 4L19 7"
+                  style={{
+                    strokeDasharray: 30,
+                    strokeDashoffset: 0,
+                    animation: 'check-draw 600ms ease-out',
+                  }}
+                />
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <h2 className="font-display text-2xl font-bold text-text text-center mb-2">
+          {i18n.registration.confirmation_title}
+        </h2>
+        <p className="text-sm text-text-muted text-center mb-4">{subtitle}</p>
+
+        {/* Registered workshops */}
+        <ul className="mb-6 space-y-1.5">
+          {workshopNames.map((n, i) => (
+            <li
+              key={i}
+              className="flex items-center gap-2 bg-teal/5 border border-teal/20 rounded-xl px-3 py-2 text-sm font-medium text-teal-dark"
+            >
+              <svg className="w-4 h-4 text-teal shrink-0" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+              {n}
+            </li>
+          ))}
+        </ul>
+
+        {/* Stepper */}
+        <ol className="relative mb-6">
+          {/* Step 1 — done */}
+          <li className="relative pl-10 pb-5">
+            <span className="absolute left-0 top-0 flex items-center justify-center w-7 h-7 rounded-full bg-success text-white shadow-sm shadow-success/30 z-10">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+            </span>
+            <span className="absolute left-[13px] top-7 bottom-0 w-0.5 bg-success/40" aria-hidden="true"></span>
+            <div>
+              <div className="font-semibold text-text">{i18n.registration.step_submitted_title}</div>
+              <div className="text-xs text-text-muted mt-0.5">{i18n.registration.step_submitted_desc}</div>
+            </div>
+          </li>
+
+          {/* Step 2 — current (pending) */}
+          <li className="relative pl-10 pb-5">
+            <span className="absolute left-0 top-0 flex items-center justify-center w-7 h-7 rounded-full bg-white border-2 border-primary text-primary z-10">
+              <span className="absolute inset-0 rounded-full bg-primary/20 animate-ping" aria-hidden="true"></span>
+              <span className="relative w-2 h-2 rounded-full bg-primary"></span>
+            </span>
+            <span className="absolute left-[13px] top-7 bottom-0 w-0.5 bg-bg-warm" aria-hidden="true"></span>
+            <div>
+              <div className="font-semibold text-text">{i18n.registration.step_confirmation_title}</div>
+              <div className="text-xs text-text-muted mt-0.5">{i18n.registration.step_confirmation_desc}</div>
+            </div>
+          </li>
+
+          {/* Step 3 — upcoming */}
+          <li className="relative pl-10">
+            <span className="absolute left-0 top-0 flex items-center justify-center w-7 h-7 rounded-full bg-white border-2 border-bg-warm text-text-muted z-10">
+              <span className="w-2 h-2 rounded-full bg-bg-warm"></span>
+            </span>
+            <div>
+              <div className="font-semibold text-text-muted">{i18n.registration.step_workshop_title}</div>
+              <div className="text-xs text-text-muted mt-0.5">{i18n.registration.step_workshop_desc}</div>
+            </div>
+          </li>
+        </ol>
+
+        {/* Spam hint */}
+        <div className="mb-5 flex items-start gap-2 text-xs text-text-muted bg-bg/60 border border-bg-warm rounded-xl px-3 py-2.5">
+          <svg className="w-4 h-4 text-text-muted mt-0.5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M12 2a10 10 0 100 20 10 10 0 000-20z" />
+          </svg>
+          <span>{i18n.registration.check_spam}</span>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setResults([])}
+          className="w-full bg-white hover:bg-bg/60 border border-bg-warm text-text font-semibold py-3 px-4 rounded-full transition-colors"
+        >
+          {i18n.registration.another_registration}
+        </button>
+
+        <style>{`
+          @keyframes check-draw {
+            from { stroke-dashoffset: 30; }
+            to   { stroke-dashoffset: 0; }
+          }
+        `}</style>
+      </div>
+    );
   }
 
   return (
