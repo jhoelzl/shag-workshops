@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { DanceClass } from '../lib/database.types';
 import type { Locale } from '../i18n/index';
 import de from '../i18n/de.json';
@@ -134,6 +134,15 @@ export default function RegistrationForm({ locale, danceClasses, supabaseFunctio
 
   // Show full confirmation view when all submissions succeeded
   const allSucceeded = results.length > 0 && results.every((r) => r.type === 'success');
+  const confirmationHeadingRef = useRef<HTMLHeadingElement>(null);
+
+  // Move focus to the confirmation heading once the success view is shown
+  useEffect(() => {
+    if (allSucceeded) {
+      confirmationHeadingRef.current?.focus();
+    }
+  }, [allSucceeded]);
+
   if (allSucceeded) {
     const workshopNames = results.map((r) => r.className);
     const subtitle =
@@ -142,7 +151,7 @@ export default function RegistrationForm({ locale, danceClasses, supabaseFunctio
         : i18n.registration.confirmation_subtitle_many;
 
     return (
-      <div className="w-full bg-surface rounded-2xl shadow-lg border border-bg-warm p-6 max-w-lg">
+      <div className="w-full bg-surface rounded-2xl shadow-lg border border-bg-warm p-6 max-w-lg" role="status" aria-live="polite">
         {/* Animated green check */}
         <div className="flex justify-center mb-5">
           <div className="relative">
@@ -171,7 +180,11 @@ export default function RegistrationForm({ locale, danceClasses, supabaseFunctio
           </div>
         </div>
 
-        <h2 className="font-display text-2xl font-bold text-text text-center mb-2">
+        <h2
+          ref={confirmationHeadingRef}
+          tabIndex={-1}
+          className="font-display text-2xl font-bold text-text text-center mb-2 outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded"
+        >
           {i18n.registration.confirmation_title}
         </h2>
         <p className="text-sm text-text-muted text-center mb-4">{subtitle}</p>
