@@ -100,8 +100,44 @@ export default function ClassList({ locale }: { locale: Locale }) {
 
   if (loading) {
     return (
-      <div className="flex justify-center py-8">
-        <div className="w-8 h-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
+      <div className="space-y-4">
+        {[0, 1, 2].map((i) => (
+          <div key={i} className="bg-surface rounded-3xl border border-bg-warm shadow-soft overflow-hidden animate-pulse">
+            {/* Header */}
+            <div className="px-6 pt-6 pb-3 flex justify-between items-start gap-3">
+              <div className="flex-1 space-y-2">
+                <div className="h-3 w-32 rounded bg-gray-200" />
+                <div className="h-7 w-2/3 rounded-lg bg-gray-200" />
+              </div>
+              <div className="h-6 w-16 rounded-full bg-gray-200 shrink-0" />
+            </div>
+            {/* Description */}
+            <div className="px-6 pb-3 space-y-2 min-h-[5.25rem]">
+              <div className="h-3.5 w-full rounded bg-gray-100" />
+              <div className="h-3.5 w-5/6 rounded bg-gray-100" />
+              <div className="h-3.5 w-3/4 rounded bg-gray-100" />
+            </div>
+            {/* Sessions box + meta badges */}
+            <div className="px-6 pb-5 space-y-3">
+              <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3.5 flex items-start gap-3">
+                <div className="w-8 h-8 rounded-lg bg-gray-200 shrink-0" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-3.5 w-24 rounded bg-gray-200" />
+                  <div className="h-3 w-44 rounded bg-gray-200" />
+                  <div className="h-3 w-40 rounded bg-gray-200" />
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <div className="h-11 flex-1 rounded-2xl bg-gray-100" />
+                <div className="h-11 w-24 rounded-2xl bg-gray-100 shrink-0" />
+              </div>
+            </div>
+            {/* CTA button */}
+            <div className="px-6 pb-6 pt-3">
+              <div className="h-12 w-full rounded-full bg-gray-200" />
+            </div>
+          </div>
+        ))}
       </div>
     );
   }

@@ -79,8 +79,60 @@ export default function AdminDashboard() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="w-10 h-10 border-4 border-coral/20 border-t-coral rounded-full animate-spin" />
+      <div className="min-h-screen animate-pulse">
+        {/* Header skeleton */}
+        <header className="sticky top-0 z-40 border-b border-primary/5 bg-bg/80 backdrop-blur-md">
+          <div className="max-w-6xl mx-auto px-5 sm:px-6 py-3.5 flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="h-9 w-9 rounded-xl bg-gray-200" />
+              <div className="h-5 w-16 rounded-lg bg-gray-200" />
+            </div>
+            <div className="h-7 w-20 rounded-full bg-gray-200" />
+          </div>
+          <nav className="max-w-6xl mx-auto px-5 sm:px-6 pb-3.5">
+            <div className="inline-flex items-center gap-1 p-1 bg-white/60 rounded-full border border-primary/10">
+              {[0, 1, 2].map((i) => (
+                <div key={i} className="h-8 w-24 rounded-full bg-gray-200" />
+              ))}
+            </div>
+          </nav>
+        </header>
+        {/* Content skeleton */}
+        <div className="max-w-6xl mx-auto px-5 sm:px-6 py-8 space-y-6">
+          {/* Greeting */}
+          <div className="h-7 w-48 rounded-lg bg-gray-200" />
+          {/* Stats grid */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            {[0, 1, 2, 3].map((i) => (
+              <div key={i} className="bg-white rounded-2xl p-5 shadow-soft space-y-3">
+                <div className="h-3.5 w-20 rounded bg-gray-200" />
+                <div className="h-8 w-12 rounded-lg bg-gray-200" />
+              </div>
+            ))}
+          </div>
+          {/* Classes list */}
+          <div className="bg-white rounded-2xl shadow-soft p-5 space-y-3">
+            <div className="h-5 w-32 rounded-lg bg-gray-200" />
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="flex items-center gap-4 py-3 border-t border-gray-100">
+                <div className="h-4 flex-1 rounded bg-gray-100" />
+                <div className="h-6 w-16 rounded-full bg-gray-200" />
+                <div className="h-6 w-16 rounded-full bg-gray-200" />
+              </div>
+            ))}
+          </div>
+          {/* Recent registrations */}
+          <div className="bg-white rounded-2xl shadow-soft p-5 space-y-3">
+            <div className="h-5 w-44 rounded-lg bg-gray-200" />
+            {[0, 1, 2, 3].map((i) => (
+              <div key={i} className="flex items-center gap-4 py-2.5 border-t border-gray-100">
+                <div className="h-4 w-32 rounded bg-gray-100" />
+                <div className="h-4 flex-1 rounded bg-gray-100" />
+                <div className="h-5 w-20 rounded-full bg-gray-200" />
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     );
   }
