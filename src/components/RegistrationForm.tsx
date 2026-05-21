@@ -32,6 +32,26 @@ export default function RegistrationForm({ locale, danceClasses, supabaseFunctio
   const [isPartnerInfoOpen, setIsPartnerInfoOpen] = useState(false);
   const [results, setResults] = useState<WorkshopResult[]>([]);
 
+  // Inline validation: track which fields have been touched (blurred at least once
+  // or after a submit attempt) so we only show errors when appropriate.
+  const [touched, setTouched] = useState<{ name: boolean; email: boolean }>({
+    name: false,
+    email: false,
+  });
+
+  const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  const nameError = name.trim().length === 0 ? i18n.registration.validation_name_required : null;
+  const emailTrimmed = email.trim();
+  const emailError = !emailTrimmed
+    ? i18n.registration.validation_email_required
+    : !EMAIL_PATTERN.test(emailTrimmed)
+      ? i18n.registration.validation_email_invalid
+      : null;
+
+  const isFormValid =
+    !nameError && !emailError && privacyConsent && selectedClassIds.size > 0;
+
   // Dev-only preview: open the page with ?preview=confirmation to see the success view
   useEffect(() => {
     if (!import.meta.env.DEV) return;
@@ -59,6 +79,12 @@ export default function RegistrationForm({ locale, danceClasses, supabaseFunctio
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (selectedClassIds.size === 0) return;
+
+    // Surface any pending field errors that the user hasn't seen yet
+    if (nameError || emailError) {
+      setTouched({ name: true, email: true });
+      return;
+    }
     if (!privacyConsent) {
       setPrivacyError(true);
       return;
@@ -134,6 +160,7 @@ export default function RegistrationForm({ locale, danceClasses, supabaseFunctio
       setPartnerName('');
       setComment('');
       setPrivacyConsent(false);
+      setTouched({ name: false, email: false });
       newResults.filter((r) => r.type === 'success').forEach((r) => onToggleClass(r.classId));
     }
 
@@ -374,12 +401,24 @@ export default function RegistrationForm({ locale, danceClasses, supabaseFunctio
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
+          onBlur={() => setTouched((t) => ({ ...t, name: true }))}
           required
           autoComplete="name"
           autoCapitalize="words"
           spellCheck={false}
-          className="w-full border border-bg-warm rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-teal/30 focus:border-teal outline-none bg-bg/50"
+          aria-invalid={touched.name && !!nameError}
+          aria-describedby={touched.name && nameError ? 'name-error' : undefined}
+          className={`w-full border rounded-xl px-3 py-2.5 text-sm focus:ring-2 outline-none bg-bg/50 ${
+            touched.name && nameError
+              ? 'border-coral focus:ring-coral/30 focus:border-coral'
+              : 'border-bg-warm focus:ring-teal/30 focus:border-teal'
+          }`}
         />
+        {touched.name && nameError && (
+          <p id="name-error" role="alert" className="mt-1 text-xs text-coral">
+            {nameError}
+          </p>
+        )}
       </div>
 
       {/* Email */}
@@ -390,6 +429,7 @@ export default function RegistrationForm({ locale, danceClasses, supabaseFunctio
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
+          onBlur={() => setTouched((t) => ({ ...t, email: true }))}
           required
           autoComplete="email"
           inputMode="email"
@@ -397,8 +437,19 @@ export default function RegistrationForm({ locale, danceClasses, supabaseFunctio
           autoCorrect="off"
           spellCheck={false}
           pattern="[^\s@]+@[^\s@]+\.[^\s@]+"
-          className="w-full border border-bg-warm rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-teal/30 focus:border-teal outline-none bg-bg/50"
+          aria-invalid={touched.email && !!emailError}
+          aria-describedby={touched.email && emailError ? 'email-error' : undefined}
+          className={`w-full border rounded-xl px-3 py-2.5 text-sm focus:ring-2 outline-none bg-bg/50 ${
+            touched.email && emailError
+              ? 'border-coral focus:ring-coral/30 focus:border-coral'
+              : 'border-bg-warm focus:ring-teal/30 focus:border-teal'
+          }`}
         />
+        {touched.email && emailError && (
+          <p id="email-error" role="alert" className="mt-1 text-xs text-coral">
+            {emailError}
+          </p>
+        )}
       </div>
 
       {/* Partner Name */}
@@ -514,8 +565,8 @@ export default function RegistrationForm({ locale, danceClasses, supabaseFunctio
       {/* Submit */}
       <button
         type="submit"
-        disabled={submitting || selectedClassIds.size === 0}
-        className="w-full bg-coral hover:bg-coral-dark disabled:opacity-50 text-white font-semibold py-3 px-4 rounded-full transition-colors shadow-md shadow-coral/20"
+        disabled={submitting || !isFormValid}
+        className="w-full bg-coral hover:bg-coral-dark disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-3 px-4 rounded-full transition-colors shadow-md shadow-coral/20"
       >
         {submitting ? i18n.registration.submitting : i18n.registration.submit}
       </button>
