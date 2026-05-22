@@ -32,6 +32,23 @@ interface DbMock {
   updateStatus: (id: string, status: string) => boolean;
 }
 
+const DEFAULT_ALLOWED_ORIGINS = [
+  'https://shagadeus.at',
+  'http://localhost:4321',
+  'https://localhost:4321',
+];
+
+function isAllowedOrigin(originHeader: string | null, allowedOrigins: string[] = DEFAULT_ALLOWED_ORIGINS): boolean {
+  if (!originHeader) return true;
+  try {
+    const origin = new URL(originHeader).origin.replace(/\/$/, '');
+    const normalizedAllowed = new Set(allowedOrigins.map((entry) => entry.replace(/\/$/, '')));
+    return normalizedAllowed.has(origin);
+  } catch {
+    return false;
+  }
+}
+
 type ConfirmResult =
   | { error: string; status: number }
   | { success: true; status: number };
@@ -40,7 +57,12 @@ function processConfirmation(
   input: ConfirmInput,
   db: DbMock,
   hasAuthHeader: boolean,
+  originHeader: string | null = null,
 ): ConfirmResult {
+  if (!isAllowedOrigin(originHeader)) {
+    return { error: 'Forbidden origin', status: 403 };
+  }
+
   // Verify admin auth
   if (!hasAuthHeader) {
     return { error: 'Unauthorized', status: 401 };
@@ -142,6 +164,38 @@ describe('Confirm Registration: Authentication', () => {
       { registration_id: 'reg-1', new_status: 'confirmed' },
       makeDb(),
       true,
+    );
+    expect(result).toMatchObject({ success: true, status: 200 });
+  });
+});
+
+describe('Confirm Registration: Origin/CSRF guard', () => {
+  it('rejects browser requests from a forbidden origin', () => {
+    const result = processConfirmation(
+      { registration_id: 'reg-1', new_status: 'confirmed' },
+      makeDb(),
+      true,
+      'https://evil.example',
+    );
+    expect(result).toMatchObject({ error: 'Forbidden origin', status: 403 });
+  });
+
+  it('allows localhost origin for local development', () => {
+    const result = processConfirmation(
+      { registration_id: 'reg-1', new_status: 'confirmed' },
+      makeDb(),
+      true,
+      'http://localhost:4321',
+    );
+    expect(result).toMatchObject({ success: true, status: 200 });
+  });
+
+  it('allows origin-less internal requests', () => {
+    const result = processConfirmation(
+      { registration_id: 'reg-1', new_status: 'confirmed' },
+      makeDb(),
+      true,
+      null,
     );
     expect(result).toMatchObject({ success: true, status: 200 });
   });

@@ -14,7 +14,37 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const DEFAULT_ALLOWED_ORIGINS = [
+  'https://shagadeus.at',
+  'http://localhost:4321',
+  'https://localhost:4321',
+];
+
+const allowedOrigins = new Set(
+  (Deno.env.get('ALLOWED_ORIGINS') ?? Deno.env.get('ALLOWED_ORIGIN') ?? DEFAULT_ALLOWED_ORIGINS.join(','))
+    .split(',')
+    .map((origin) => origin.trim().replace(/\/$/, ''))
+    .filter(Boolean)
+);
+
+function isAllowedOrigin(originHeader: string | null): boolean {
+  // Requests without Origin are treated as non-browser/internal calls.
+  if (!originHeader) return true;
+  try {
+    return allowedOrigins.has(new URL(originHeader).origin.replace(/\/$/, ''));
+  } catch {
+    return false;
+  }
+}
+
 Deno.serve(async (req) => {
+  if (!isAllowedOrigin(req.headers.get('origin'))) {
+    return new Response(
+      JSON.stringify({ error: 'Forbidden origin', code: 'FORBIDDEN_ORIGIN' }),
+      { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }

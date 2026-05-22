@@ -43,6 +43,23 @@ interface SupabaseMock {
   insertRegistration: (data: Record<string, unknown>) => { id: string } | null;
 }
 
+const DEFAULT_ALLOWED_ORIGINS = [
+  'https://shagadeus.at',
+  'http://localhost:4321',
+  'https://localhost:4321',
+];
+
+function isAllowedOrigin(originHeader: string | null, allowedOrigins: string[] = DEFAULT_ALLOWED_ORIGINS): boolean {
+  if (!originHeader) return true;
+  try {
+    const origin = new URL(originHeader).origin.replace(/\/$/, '');
+    const normalizedAllowed = new Set(allowedOrigins.map((entry) => entry.replace(/\/$/, '')));
+    return normalizedAllowed.has(origin);
+  } catch {
+    return false;
+  }
+}
+
 type RegistrationResult =
   | { error: string; code: string; status: number }
   | { success: true; registration_status: string; id: string; status: number };
@@ -51,7 +68,12 @@ function processRegistration(
   input: RegisterInput,
   db: SupabaseMock,
   now: Date,
+  originHeader: string | null = null,
 ): RegistrationResult {
+  if (!isAllowedOrigin(originHeader)) {
+    return { error: 'Forbidden origin', code: 'FORBIDDEN_ORIGIN', status: 403 };
+  }
+
   const { dance_class_id, role, name, email, partner_name, comment } = input;
 
   // Input validation
@@ -190,6 +212,23 @@ describe('Registration: Input validation', () => {
 
   it('accepts valid follow role', () => {
     const result = processRegistration({ ...VALID_INPUT, role: 'follow' }, makeDb(), NOW);
+    expect(result).toMatchObject({ success: true });
+  });
+});
+
+describe('Registration: Origin/CSRF guard', () => {
+  it('rejects browser requests from a forbidden origin', () => {
+    const result = processRegistration(VALID_INPUT, makeDb(), NOW, 'https://evil.example');
+    expect(result).toMatchObject({ code: 'FORBIDDEN_ORIGIN', status: 403 });
+  });
+
+  it('allows localhost origin for local development', () => {
+    const result = processRegistration(VALID_INPUT, makeDb(), NOW, 'http://localhost:4321');
+    expect(result).toMatchObject({ success: true });
+  });
+
+  it('allows origin-less internal requests', () => {
+    const result = processRegistration(VALID_INPUT, makeDb(), NOW, null);
     expect(result).toMatchObject({ success: true });
   });
 });
