@@ -1,5 +1,4 @@
 import { useEffect, useState, useMemo } from 'react';
-import { supabase } from '../lib/supabase';
 import { simpleMarkdown } from '../lib/markdown';
 import { getClassState } from '../lib/classState';
 import type { DanceClass, ClassSession } from '../lib/database.types';
@@ -17,11 +16,12 @@ interface ClassWithCounts extends DanceClass {
   sessions: ClassSession[];
 }
 
-export default function WorkshopPage({ locale }: { locale: Locale }) {
-  const [classes, setClasses] = useState<ClassWithCounts[]>([]);
-  const [ongoingClasses, setOngoingClasses] = useState<ClassWithCounts[]>([]);
-  const [archivedClasses, setArchivedClasses] = useState<ClassWithCounts[]>([]);
-  const [loading, setLoading] = useState(true);
+interface Props {
+  locale: Locale;
+  initialClasses: ClassWithCounts[];
+}
+
+export default function WorkshopPage({ locale, initialClasses }: Props) {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   function toggleSelectedId(id: string) {
@@ -44,84 +44,28 @@ export default function WorkshopPage({ locale }: { locale: Locale }) {
     if (classParam) setSelectedIds(new Set([classParam]));
   }, []);
 
-  useEffect(() => {
-    async function fetchClasses() {
-      const { data: classData } = await supabase
-        .from('dance_classes')
-        .select('*')
-        .eq('is_public', true);
-
-      if (!classData || classData.length === 0) {
-        setClasses([]);
-        setLoading(false);
-        return;
-      }
-
-      const classIds = classData.map((c) => c.id);
-
-      const [{ data: counts }, { data: sessions }] = await Promise.all([
-        supabase.from('class_registration_counts').select('*'),
-        supabase
-          .from('class_sessions')
-          .select('*')
-          .in('dance_class_id', classIds)
-          .order('session_date', { ascending: true })
-          .order('start_time', { ascending: true }),
-      ]);
-
-      const countsMap = new Map(counts?.map((c) => [c.dance_class_id, c]));
-      const sessionsMap = new Map<string, ClassSession[]>();
-      for (const s of sessions || []) {
-        if (!sessionsMap.has(s.dance_class_id)) sessionsMap.set(s.dance_class_id, []);
-        sessionsMap.get(s.dance_class_id)!.push(s);
-      }
-
-      const merged: ClassWithCounts[] = classData.map((dc) => {
-        const c = countsMap.get(dc.id);
-        return {
-          ...dc,
-          leads_available: Number(c?.leads_available ?? dc.max_leads),
-          follows_available: Number(c?.follows_available ?? dc.max_follows),
-          sessions: sessionsMap.get(dc.id) || [],
-        };
-      });
-
-      // Sort classes chronologically by first session date and time.
-      merged.sort((a, b) => {
-        const firstA = a.sessions?.[0];
-        const firstB = b.sessions?.[0];
-
-        if (!firstA && !firstB) return 0;
-        if (!firstA) return 1;
-        if (!firstB) return -1;
-
-        const firstDateTimeA = `${firstA.session_date}T${firstA.start_time}`;
-        const firstDateTimeB = `${firstB.session_date}T${firstB.start_time}`;
-        return firstDateTimeA.localeCompare(firstDateTimeB);
-      });
-
-      const active = merged.filter((dc) => {
-        const state = getClassState(dc.sessions || [], dc.registration_opens_at, dc.registration_closes_at);
-        return state === 'upcoming' || state === 'open';
-      });
-      const ongoing = merged.filter((dc) => {
-        const state = getClassState(dc.sessions || [], dc.registration_opens_at, dc.registration_closes_at);
-        return state === 'ongoing';
-      });
-      const archived = merged.filter((dc) => {
-        const state = getClassState(dc.sessions || [], dc.registration_opens_at, dc.registration_closes_at);
-        return state === 'archived';
-      });
-
-      setClasses(active);
-      setOngoingClasses(ongoing);
-      setArchivedClasses(archived);
-      setLoading(false);
-    }
-    fetchClasses();
-  }, []);
-
-  const allClasses = [...classes, ...ongoingClasses, ...archivedClasses];
+  const allClasses = initialClasses;
+  const classes = useMemo(
+    () => allClasses.filter((dc) => {
+      const state = getClassState(dc.sessions || [], dc.registration_opens_at, dc.registration_closes_at);
+      return state === 'upcoming' || state === 'open';
+    }),
+    [allClasses]
+  );
+  const ongoingClasses = useMemo(
+    () => allClasses.filter((dc) => {
+      const state = getClassState(dc.sessions || [], dc.registration_opens_at, dc.registration_closes_at);
+      return state === 'ongoing';
+    }),
+    [allClasses]
+  );
+  const archivedClasses = useMemo(
+    () => allClasses.filter((dc) => {
+      const state = getClassState(dc.sessions || [], dc.registration_opens_at, dc.registration_closes_at);
+      return state === 'archived';
+    }),
+    [allClasses]
+  );
   const availableLevels = useMemo(() => {
     const levels = new Set(allClasses.map((c) => c.level).filter(Boolean));
     return Array.from(levels).sort();
@@ -189,77 +133,6 @@ export default function WorkshopPage({ locale }: { locale: Locale }) {
             </span>
           </span>
         )}
-      </div>
-    );
-  }
-
-  if (loading) {
-    return (
-      <div className="pt-2">
-        {/* Filter bar skeleton */}
-        <div className="flex gap-2 justify-center mb-8">
-          {[0, 1, 2].map((i) => (
-            <div key={i} className="h-8 w-20 rounded-full bg-gray-200 animate-pulse" />
-          ))}
-        </div>
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-5">
-          {/* Workshop card skeletons */}
-          <div className="min-w-0 lg:col-span-3 space-y-4">
-            {[0, 1, 2].map((i) => (
-              <div key={i} className="bg-surface rounded-2xl border-2 border-transparent shadow-sm overflow-hidden animate-pulse">
-                {/* Header */}
-                <div className="px-5 pt-5 pb-3 flex justify-between items-start gap-3">
-                  <div className="flex-1 space-y-2">
-                    <div className="h-3 w-32 rounded bg-gray-200" />
-                    <div className="h-6 w-2/3 rounded-lg bg-gray-200" />
-                  </div>
-                  <div className="h-6 w-16 rounded-full bg-gray-200 mt-1 shrink-0" />
-                </div>
-                {/* Description */}
-                <div className="px-5 pb-3 space-y-2">
-                  <div className="h-3.5 w-full rounded bg-gray-100" />
-                  <div className="h-3.5 w-5/6 rounded bg-gray-100" />
-                  <div className="h-3.5 w-3/4 rounded bg-gray-100" />
-                </div>
-                {/* Sessions box */}
-                <div className="px-5 pb-4">
-                  <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3.5 flex items-start gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-gray-200 shrink-0" />
-                    <div className="flex-1 space-y-2">
-                      <div className="h-3.5 w-24 rounded bg-gray-200" />
-                      <div className="h-3 w-44 rounded bg-gray-200" />
-                      <div className="h-3 w-40 rounded bg-gray-200" />
-                    </div>
-                  </div>
-                </div>
-                {/* Location + price badges */}
-                <div className="px-5 pb-5 flex gap-2">
-                  <div className="h-10 flex-1 rounded-2xl bg-gray-100" />
-                  <div className="h-10 w-24 rounded-2xl bg-gray-100 shrink-0" />
-                </div>
-              </div>
-            ))}
-          </div>
-          {/* Registration form skeleton */}
-          <div className="min-w-0 lg:col-span-2 lg:sticky lg:top-24 lg:self-start">
-            <div className="bg-surface rounded-2xl shadow-soft p-5 animate-pulse space-y-4">
-              <div className="h-6 w-3/4 rounded-lg bg-gray-200" />
-              <div className="space-y-1.5">
-                <div className="h-4 w-28 rounded bg-gray-200" />
-                <div className="h-10 w-full rounded-xl bg-gray-100" />
-              </div>
-              <div className="space-y-1.5">
-                <div className="h-4 w-20 rounded bg-gray-200" />
-                <div className="h-10 w-full rounded-xl bg-gray-100" />
-              </div>
-              <div className="space-y-1.5">
-                <div className="h-4 w-16 rounded bg-gray-200" />
-                <div className="h-10 w-full rounded-xl bg-gray-100" />
-              </div>
-              <div className="h-12 w-full rounded-full bg-gray-200" />
-            </div>
-          </div>
-        </div>
       </div>
     );
   }
