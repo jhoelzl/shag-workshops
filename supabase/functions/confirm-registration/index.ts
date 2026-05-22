@@ -1,6 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { Resend } from 'https://esm.sh/resend@4';
-import { REPLY_TO, htmlToText, wrapHtml } from '../_shared/email.ts';
+import { REPLY_TO, htmlToText, renderConfirmationTemplate, wrapHtml } from '../_shared/email.ts';
 import { buildIcsContent } from '../_shared/calendar.ts';
 import {
   renderWorkshopBoxHtml,
@@ -133,14 +133,8 @@ Deno.serve(async (req) => {
 
       const bodies: Record<string, { de: string; en: string }> = {
         confirmed: {
-          de: `<h2>Hallo ${registration.name}!</h2>
-               <p>Deine Anmeldung für <strong>${dc.title_de}</strong> wurde <strong>bestätigt</strong>!</p>
-               <p>Wir freuen uns auf dich!</p>
-               <p>Vera & Josef</p>`,
-          en: `<h2>Hello ${registration.name}!</h2>
-               <p>Your registration for <strong>${dc.title_en}</strong> has been <strong>confirmed</strong>!</p>
-               <p>We look forward to seeing you!</p>
-               <p>Vera & Josef</p>`,
+        de: renderConfirmationTemplate({ lang: 'de', name: registration.name, classTitle: dc.title_de }),
+        en: renderConfirmationTemplate({ lang: 'en', name: registration.name, classTitle: dc.title_en }),
         },
         waitlisted: {
           de: `<h2>Hallo ${registration.name}!</h2>

@@ -84,6 +84,24 @@ export function htmlToText(html: string): string {
   return s.trim();
 }
 
+export function renderConfirmationTemplate(input: {
+  lang: 'de' | 'en';
+  name: string;
+  classTitle: string;
+}): string {
+  if (input.lang === 'en') {
+    return `<h2>Hello ${input.name}!</h2>
+               <p>Your registration for <strong>${input.classTitle}</strong> has been <strong>confirmed</strong>!</p>
+               <p>We look forward to seeing you!</p>
+               <p>Vera & Josef</p>`;
+  }
+
+  return `<h2>Hallo ${input.name}!</h2>
+               <p>Deine Anmeldung für <strong>${input.classTitle}</strong> wurde <strong>bestätigt</strong>!</p>
+               <p>Wir freuen uns auf dich!</p>
+               <p>Vera & Josef</p>`;
+}
+
 function escapeHtml(s: string): string {
   return s
     .replace(/&/g, '&amp;')
