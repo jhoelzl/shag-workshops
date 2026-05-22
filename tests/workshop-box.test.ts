@@ -1,0 +1,123 @@
+import { describe, it, expect } from 'vitest';
+import {
+  renderWorkshopBoxHtml,
+  renderWorkshopBoxText,
+  type WorkshopBoxInput,
+} from '../supabase/functions/_shared/workshop-box.ts';
+
+const BASE_INPUT: WorkshopBoxInput = {
+  classId: 'class-1',
+  titleDe: 'Shag Me Amadeus',
+  titleEn: 'Shag Me Amadeus',
+  dance: 'Collegiate Shag',
+  teachers: 'Vera & Josef',
+  level: 'Beginner',
+  location: 'Tanzstudio Salzburg',
+  locationDetails: 'Linzer Gasse 12, 5020 Salzburg',
+  locationUrl: 'https://maps.example.com/salzburg',
+  priceEur: 10,
+  isDonation: false,
+  sessions: [
+    { id: 's1', session_date: '2026-06-18', start_time: '19:00', end_time: '19:55' },
+    { id: 's2', session_date: '2026-06-25', start_time: '19:00', end_time: '19:55' },
+  ],
+  workshopPageUrl: 'https://shagadeus.at/de/workshops',
+  lang: 'de',
+};
+
+describe('renderWorkshopBoxText', () => {
+  it('contains the workshop title', () => {
+    const text = renderWorkshopBoxText(BASE_INPUT);
+    expect(text).toContain('SHAG ME AMADEUS');
+  });
+
+  it('contains all session dates and times (DE format)', () => {
+    const text = renderWorkshopBoxText(BASE_INPUT);
+    expect(text).toContain('18.06.2026');
+    expect(text).toContain('25.06.2026');
+    expect(text).toContain('19:00');
+    expect(text).toContain('19:55');
+  });
+
+  it('contains location and location URL', () => {
+    const text = renderWorkshopBoxText(BASE_INPUT);
+    expect(text).toContain('Tanzstudio Salzburg');
+    expect(text).toContain('Linzer Gasse 12, 5020 Salzburg');
+    expect(text).toContain('https://maps.example.com/salzburg');
+  });
+
+  it('contains the price', () => {
+    const text = renderWorkshopBoxText(BASE_INPUT);
+    expect(text).toContain('10 €');
+  });
+
+  it('shows "Auf Spendenbasis" when is_donation is true', () => {
+    const text = renderWorkshopBoxText({ ...BASE_INPUT, isDonation: true });
+    expect(text).toContain('Auf Spendenbasis');
+  });
+
+  it('contains Google Calendar URLs for each session', () => {
+    const text = renderWorkshopBoxText(BASE_INPUT);
+    const matches = text.match(/https:\/\/calendar\.google\.com\/calendar\/render/g);
+    expect(matches?.length).toBe(2);
+  });
+
+  it('mentions the ICS attachment', () => {
+    const text = renderWorkshopBoxText(BASE_INPUT);
+    expect(text.toLowerCase()).toContain('.ics');
+  });
+
+  it('contains the public workshop page URL', () => {
+    const text = renderWorkshopBoxText(BASE_INPUT);
+    expect(text).toContain('https://shagadeus.at/de/workshops');
+  });
+
+  it('uses English labels and ISO date format when lang=en', () => {
+    const text = renderWorkshopBoxText({ ...BASE_INPUT, lang: 'en' });
+    expect(text).toContain('Dates:');
+    expect(text).toContain('Location:');
+    expect(text).toContain('Price:');
+    expect(text).toContain('2026-06-18');
+  });
+
+  it('skips dates section when no valid sessions are provided', () => {
+    const text = renderWorkshopBoxText({ ...BASE_INPUT, sessions: [] });
+    expect(text).not.toContain('Termine:');
+    expect(text).not.toContain('calendar.google.com');
+  });
+});
+
+describe('renderWorkshopBoxHtml', () => {
+  it('contains the workshop title and is table-based', () => {
+    const html = renderWorkshopBoxHtml(BASE_INPUT);
+    expect(html).toContain('Shag Me Amadeus');
+    expect(html).toContain('<table');
+  });
+
+  it('uses inline styles (no <style> blocks, no class attributes)', () => {
+    const html = renderWorkshopBoxHtml(BASE_INPUT);
+    expect(html).not.toMatch(/<style[\s>]/);
+    expect(html).not.toMatch(/\sclass=/);
+  });
+
+  it('escapes HTML special characters in user-provided fields', () => {
+    const html = renderWorkshopBoxHtml({
+      ...BASE_INPUT,
+      titleDe: 'Shag & <script>alert(1)</script>',
+    });
+    expect(html).not.toContain('<script>');
+    expect(html).toContain('&amp;');
+    expect(html).toContain('&lt;script&gt;');
+  });
+
+  it('renders one Google Calendar button per session', () => {
+    const html = renderWorkshopBoxHtml(BASE_INPUT);
+    const matches = html.match(/calendar\.google\.com\/calendar\/render/g);
+    expect(matches?.length).toBe(2);
+  });
+
+  it('links the location label when locationUrl is provided', () => {
+    const html = renderWorkshopBoxHtml(BASE_INPUT);
+    expect(html).toMatch(/<a href="https:\/\/maps\.example\.com\/salzburg"[^>]*>Tanzstudio Salzburg/);
+  });
+});

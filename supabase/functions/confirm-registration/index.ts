@@ -1,6 +1,13 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { Resend } from 'https://esm.sh/resend@4';
 import { REPLY_TO, htmlToText, wrapHtml } from '../_shared/email.ts';
+import { buildIcsContent } from '../_shared/calendar.ts';
+import {
+  renderWorkshopBoxHtml,
+  renderWorkshopBoxText,
+  workshopBoxIcsFilename,
+  type WorkshopBoxInput,
+} from '../_shared/workshop-box.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -169,13 +176,97 @@ Deno.serve(async (req) => {
 
       try {
         const body = bodies[new_status][lang];
+
+        // For confirmed registrations, inject a workshop summary box with
+        // calendar export links and attach an ICS file. The plain-text
+        // fallback is built directly (not stripped from HTML) so that
+        // text-only clients receive all the workshop details verbatim.
+        let htmlBody = body;
+        let textBody = htmlToText(body);
+        // deno-lint-ignore no-explicit-any
+        const attachments: any[] = [];
+
+        if (new_status === 'confirmed') {
+          const { data: sessions } = await supabase
+            .from('class_sessions')
+            .select('*')
+            .eq('dance_class_id', registration.dance_class_id)
+            .order('session_date', { ascending: true })
+            .order('start_time', { ascending: true });
+
+          const workshopPageUrl = lang === 'de'
+            ? 'https://shagadeus.at/de/workshops'
+            : 'https://shagadeus.at/en/workshops';
+
+          const boxInput: WorkshopBoxInput = {
+            classId: dc.id,
+            titleDe: dc.title_de,
+            titleEn: dc.title_en,
+            dance: dc.dance,
+            teachers: dc.teachers,
+            level: dc.level,
+            location: dc.location,
+            locationDetails: dc.location_details,
+            locationUrl: dc.location_url,
+            priceEur: dc.price_eur,
+            isDonation: dc.is_donation,
+            sessions: sessions ?? [],
+            workshopPageUrl,
+            lang,
+          };
+
+          const boxHtml = renderWorkshopBoxHtml(boxInput);
+          const boxText = renderWorkshopBoxText(boxInput);
+
+          // Insert the workshop box between the greeting and the signature.
+          // The signature line begins with "<p>Vera & Josef</p>" in all locales.
+          const signatureMarker = '<p>Vera &amp; Josef</p>';
+          const bodyEscaped = body.replace(/Vera & Josef/g, 'Vera &amp; Josef');
+          htmlBody = bodyEscaped.includes(signatureMarker)
+            ? bodyEscaped.replace(signatureMarker, `${boxHtml}\n${signatureMarker}`)
+            : `${bodyEscaped}\n${boxHtml}`;
+
+          // Compose plain-text fallback from base text + workshop box text.
+          const baseText = htmlToText(body);
+          const sigIdx = baseText.indexOf('Vera & Josef');
+          textBody = sigIdx >= 0
+            ? `${baseText.slice(0, sigIdx).trimEnd()}\n\n${boxText}\n\n${baseText.slice(sigIdx)}`
+            : `${baseText}\n\n${boxText}`;
+
+          // Build ICS attachment (only if at least one valid session exists).
+          const icsContent = buildIcsContent(
+            {
+              id: dc.id,
+              title: lang === 'de' ? dc.title_de : dc.title_en,
+              location: dc.location,
+              locationDetails: dc.location_details,
+              url: workshopPageUrl,
+            },
+            sessions ?? []
+          );
+          if (icsContent) {
+            // UTF-8 → base64 (icsContent may contain umlauts / non-ASCII).
+            const utf8Bytes = new TextEncoder().encode(icsContent);
+            let binary = '';
+            for (let i = 0; i < utf8Bytes.length; i++) {
+              binary += String.fromCharCode(utf8Bytes[i]);
+            }
+            attachments.push({
+              filename: workshopBoxIcsFilename(boxInput),
+              content: btoa(binary),
+              contentType: 'text/calendar; charset=utf-8; method=PUBLISH',
+            });
+          }
+        }
+
         const { data: sendData, error: sendError } = await resend.emails.send({
           from: fromAddress,
           to: [toAddress],
           replyTo: REPLY_TO,
           subject,
-          html: wrapHtml(body, { title: subject }),
-          text: htmlToText(body),
+          html: wrapHtml(htmlBody, { title: subject }),
+          text: textBody,
+          ...(attachments.length ? { attachments } : {}),
         });
         if (sendError) {
           console.error('Resend send error:', JSON.stringify(sendError), 'from:', fromAddress, 'to:', toAddress);
