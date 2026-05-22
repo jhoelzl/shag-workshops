@@ -2,6 +2,7 @@
 dist/
 dist-flyer/
 coverage/
+.vercel/
 
 # dependencies
 node_modules/
