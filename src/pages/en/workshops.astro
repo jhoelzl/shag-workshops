@@ -9,13 +9,14 @@ const locale = 'en';
 const i18n = t(locale);
 
 const siteOrigin = 'https://shagadeus.at';
-const { data: publicClasses = [] } = await supabase
+const { data: publicClassesData } = await supabase
   .from('dance_classes')
   .select('*')
   .eq('is_public', true);
+const publicClasses = publicClassesData ?? [];
 
 const classIds = publicClasses.map((danceClass) => danceClass.id);
-const { data: classSessions = [] } = classIds.length > 0
+const { data: classSessionsData } = classIds.length > 0
   ? await supabase
       .from('class_sessions')
       .select('*')
@@ -23,6 +24,7 @@ const { data: classSessions = [] } = classIds.length > 0
       .order('session_date', { ascending: true })
       .order('start_time', { ascending: true })
   : { data: [] as ClassSession[] };
+const classSessions = classSessionsData ?? [];
 
 const sessionsByClass = classSessions.reduce((acc, session) => {
   if (!acc.has(session.dance_class_id)) {
