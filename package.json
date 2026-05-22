@@ -9,6 +9,7 @@
     "astro": "astro",
     "test": "vitest",
     "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "check:i18n": "node scripts/check-i18n.mjs",
     "setup:hooks": "git config core.hooksPath .githooks",
     "deploy:functions": "supabase functions deploy register --no-verify-jwt && supabase functions deploy admin-register && supabase functions deploy confirm-registration",
@@ -28,6 +29,7 @@
     "@astrojs/check": "^0.9.8",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
+    "@vitest/coverage-v8": "^4.1.7",
     "playwright": "^1.59.1",
     "typescript": "^5.9.3",
     "vitest": "^4.1.4"
