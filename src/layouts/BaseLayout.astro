@@ -14,6 +14,21 @@ const i18n = t(locale);
 const altLocale = getAlternateLocale(locale);
 const altPath = translatePath(currentPath, locale);
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+const siteOrigin = 'https://shagadeus.at';
+
+function normalizePath(path: string): string {
+  if (!path || path === '/') return '/';
+  const withLeadingSlash = path.startsWith('/') ? path : `/${path}`;
+  return withLeadingSlash.endsWith('/') ? withLeadingSlash : `${withLeadingSlash}/`;
+}
+
+const normalizedCurrentPath = normalizePath(currentPath);
+const dePath = locale === 'de' ? normalizedCurrentPath : translatePath(normalizedCurrentPath, 'en');
+const enPath = locale === 'en' ? normalizedCurrentPath : translatePath(normalizedCurrentPath, 'de');
+const canonicalUrl = `${siteOrigin}/${locale}${normalizedCurrentPath}`;
+const hreflangDeUrl = `${siteOrigin}/de${dePath}`;
+const hreflangEnUrl = `${siteOrigin}/en${enPath}`;
+const hreflangDefaultUrl = hreflangDeUrl;
 ---
 
 <!doctype html>
@@ -24,6 +39,10 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
     <meta name="description" content="Collegiate Shag Workshops in Salzburg - Swing Dance Classes" />
     <link rel="icon" type="image/png" href={`${base}/shagadeus_logo.png`} />
     <link rel="apple-touch-icon" href={`${base}/shagadeus_logo.png`} />
+    <link rel="canonical" href={canonicalUrl} />
+    <link rel="alternate" hreflang="de" href={hreflangDeUrl} />
+    <link rel="alternate" hreflang="en" href={hreflangEnUrl} />
+    <link rel="alternate" hreflang="x-default" href={hreflangDefaultUrl} />
     <title>{title ? `${title} | Amadeus Shagadeus` : 'Amadeus Shagadeus - Collegiate Shag in Salzburg'}</title>
     <slot name="head" />
   </head>
