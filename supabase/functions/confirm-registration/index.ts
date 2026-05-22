@@ -164,8 +164,9 @@ Deno.serve(async (req) => {
         },
       };
 
-      // Default to German if we don't know the locale
-      const lang = 'de';
+      // Use the locale captured at signup time so the participant gets the
+      // mail in the same language they registered in. Fall back to German.
+      const lang: 'de' | 'en' = registration.locale === 'en' ? 'en' : 'de';
       const fromAddress = Deno.env.get('EMAIL_FROM') || 'Amadeus Shagadeus <onboarding@resend.dev>';
       const overrideTo = Deno.env.get('EMAIL_TO_OVERRIDE');
       const toAddress = overrideTo || registration.email;
