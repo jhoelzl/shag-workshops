@@ -9,6 +9,7 @@
     "astro": "astro",
     "test": "vitest",
     "test:run": "vitest run",
+    "deploy:functions": "supabase functions deploy register --no-verify-jwt && supabase functions deploy admin-register && supabase functions deploy confirm-registration",
     "flyer:export": "node scripts/export-flyer.mjs"
   },
   "description": "Collegiate Shag Workshops Salzburg",
