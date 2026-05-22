@@ -1,0 +1,6 @@
+#!/usr/bin/env sh
+
+set -e
+
+echo "Running i18n consistency check..."
+npm run check:i18n
