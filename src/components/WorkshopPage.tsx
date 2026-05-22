@@ -148,7 +148,7 @@ export default function WorkshopPage({ locale, initialClasses }: Props) {
       <div className="flex flex-wrap items-center justify-center gap-2 mb-8">
         <button
           onClick={() => setFilterLevel('all')}
-          className={`text-sm font-medium px-4 py-1.5 rounded-full transition-colors ${filterLevel === 'all' ? 'bg-teal text-white shadow-sm' : 'bg-teal/8 text-teal-dark hover:bg-teal/15'}`}
+          className={`text-sm font-medium px-4 py-1.5 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${filterLevel === 'all' ? 'bg-teal text-white shadow-sm' : 'bg-teal/8 text-teal-dark hover:bg-teal/15'}`}
         >
           {i18n.workshops.filter_all_levels}
         </button>
@@ -156,7 +156,7 @@ export default function WorkshopPage({ locale, initialClasses }: Props) {
           <button
             key={level}
             onClick={() => setFilterLevel(level!)}
-            className={`text-sm font-medium px-4 py-1.5 rounded-full transition-colors ${filterLevel === level ? 'bg-teal text-white shadow-sm' : 'bg-teal/8 text-teal-dark hover:bg-teal/15'}`}
+            className={`text-sm font-medium px-4 py-1.5 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${filterLevel === level ? 'bg-teal text-white shadow-sm' : 'bg-teal/8 text-teal-dark hover:bg-teal/15'}`}
           >
             {level}
           </button>

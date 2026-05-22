@@ -332,7 +332,7 @@ export default function RegistrationForm({ locale, danceClasses, supabaseFunctio
         <button
           type="button"
           onClick={() => setResults([])}
-          className="w-full bg-white hover:bg-bg/60 border border-bg-warm text-text font-semibold py-3 px-4 rounded-full transition-colors"
+          className="w-full bg-white hover:bg-bg/60 border border-bg-warm text-text font-semibold py-3 px-4 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
         >
           {i18n.registration.another_registration}
         </button>
@@ -401,7 +401,7 @@ export default function RegistrationForm({ locale, danceClasses, supabaseFunctio
               aria-controls="role-info-tooltip"
               onClick={() => setIsRoleInfoOpen((prev) => !prev)}
               onBlur={() => setIsRoleInfoOpen(false)}
-              className="inline-flex items-center justify-center w-5 h-5 rounded-full border border-teal/35 text-teal text-xs font-bold cursor-pointer"
+              className="inline-flex items-center justify-center w-5 h-5 rounded-full border border-teal/35 text-teal text-xs font-bold cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
             >
               i
             </button>
@@ -424,14 +424,14 @@ export default function RegistrationForm({ locale, danceClasses, supabaseFunctio
           <button
             type="button"
             onClick={() => setRole('lead')}
-            className={`relative z-10 flex-1 py-2.5 text-sm font-semibold rounded-full transition-colors duration-200 ${role === 'lead' ? 'text-white' : 'text-text-muted hover:text-text'}`}
+            className={`relative z-10 flex-1 py-2.5 text-sm font-semibold rounded-full transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${role === 'lead' ? 'text-white' : 'text-text-muted hover:text-text'}`}
           >
             {i18n.registration.role_lead}
           </button>
           <button
             type="button"
             onClick={() => setRole('follow')}
-            className={`relative z-10 flex-1 py-2.5 text-sm font-semibold rounded-full transition-colors duration-200 ${role === 'follow' ? 'text-white' : 'text-text-muted hover:text-text'}`}
+            className={`relative z-10 flex-1 py-2.5 text-sm font-semibold rounded-full transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${role === 'follow' ? 'text-white' : 'text-text-muted hover:text-text'}`}
           >
             {i18n.registration.role_follow}
           </button>
@@ -513,7 +513,7 @@ export default function RegistrationForm({ locale, danceClasses, supabaseFunctio
               aria-controls="partner-info-tooltip"
               onClick={() => setIsPartnerInfoOpen((prev) => !prev)}
               onBlur={() => setIsPartnerInfoOpen(false)}
-              className="inline-flex items-center justify-center w-5 h-5 rounded-full border border-teal/35 text-teal text-xs font-bold cursor-pointer"
+              className="inline-flex items-center justify-center w-5 h-5 rounded-full border border-teal/35 text-teal text-xs font-bold cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
             >
               i
             </button>
@@ -615,7 +615,7 @@ export default function RegistrationForm({ locale, danceClasses, supabaseFunctio
       <button
         type="submit"
         disabled={submitting || !isFormValid}
-        className="w-full bg-coral hover:bg-coral-dark disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-3 px-4 rounded-full transition-colors shadow-md shadow-coral/20"
+        className="w-full bg-coral hover:bg-coral-dark disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-3 px-4 rounded-full transition-colors shadow-md shadow-coral/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
       >
         {submitting ? i18n.registration.submitting : i18n.registration.submit}
       </button>
