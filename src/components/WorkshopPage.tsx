@@ -190,7 +190,7 @@ export default function WorkshopPage({ locale, initialClasses }: Props) {
             <div
               key={dc.id}
               onClick={() => !isPlanned && !isPreview && toggleSelectedId(dc.id)}
-              className={`bg-surface rounded-2xl transition-all duration-300 border-2 overflow-hidden ${
+              className={`bg-surface rounded-2xl transition-all duration-300 border-2 overflow-hidden hover:shadow-lift hover:-translate-y-0.5 ${
                 isPlanned || isPreview
                   ? 'border-transparent shadow-sm'
                   : isSelected
@@ -325,7 +325,7 @@ export default function WorkshopPage({ locale, initialClasses }: Props) {
               <div
                 key={dc.id}
                 onClick={() => toggleSelectedId(dc.id)}
-                className="bg-surface rounded-2xl border border-bg-warm cursor-pointer hover:shadow-sm transition-all duration-300 overflow-hidden"
+                className="bg-surface rounded-2xl border border-bg-warm cursor-pointer hover:shadow-lift hover:-translate-y-0.5 transition-all duration-300 overflow-hidden"
               >
                 <div className="p-4">
                   <div className="flex justify-between items-center">
@@ -413,7 +413,7 @@ export default function WorkshopPage({ locale, initialClasses }: Props) {
               <div
                 key={dc.id}
                 onClick={() => toggleSelectedId(dc.id)}
-                className="bg-surface/60 rounded-2xl border border-bg-warm opacity-70 cursor-pointer hover:opacity-90 transition-all duration-300 overflow-hidden"
+                className="bg-surface/60 rounded-2xl border border-bg-warm opacity-70 cursor-pointer hover:opacity-90 hover:shadow-lift hover:-translate-y-0.5 transition-all duration-300 overflow-hidden"
               >
                 <div className="p-4">
                   <div className="flex justify-between items-center">
