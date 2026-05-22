@@ -837,7 +837,14 @@ function InlineRegistrations({
                 return (
                   <Fragment key={reg.id}>
                     <tr className="border-t border-primary/5 hover:bg-white/80 transition-colors">
-                      <td className="py-2.5 px-3 font-semibold text-primary">{reg.name}</td>
+                      <td className="py-2.5 px-3">
+                        <div className="font-semibold text-primary">{reg.name}</div>
+                        {reg.comment && (
+                          <div className="text-[11px] text-text-muted italic mt-0.5 max-w-[180px] truncate" title={reg.comment}>
+                            💬 {reg.comment}
+                          </div>
+                        )}
+                      </td>
                       <td className="py-2.5 px-3 text-text-muted">{reg.email}</td>
                       <td className="py-2.5 px-3">
                         <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${reg.role === 'lead' ? 'bg-primary/8 text-primary' : 'bg-coral/15 text-coral-dark'}`}>
