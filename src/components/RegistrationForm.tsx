@@ -183,6 +183,8 @@ export default function RegistrationForm({ locale, danceClasses, supabaseFunctio
   const allSucceeded = results.length > 0 && results.every((r) => r.type === 'success');
   const confirmationHeadingRef = useRef<HTMLHeadingElement>(null);
   const resultContainerRef = useRef<HTMLDivElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
+  const hasAutoScrolledToForm = useRef(false);
 
   // Move focus to the confirmation heading once the success view is shown
   useEffect(() => {
@@ -197,6 +199,14 @@ export default function RegistrationForm({ locale, danceClasses, supabaseFunctio
       resultContainerRef.current?.focus();
     }
   }, [results, allSucceeded]);
+
+  // When a workshop is preselected (e.g. via ?class=<id>), bring the form into view once.
+  useEffect(() => {
+    if (hasAutoScrolledToForm.current) return;
+    if (selectedClassIds.size === 0) return;
+    formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    hasAutoScrolledToForm.current = true;
+  }, [selectedClassIds.size]);
 
   if (allSucceeded) {
     const successResults = results.filter((r) => r.type === 'success');
@@ -338,7 +348,7 @@ export default function RegistrationForm({ locale, danceClasses, supabaseFunctio
   }
 
   return (
-    <form onSubmit={handleSubmit} className="w-full bg-surface rounded-2xl shadow-lg border border-bg-warm p-6 max-w-lg">
+    <form ref={formRef} onSubmit={handleSubmit} className="w-full bg-surface rounded-2xl shadow-lg border border-bg-warm p-6 max-w-lg">
       <div className="sr-only" aria-live="polite" aria-atomic="true">
         {liveFeedbackMessages.join(' ')}
       </div>
