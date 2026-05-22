@@ -27,9 +27,10 @@ export default function AdminLogin() {
       const returnTo = params.get('returnTo');
       let redirect = safeDefault;
       if (returnTo) {
+        const safePath = /^\/(?!\/)/.test(returnTo) && !returnTo.includes('\\') ? returnTo : safeDefault;
         try {
           // Parse as URL to sanitize - prevents javascript: scheme and open redirects
-          const url = new URL(returnTo, window.location.origin);
+          const url = new URL(safePath, window.location.origin);
           if (url.origin === window.location.origin && url.pathname.startsWith(`${base}/`)) {
             redirect = url.pathname;
           }
