@@ -4,7 +4,7 @@
 // and a plain-text version are produced from the same data so that text-only
 // clients receive an equivalent, accurate fallback.
 
-import { buildGoogleCalendarUrl, type CalendarSession, type CalendarWorkshop } from './calendar.ts';
+import { type CalendarSession } from './calendar.ts';
 
 export interface WorkshopBoxInput {
   classId: string;
@@ -63,16 +63,6 @@ function formatPrice(input: WorkshopBoxInput): string {
   return `${input.priceEur} €`;
 }
 
-function buildCalendarWorkshop(input: WorkshopBoxInput): CalendarWorkshop {
-  return {
-    id: input.classId,
-    title: input.lang === 'de' ? input.titleDe : input.titleEn,
-    location: input.location ?? null,
-    locationDetails: input.locationDetails ?? null,
-    url: input.workshopPageUrl ?? null,
-  };
-}
-
 /** ICS attachment filename — base name without extension. */
 export function workshopBoxIcsFilename(input: WorkshopBoxInput): string {
   const base = (input.lang === 'de' ? input.titleDe : input.titleEn)
@@ -119,7 +109,6 @@ const LABELS = {
 export function renderWorkshopBoxHtml(input: WorkshopBoxInput): string {
   const L = LABELS[input.lang];
   const title = input.lang === 'de' ? input.titleDe : input.titleEn;
-  const calWorkshop = buildCalendarWorkshop(input);
   const validSessions = input.sessions.filter(
     (s) => s.session_date && s.start_time && s.end_time
   );
@@ -132,23 +121,9 @@ export function renderWorkshopBoxHtml(input: WorkshopBoxInput): string {
   if (input.location) locationParts.push(input.location);
   if (input.locationDetails) locationParts.push(input.locationDetails);
   const locationLabel = locationParts.length ? escapeHtml(locationParts.join(', ')) : '';
-  const locationHtml = locationLabel
-    ? (input.locationUrl
-      ? `<a href="${escapeHtml(input.locationUrl)}" style="color:#2A9D8F;text-decoration:underline;">${locationLabel}</a>`
-      : locationLabel)
-    : '';
+  const locationHtml = locationLabel;
 
   const priceLabel = formatPrice(input);
-
-  // Calendar buttons: one Google Calendar link per session (or a single link
-  // for single-session workshops). The ICS attachment is referenced via a hint.
-  const googleButtons = validSessions.map((s, idx) => {
-    const url = buildGoogleCalendarUrl(calWorkshop, s);
-    const label = validSessions.length > 1
-      ? `${L.googleCalendar} (${idx + 1})`
-      : L.googleCalendar;
-    return `<a href="${escapeHtml(url)}" style="display:inline-block;background-color:#ffffff;color:#2A9D8F;border:1px solid #2A9D8F;border-radius:9999px;padding:8px 14px;font-size:13px;font-weight:600;text-decoration:none;margin:4px 6px 4px 0;">${escapeHtml(label)}</a>`;
-  }).join('');
 
   const teacherLine = input.teachers
     ? `<span style="color:#6b7280;">${escapeHtml(L.teachers)}: ${escapeHtml(input.teachers)}</span>`
@@ -202,11 +177,9 @@ export function renderWorkshopBoxHtml(input: WorkshopBoxInput): string {
         </tr>` : ''}
       </table>
 
-      ${googleButtons ? `
+      ${validSessions.length ? `
       <div style="margin-top:16px;padding-top:14px;border-top:1px solid #e5e7eb;">
-        <div style="font-size:13px;color:#1f2937;margin-bottom:8px;">${escapeHtml(L.addToCalendar)}</div>
-        ${googleButtons}
-        <div style="font-size:11px;color:#6b7280;margin-top:8px;">${escapeHtml(L.icsHint)}</div>
+        <div style="font-size:11px;color:#6b7280;">${escapeHtml(L.icsHint)}</div>
       </div>` : ''}
 
       ${input.workshopPageUrl ? `
@@ -227,7 +200,6 @@ export function renderWorkshopBoxHtml(input: WorkshopBoxInput): string {
 export function renderWorkshopBoxText(input: WorkshopBoxInput): string {
   const L = LABELS[input.lang];
   const title = input.lang === 'de' ? input.titleDe : input.titleEn;
-  const calWorkshop = buildCalendarWorkshop(input);
   const validSessions = input.sessions.filter(
     (s) => s.session_date && s.start_time && s.end_time
   );
@@ -256,7 +228,6 @@ export function renderWorkshopBoxText(input: WorkshopBoxInput): string {
   if (input.locationDetails) locationParts.push(input.locationDetails);
   if (locationParts.length) {
     lines.push(`${L.location}: ${locationParts.join(', ')}`);
-    if (input.locationUrl) lines.push(`  ${input.locationUrl}`);
   }
 
   const priceLabel = formatPrice(input);
@@ -264,15 +235,7 @@ export function renderWorkshopBoxText(input: WorkshopBoxInput): string {
 
   if (validSessions.length) {
     lines.push('');
-    lines.push(L.addToCalendar);
     lines.push(`  ${L.icsHint}`);
-    for (let i = 0; i < validSessions.length; i++) {
-      const url = buildGoogleCalendarUrl(calWorkshop, validSessions[i]);
-      const label = validSessions.length > 1
-        ? `${L.googleCalendar} (${i + 1})`
-        : L.googleCalendar;
-      lines.push(`  ${label}: ${url}`);
-    }
   }
 
   if (input.workshopPageUrl) {
