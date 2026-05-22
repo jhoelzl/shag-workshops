@@ -5,6 +5,8 @@ import WorkshopPage from '../../components/WorkshopPage';
 import { supabase } from '../../lib/supabase';
 import type { DanceClass, ClassSession } from '../../lib/database.types';
 
+export const prerender = false;
+
 const locale = 'de';
 const i18n = t(locale);
 
@@ -16,6 +18,14 @@ const { data: publicClassesData } = await supabase
 const publicClasses = publicClassesData ?? [];
 
 const classIds = publicClasses.map((danceClass) => danceClass.id);
+
+const { data: classCountsData } = classIds.length > 0
+  ? await supabase
+      .from('class_registration_counts')
+      .select('*')
+      .in('dance_class_id', classIds)
+  : { data: [] };
+
 const { data: classSessionsData } = classIds.length > 0
   ? await supabase
       .from('class_sessions')
@@ -25,6 +35,7 @@ const { data: classSessionsData } = classIds.length > 0
       .order('start_time', { ascending: true })
   : { data: [] as ClassSession[] };
 const classSessions = classSessionsData ?? [];
+const classCounts = classCountsData ?? [];
 
 const sessionsByClass = classSessions.reduce((acc, session) => {
   if (!acc.has(session.dance_class_id)) {
@@ -33,6 +44,35 @@ const sessionsByClass = classSessions.reduce((acc, session) => {
   acc.get(session.dance_class_id)!.push(session);
   return acc;
 }, new Map<string, ClassSession[]>());
+
+const countsByClass = classCounts.reduce((acc, counts) => {
+  if (!counts.dance_class_id) return acc;
+  acc.set(counts.dance_class_id, counts);
+  return acc;
+}, new Map<string, { leads_available: number | null; follows_available: number | null }>());
+
+const initialClasses = publicClasses
+  .map((danceClass: DanceClass) => {
+    const counts = countsByClass.get(danceClass.id);
+    return {
+      ...danceClass,
+      leads_available: Number(counts?.leads_available ?? danceClass.max_leads),
+      follows_available: Number(counts?.follows_available ?? danceClass.max_follows),
+      sessions: sessionsByClass.get(danceClass.id) || [],
+    };
+  })
+  .sort((a, b) => {
+    const firstA = a.sessions?.[0];
+    const firstB = b.sessions?.[0];
+
+    if (!firstA && !firstB) return 0;
+    if (!firstA) return 1;
+    if (!firstB) return -1;
+
+    const firstDateTimeA = `${firstA.session_date}T${firstA.start_time}`;
+    const firstDateTimeB = `${firstB.session_date}T${firstB.start_time}`;
+    return firstDateTimeA.localeCompare(firstDateTimeB);
+  });
 
 const eventJsonLd = publicClasses.flatMap((danceClass: DanceClass) => {
   const sessions = sessionsByClass.get(danceClass.id) || [];
@@ -89,6 +129,6 @@ const eventJsonLd = publicClasses.flatMap((danceClass: DanceClass) => {
   </section>
 
   <div class="max-w-6xl mx-auto px-6 pb-12">
-    <WorkshopPage client:load locale={locale} />
+    <WorkshopPage client:load locale={locale} initialClasses={initialClasses} />
   </div>
 </BaseLayout>
