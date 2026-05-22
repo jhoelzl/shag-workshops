@@ -134,6 +134,7 @@ export interface Database {
           comment: string | null;
           status: 'pending' | 'confirmed' | 'waitlisted' | 'cancelled';
           admin_notes: string | null;
+          locale: 'de' | 'en';
           created_at: string;
         };
         Relationships: [];
@@ -147,6 +148,7 @@ export interface Database {
           comment?: string | null;
           status?: 'pending' | 'confirmed' | 'waitlisted' | 'cancelled';
           admin_notes?: string | null;
+          locale?: 'de' | 'en';
           created_at?: string;
         };
         Update: {
@@ -159,6 +161,7 @@ export interface Database {
           comment?: string | null;
           status?: 'pending' | 'confirmed' | 'waitlisted' | 'cancelled';
           admin_notes?: string | null;
+          locale?: 'de' | 'en';
           created_at?: string;
         };
       };

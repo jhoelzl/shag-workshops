@@ -137,6 +137,7 @@ Deno.serve(async (req) => {
         partner_name: partner_name?.trim() || null,
         comment: comment?.trim() || null,
         status,
+        locale: locale === 'en' ? 'en' : 'de',
       })
       .select()
       .single();

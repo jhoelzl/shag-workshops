@@ -109,6 +109,7 @@ Deno.serve(async (req) => {
     const status = spotsAvailable > 0 ? 'pending' : 'waitlisted';
 
     // Insert registration
+    const normalizedLocale = locale === 'en' ? 'en' : 'de';
     const { data: registration, error: insertError } = await supabase
       .from('registrations')
       .insert({
@@ -119,6 +120,7 @@ Deno.serve(async (req) => {
         partner_name: partner_name?.trim() || null,
         comment: comment?.trim() || null,
         status,
+        locale: normalizedLocale,
       })
       .select()
       .single();
