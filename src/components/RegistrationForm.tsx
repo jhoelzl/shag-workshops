@@ -53,6 +53,17 @@ export default function RegistrationForm({ locale, danceClasses, supabaseFunctio
   const isFormValid =
     !nameError && !emailError && privacyConsent && selectedClassIds.size > 0;
 
+  const liveFeedbackMessages: string[] = [];
+  if (touched.name && nameError) liveFeedbackMessages.push(nameError);
+  if (touched.email && emailError) liveFeedbackMessages.push(emailError);
+  if (privacyError) liveFeedbackMessages.push(i18n.registration.privacy_consent_required);
+  if (results.length > 0) {
+    for (const r of results) {
+      const title = r.type === 'success' ? i18n.registration.success_title : i18n.registration.error_title;
+      liveFeedbackMessages.push(`${title}: ${r.className}. ${r.message}`);
+    }
+  }
+
   // Dev-only preview: open the page with ?preview=confirmation to see the success view
   useEffect(() => {
     if (!import.meta.env.DEV) return;
@@ -171,6 +182,7 @@ export default function RegistrationForm({ locale, danceClasses, supabaseFunctio
   // Show full confirmation view when all submissions succeeded
   const allSucceeded = results.length > 0 && results.every((r) => r.type === 'success');
   const confirmationHeadingRef = useRef<HTMLHeadingElement>(null);
+  const resultContainerRef = useRef<HTMLDivElement>(null);
 
   // Move focus to the confirmation heading once the success view is shown
   useEffect(() => {
@@ -178,6 +190,13 @@ export default function RegistrationForm({ locale, danceClasses, supabaseFunctio
       confirmationHeadingRef.current?.focus();
     }
   }, [allSucceeded]);
+
+  // Move focus to inline result messages for partial success/error responses.
+  useEffect(() => {
+    if (!allSucceeded && results.length > 0) {
+      resultContainerRef.current?.focus();
+    }
+  }, [results, allSucceeded]);
 
   if (allSucceeded) {
     const successResults = results.filter((r) => r.type === 'success');
@@ -320,6 +339,10 @@ export default function RegistrationForm({ locale, danceClasses, supabaseFunctio
 
   return (
     <form onSubmit={handleSubmit} className="w-full bg-surface rounded-2xl shadow-lg border border-bg-warm p-6 max-w-lg">
+      <div className="sr-only" aria-live="polite" aria-atomic="true">
+        {liveFeedbackMessages.join(' ')}
+      </div>
+
       <h2 className="font-display text-2xl font-bold text-primary mb-6">{i18n.registration.title}</h2>
 
       {/* Dance Class Selection */}
@@ -521,7 +544,11 @@ export default function RegistrationForm({ locale, danceClasses, supabaseFunctio
 
       {/* Result Messages */}
       {results.length > 0 && (
-        <div className="mb-4 space-y-2">
+        <div
+          ref={resultContainerRef}
+          tabIndex={-1}
+          className="mb-4 space-y-2 outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-xl"
+        >
           {results.map((r) => (
             <div
               key={r.classId}
