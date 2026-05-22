@@ -39,11 +39,11 @@ describe('renderWorkshopBoxText', () => {
     expect(text).toContain('19:55');
   });
 
-  it('contains location and location URL', () => {
+  it('contains location without URL', () => {
     const text = renderWorkshopBoxText(BASE_INPUT);
     expect(text).toContain('Tanzstudio Salzburg');
     expect(text).toContain('Linzer Gasse 12, 5020 Salzburg');
-    expect(text).toContain('https://maps.example.com/salzburg');
+    expect(text).not.toContain('https://maps.example.com/salzburg');
   });
 
   it('contains the price', () => {
@@ -56,10 +56,9 @@ describe('renderWorkshopBoxText', () => {
     expect(text).toContain('Auf Spendenbasis');
   });
 
-  it('contains Google Calendar URLs for each session', () => {
+  it('does not contain Google Calendar URLs', () => {
     const text = renderWorkshopBoxText(BASE_INPUT);
-    const matches = text.match(/https:\/\/calendar\.google\.com\/calendar\/render/g);
-    expect(matches?.length).toBe(2);
+    expect(text).not.toContain('calendar.google.com');
   });
 
   it('mentions the ICS attachment', () => {
@@ -110,14 +109,14 @@ describe('renderWorkshopBoxHtml', () => {
     expect(html).toContain('&lt;script&gt;');
   });
 
-  it('renders one Google Calendar button per session', () => {
+  it('does not render Google Calendar buttons', () => {
     const html = renderWorkshopBoxHtml(BASE_INPUT);
-    const matches = html.match(/calendar\.google\.com\/calendar\/render/g);
-    expect(matches?.length).toBe(2);
+    expect(html).not.toContain('calendar.google.com');
   });
 
-  it('links the location label when locationUrl is provided', () => {
+  it('shows location as plain text without a link', () => {
     const html = renderWorkshopBoxHtml(BASE_INPUT);
-    expect(html).toMatch(/<a href="https:\/\/maps\.example\.com\/salzburg"[^>]*>Tanzstudio Salzburg/);
+    expect(html).toContain('Tanzstudio Salzburg');
+    expect(html).not.toMatch(/<a href="https:\/\/maps\.example\.com\/salzburg"/);
   });
 });
