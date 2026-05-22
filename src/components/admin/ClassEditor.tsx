@@ -351,6 +351,39 @@ export default function ClassEditor({ classes, registrations, history, currentUs
     return `${first} – ${last} (${s.length}x)`;
   }
 
+  function exportWorkshopRegistrationsAsCsv(danceClass: DanceClass, classRegs: Registration[]) {
+    if (classRegs.length === 0) return;
+
+    const headers = ['Workshop', 'Name', 'Email', 'Role', 'Partner', 'Status', 'Comment', 'Date'];
+    const rows = classRegs.map((reg) => [
+      danceClass.title_de,
+      reg.name,
+      reg.email,
+      reg.role,
+      reg.partner_name || '',
+      reg.status,
+      reg.comment || '',
+      new Date(reg.created_at).toISOString(),
+    ]);
+
+    const csv = [headers, ...rows].map((row) => row.map(escapeCsvValue).join(',')).join('\n');
+    const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    const dateStamp = new Date().toISOString().slice(0, 10);
+    const workshopSlug = danceClass.title_de
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '') || 'workshop';
+
+    link.href = url;
+    link.download = `registrations-${workshopSlug}-${dateStamp}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
+
   const isEditingThis = (id: string) => editing?.id === id;
   const isCreatingNew = editing && !editing.id;
 
@@ -526,6 +559,14 @@ export default function ClassEditor({ classes, registrations, history, currentUs
                         >
                           {classRegs.length} Reg.
                         </button>
+                        <button
+                          onClick={() => exportWorkshopRegistrationsAsCsv(dc, classRegs)}
+                          disabled={classRegs.length === 0}
+                          className="text-xs font-semibold bg-primary/5 hover:bg-primary/10 text-primary px-3 py-1.5 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          title="Export registrations for this workshop"
+                        >
+                          CSV
+                        </button>
                         <button onClick={() => startEditing(dc)} className="text-xs font-semibold bg-primary/5 hover:bg-primary/10 text-primary px-3 py-1.5 rounded-full transition-colors">Edit</button>
                         <button onClick={() => duplicateClass(dc)} className="text-xs font-semibold bg-teal/10 hover:bg-teal/20 text-teal-dark px-3 py-1.5 rounded-full transition-colors">Duplicate</button>
                         <button onClick={() => handleDelete(dc.id)} className="text-xs font-semibold bg-coral/10 hover:bg-coral/20 text-coral-dark px-3 py-1.5 rounded-full transition-colors">Delete</button>
@@ -639,6 +680,10 @@ function TransitionButton({ to, label, disabled, onClick }: { to: RegStatus; lab
       <span aria-hidden>→</span><span aria-hidden>{m.icon}</span>{label}
     </button>
   );
+}
+
+function escapeCsvValue(value: string): string {
+  return `"${value.replace(/"/g, '""')}"`;
 }
 
 function InlineRegistrations({

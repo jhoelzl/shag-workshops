@@ -215,6 +215,37 @@ export default function RegistrationTable({ registrations, history, classes, cur
     }
   }
 
+  function exportFilteredAsCsv() {
+    if (filtered.length === 0) return;
+
+    const headers = ['Name', 'Email', 'Role', 'Partner', 'Status', 'Class', 'Comment', 'Date'];
+    const rows = filtered.map((reg) => {
+      const danceClass = classMap.get(reg.dance_class_id);
+      return [
+        reg.name,
+        reg.email,
+        reg.role,
+        reg.partner_name || '',
+        reg.status,
+        danceClass?.title_de || '',
+        reg.comment || '',
+        new Date(reg.created_at).toISOString(),
+      ];
+    });
+
+    const csv = [headers, ...rows].map((row) => row.map(escapeCsvValue).join(',')).join('\n');
+    const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const dateStamp = new Date().toISOString().slice(0, 10);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `registrations-${dateStamp}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
+
   const hasFilters = filterClassId !== 'all' || filterStatus !== 'all' || searchQuery;
 
   return (
@@ -298,6 +329,13 @@ export default function RegistrationTable({ registrations, history, classes, cur
       {/* Bulk Actions + Add */}
       {filterClassId !== 'all' && (
         <div className="flex flex-wrap gap-2 mb-5">
+          <button
+            onClick={exportFilteredAsCsv}
+            disabled={filtered.length === 0}
+            className="text-xs font-semibold bg-primary/5 hover:bg-primary/10 text-primary px-4 py-2 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Als CSV exportieren
+          </button>
           {!showAdd ? (
             <button
               onClick={() => { setShowAdd(true); setAddError(null); }}
@@ -661,4 +699,8 @@ function TransitionButton({ from, to, label, onClick, disabled }: { from: Status
       {label}
     </button>
   );
+}
+
+function escapeCsvValue(value: string): string {
+  return `"${value.replace(/"/g, '""')}"`;
 }
