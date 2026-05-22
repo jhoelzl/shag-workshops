@@ -406,6 +406,11 @@ export default function RegistrationTable({ registrations, history, classes, cur
                       <td className="py-3 px-5">
                         <div className="font-semibold text-primary">{reg.name}</div>
                         <div className="text-xs text-text-muted">{reg.email}</div>
+                        {reg.comment && (
+                          <div className="text-[11px] text-text-muted italic mt-0.5 max-w-[200px] truncate" title={reg.comment}>
+                            💬 {reg.comment}
+                          </div>
+                        )}
                       </td>
                       <td className="py-3 px-4 text-text-muted text-xs max-w-[180px] truncate">{dc?.title_de ?? '-'}</td>
                       <td className="py-3 px-4">
