@@ -1,0 +1,285 @@
+// Renders a "workshop box" — a compact summary of a workshop's details
+// (sessions, location, price) and calendar export links — for inclusion in
+// transactional emails. Both an HTML (table-based, inline CSS, email-safe)
+// and a plain-text version are produced from the same data so that text-only
+// clients receive an equivalent, accurate fallback.
+
+import { buildGoogleCalendarUrl, type CalendarSession, type CalendarWorkshop } from './calendar.ts';
+
+export interface WorkshopBoxInput {
+  classId: string;
+  titleDe: string;
+  titleEn: string;
+  dance?: string | null;
+  teachers?: string | null;
+  level?: string | null;
+  location?: string | null;
+  locationDetails?: string | null;
+  locationUrl?: string | null;
+  priceEur?: number | null;
+  isDonation?: boolean | null;
+  sessions: CalendarSession[];
+  /** Public workshop URL on shagadeus.at, e.g. https://shagadeus.at/de/workshops */
+  workshopPageUrl?: string | null;
+  lang: 'de' | 'en';
+}
+
+const WEEKDAYS_DE = ['So.', 'Mo.', 'Di.', 'Mi.', 'Do.', 'Fr.', 'Sa.'];
+const WEEKDAYS_EN = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+/**
+ * Formats a session as e.g. "Do., 18.06.2026 · 19:00 – 19:55".
+ * Interprets the date as a wall-clock date (no timezone shift) to avoid
+ * off-by-one errors near midnight in non-Vienna locales.
+ */
+function formatSession(session: CalendarSession, lang: 'de' | 'en'): string {
+  const [y, m, d] = session.session_date.split('-').map((n) => parseInt(n, 10));
+  // Construct a UTC date purely for weekday lookup; the wall-clock values are
+  // used directly without timezone conversion.
+  const weekdayIdx = new Date(Date.UTC(y, m - 1, d)).getUTCDay();
+  const weekday = (lang === 'de' ? WEEKDAYS_DE : WEEKDAYS_EN)[weekdayIdx];
+  const datePart = lang === 'de'
+    ? `${String(d).padStart(2, '0')}.${String(m).padStart(2, '0')}.${y}`
+    : `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+  const start = session.start_time.slice(0, 5);
+  const end = session.end_time.slice(0, 5);
+  return `${weekday}, ${datePart} · ${start} – ${end}`;
+}
+
+function formatPrice(input: WorkshopBoxInput): string {
+  if (input.isDonation) {
+    return input.lang === 'de' ? 'Auf Spendenbasis' : 'Donation based';
+  }
+  if (input.priceEur == null) return '';
+  return `${input.priceEur} €`;
+}
+
+function buildCalendarWorkshop(input: WorkshopBoxInput): CalendarWorkshop {
+  return {
+    id: input.classId,
+    title: input.lang === 'de' ? input.titleDe : input.titleEn,
+    location: input.location ?? null,
+    locationDetails: input.locationDetails ?? null,
+    url: input.workshopPageUrl ?? null,
+  };
+}
+
+/** ICS attachment filename — base name without extension. */
+export function workshopBoxIcsFilename(input: WorkshopBoxInput): string {
+  const base = (input.lang === 'de' ? input.titleDe : input.titleEn)
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 60) || 'workshop';
+  return `${base}.ics`;
+}
+
+const LABELS = {
+  de: {
+    workshop: 'Workshop',
+    dates: 'Termine',
+    location: 'Ort',
+    price: 'Preis',
+    teachers: 'Lehrer',
+    level: 'Level',
+    addToCalendar: '📅 Zum Kalender hinzufügen',
+    icsHint: 'Kalender-Datei (.ics) ist als Anhang in dieser Mail.',
+    googleCalendar: 'Google Calendar',
+    moreInfo: 'Workshop-Details auf shagadeus.at',
+  },
+  en: {
+    workshop: 'Workshop',
+    dates: 'Dates',
+    location: 'Location',
+    price: 'Price',
+    teachers: 'Teachers',
+    level: 'Level',
+    addToCalendar: '📅 Add to calendar',
+    icsHint: 'The calendar file (.ics) is attached to this email.',
+    googleCalendar: 'Google Calendar',
+    moreInfo: 'Workshop details on shagadeus.at',
+  },
+} as const;
+
+/**
+ * Renders the workshop box as inline-styled, table-based HTML safe for
+ * email clients (Outlook, Gmail, Apple Mail, etc.).
+ */
+export function renderWorkshopBoxHtml(input: WorkshopBoxInput): string {
+  const L = LABELS[input.lang];
+  const title = input.lang === 'de' ? input.titleDe : input.titleEn;
+  const calWorkshop = buildCalendarWorkshop(input);
+  const validSessions = input.sessions.filter(
+    (s) => s.session_date && s.start_time && s.end_time
+  );
+
+  const sessionRows = validSessions
+    .map((s) => `<tr><td style="padding:4px 0;font-size:14px;color:#1f2937;">${escapeHtml(formatSession(s, input.lang))}</td></tr>`)
+    .join('');
+
+  const locationParts: string[] = [];
+  if (input.location) locationParts.push(input.location);
+  if (input.locationDetails) locationParts.push(input.locationDetails);
+  const locationLabel = locationParts.length ? escapeHtml(locationParts.join(', ')) : '';
+  const locationHtml = locationLabel
+    ? (input.locationUrl
+      ? `<a href="${escapeHtml(input.locationUrl)}" style="color:#2A9D8F;text-decoration:underline;">${locationLabel}</a>`
+      : locationLabel)
+    : '';
+
+  const priceLabel = formatPrice(input);
+
+  // Calendar buttons: one Google Calendar link per session (or a single link
+  // for single-session workshops). The ICS attachment is referenced via a hint.
+  const googleButtons = validSessions.map((s, idx) => {
+    const url = buildGoogleCalendarUrl(calWorkshop, s);
+    const label = validSessions.length > 1
+      ? `${L.googleCalendar} (${idx + 1})`
+      : L.googleCalendar;
+    return `<a href="${escapeHtml(url)}" style="display:inline-block;background-color:#ffffff;color:#2A9D8F;border:1px solid #2A9D8F;border-radius:9999px;padding:8px 14px;font-size:13px;font-weight:600;text-decoration:none;margin:4px 6px 4px 0;">${escapeHtml(label)}</a>`;
+  }).join('');
+
+  const teacherLine = input.teachers
+    ? `<span style="color:#6b7280;">${escapeHtml(L.teachers)}: ${escapeHtml(input.teachers)}</span>`
+    : '';
+  const levelLine = input.level
+    ? `<span style="color:#6b7280;">${escapeHtml(L.level)}: ${escapeHtml(input.level)}</span>`
+    : '';
+  const danceLine = input.dance ? escapeHtml(input.dance) : '';
+
+  const eyebrowParts: string[] = [];
+  if (danceLine) eyebrowParts.push(danceLine);
+  if (input.teachers) eyebrowParts.push(escapeHtml(input.teachers));
+  const eyebrowLine = eyebrowParts.length
+    ? `<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:#E76F51;margin-bottom:4px;">${eyebrowParts.join(' · ')}</div>`
+    : '';
+
+  const metaRow = [
+    levelLine,
+    !input.teachers && !danceLine ? teacherLine : '',
+  ].filter(Boolean).join(' · ');
+
+  return `
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#fdf6ee;border:1px solid #e5e7eb;border-radius:12px;margin:20px 0;">
+  <tr>
+    <td style="padding:20px 22px;">
+      ${eyebrowLine}
+      <div style="font-size:18px;font-weight:700;color:#0f1a30;margin-bottom:6px;">${escapeHtml(title)}</div>
+      ${metaRow ? `<div style="font-size:12px;margin-bottom:14px;">${metaRow}</div>` : ''}
+
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:8px;">
+        ${sessionRows ? `
+        <tr>
+          <td style="padding:8px 0;border-top:1px solid #e5e7eb;">
+            <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:#6b7280;margin-bottom:6px;">${escapeHtml(L.dates)}</div>
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0">${sessionRows}</table>
+          </td>
+        </tr>` : ''}
+        ${locationHtml ? `
+        <tr>
+          <td style="padding:8px 0;border-top:1px solid #e5e7eb;">
+            <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:#6b7280;margin-bottom:4px;">${escapeHtml(L.location)}</div>
+            <div style="font-size:14px;color:#1f2937;">${locationHtml}</div>
+          </td>
+        </tr>` : ''}
+        ${priceLabel ? `
+        <tr>
+          <td style="padding:8px 0;border-top:1px solid #e5e7eb;">
+            <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:#6b7280;margin-bottom:4px;">${escapeHtml(L.price)}</div>
+            <div style="font-size:14px;color:#1f2937;font-weight:600;">${escapeHtml(priceLabel)}</div>
+          </td>
+        </tr>` : ''}
+      </table>
+
+      ${googleButtons ? `
+      <div style="margin-top:16px;padding-top:14px;border-top:1px solid #e5e7eb;">
+        <div style="font-size:13px;color:#1f2937;margin-bottom:8px;">${escapeHtml(L.addToCalendar)}</div>
+        ${googleButtons}
+        <div style="font-size:11px;color:#6b7280;margin-top:8px;">${escapeHtml(L.icsHint)}</div>
+      </div>` : ''}
+
+      ${input.workshopPageUrl ? `
+      <div style="margin-top:14px;font-size:12px;">
+        <a href="${escapeHtml(input.workshopPageUrl)}" style="color:#2A9D8F;text-decoration:underline;">${escapeHtml(L.moreInfo)} →</a>
+      </div>` : ''}
+    </td>
+  </tr>
+</table>
+`.trim();
+}
+
+/**
+ * Renders the workshop box as plain text. Used directly for the text/plain
+ * MIME part of the email — NOT derived from the HTML — so that the fallback
+ * is guaranteed to contain all the relevant information.
+ */
+export function renderWorkshopBoxText(input: WorkshopBoxInput): string {
+  const L = LABELS[input.lang];
+  const title = input.lang === 'de' ? input.titleDe : input.titleEn;
+  const calWorkshop = buildCalendarWorkshop(input);
+  const validSessions = input.sessions.filter(
+    (s) => s.session_date && s.start_time && s.end_time
+  );
+
+  const lines: string[] = [];
+  lines.push('────────────────────────────────────');
+  lines.push(title.toUpperCase());
+
+  const eyebrow: string[] = [];
+  if (input.dance) eyebrow.push(input.dance);
+  if (input.teachers) eyebrow.push(input.teachers);
+  if (eyebrow.length) lines.push(eyebrow.join(' · '));
+  if (input.level) lines.push(`${L.level}: ${input.level}`);
+  lines.push('');
+
+  if (validSessions.length) {
+    lines.push(`${L.dates}:`);
+    for (const s of validSessions) {
+      lines.push(`  • ${formatSession(s, input.lang)}`);
+    }
+    lines.push('');
+  }
+
+  const locationParts: string[] = [];
+  if (input.location) locationParts.push(input.location);
+  if (input.locationDetails) locationParts.push(input.locationDetails);
+  if (locationParts.length) {
+    lines.push(`${L.location}: ${locationParts.join(', ')}`);
+    if (input.locationUrl) lines.push(`  ${input.locationUrl}`);
+  }
+
+  const priceLabel = formatPrice(input);
+  if (priceLabel) lines.push(`${L.price}: ${priceLabel}`);
+
+  if (validSessions.length) {
+    lines.push('');
+    lines.push(L.addToCalendar);
+    lines.push(`  ${L.icsHint}`);
+    for (let i = 0; i < validSessions.length; i++) {
+      const url = buildGoogleCalendarUrl(calWorkshop, validSessions[i]);
+      const label = validSessions.length > 1
+        ? `${L.googleCalendar} (${i + 1})`
+        : L.googleCalendar;
+      lines.push(`  ${label}: ${url}`);
+    }
+  }
+
+  if (input.workshopPageUrl) {
+    lines.push('');
+    lines.push(`${L.moreInfo}: ${input.workshopPageUrl}`);
+  }
+
+  lines.push('────────────────────────────────────');
+  return lines.join('\n');
+}
