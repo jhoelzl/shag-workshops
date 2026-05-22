@@ -25,6 +25,7 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
     <link rel="icon" type="image/png" href={`${base}/shagadeus_logo.png`} />
     <link rel="apple-touch-icon" href={`${base}/shagadeus_logo.png`} />
     <title>{title ? `${title} | Amadeus Shagadeus` : 'Amadeus Shagadeus - Collegiate Shag in Salzburg'}</title>
+    <slot name="head" />
   </head>
   <body class="min-h-screen bg-bg text-text flex flex-col font-sans">
     <!-- Header -->

@@ -2,12 +2,73 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { t } from '../../i18n/index';
 import WorkshopPage from '../../components/WorkshopPage';
+import { supabase } from '../../lib/supabase';
+import type { DanceClass, ClassSession } from '../../lib/database.types';
 
 const locale = 'de';
 const i18n = t(locale);
+
+const siteOrigin = 'https://shagadeus.at';
+const { data: publicClasses = [] } = await supabase
+  .from('dance_classes')
+  .select('*')
+  .eq('is_public', true);
+
+const classIds = publicClasses.map((danceClass) => danceClass.id);
+const { data: classSessions = [] } = classIds.length > 0
+  ? await supabase
+      .from('class_sessions')
+      .select('*')
+      .in('dance_class_id', classIds)
+      .order('session_date', { ascending: true })
+      .order('start_time', { ascending: true })
+  : { data: [] as ClassSession[] };
+
+const sessionsByClass = classSessions.reduce((acc, session) => {
+  if (!acc.has(session.dance_class_id)) {
+    acc.set(session.dance_class_id, []);
+  }
+  acc.get(session.dance_class_id)!.push(session);
+  return acc;
+}, new Map<string, ClassSession[]>());
+
+const eventJsonLd = publicClasses.flatMap((danceClass: DanceClass) => {
+  const sessions = sessionsByClass.get(danceClass.id) || [];
+  return sessions.map((session) => {
+    const startDate = `${session.session_date}T${session.start_time}`;
+    const endDate = `${session.session_date}T${session.end_time}`;
+
+    return {
+      '@context': 'https://schema.org',
+      '@type': 'Event',
+      name: danceClass.title_de,
+      description: danceClass.description_de || undefined,
+      eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
+      eventStatus: 'https://schema.org/EventScheduled',
+      startDate,
+      endDate,
+      location: {
+        '@type': 'Place',
+        name: danceClass.location || 'Salzburg',
+        address: danceClass.location_details || undefined,
+      },
+      offers: {
+        '@type': 'Offer',
+        price: danceClass.price_eur ?? 0,
+        priceCurrency: 'EUR',
+        availability: 'https://schema.org/InStock',
+        url: `${siteOrigin}/de/workshops/?class=${danceClass.id}`,
+      },
+    };
+  });
+});
 ---
 
 <BaseLayout title="Collegiate Shag Swingtanz Workshops in Salzburg" locale={locale} currentPath="/workshops/">
+  {eventJsonLd.map((event) => (
+    <script slot="head" type="application/ld+json" set:html={JSON.stringify(event)} />
+  ))}
+
   <section class="relative overflow-hidden">
     <div class="blob bg-teal/25 w-96 h-96 -top-32 -right-20 animate-float-slow"></div>
     <div class="blob bg-coral/20 w-80 h-80 -top-20 -left-20"></div>
