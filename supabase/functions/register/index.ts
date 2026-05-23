@@ -30,12 +30,32 @@ function isAllowedOrigin(originHeader: string | null): boolean {
   }
 }
 
+function jsonResponse(body: Record<string, unknown>, status: number): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  });
+}
+
+function getClientIp(req: Request): string | null {
+  const forwarded = req.headers.get('x-forwarded-for');
+  if (forwarded) {
+    const first = forwarded.split(',')[0]?.trim();
+    if (first) return first;
+  }
+
+  const candidates = [
+    req.headers.get('fly-client-ip'),
+    req.headers.get('x-real-ip'),
+    req.headers.get('cf-connecting-ip'),
+  ];
+
+  return candidates.find(Boolean) ?? null;
+}
+
 Deno.serve(async (req) => {
   if (!isAllowedOrigin(req.headers.get('origin'))) {
-    return new Response(
-      JSON.stringify({ error: 'Forbidden origin', code: 'FORBIDDEN_ORIGIN' }),
-      { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    return jsonResponse({ error: 'Forbidden origin', code: 'FORBIDDEN_ORIGIN' }, 403);
   }
 
   if (req.method === 'OPTIONS') {
@@ -43,29 +63,35 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { dance_class_id, role, name, email, partner_name, comment, locale } = await req.json();
+    const {
+      dance_class_id,
+      role,
+      name,
+      email,
+      partner_name,
+      comment,
+      locale,
+      website,
+    } = await req.json();
+
+    const normalizedEmail = typeof email === 'string' ? email.toLowerCase().trim() : '';
+    const normalizedName = typeof name === 'string' ? name.trim() : '';
+    const normalizedPartnerName = typeof partner_name === 'string' ? partner_name.trim() : '';
+    const normalizedComment = typeof comment === 'string' ? comment.trim() : '';
+    const honeypotValue = typeof website === 'string' ? website.trim() : '';
 
     // Input validation
-    if (!dance_class_id || !role || !name || !email) {
-      return new Response(
-        JSON.stringify({ error: 'Missing required fields', code: 'VALIDATION' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    if (!dance_class_id || !role || !normalizedName || !normalizedEmail) {
+      return jsonResponse({ error: 'Missing required fields', code: 'VALIDATION' }, 400);
     }
 
     if (!['lead', 'follow'].includes(role)) {
-      return new Response(
-        JSON.stringify({ error: 'Invalid role', code: 'VALIDATION' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return jsonResponse({ error: 'Invalid role', code: 'VALIDATION' }, 400);
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return new Response(
-        JSON.stringify({ error: 'Invalid email', code: 'VALIDATION' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    if (!emailRegex.test(normalizedEmail)) {
+      return jsonResponse({ error: 'Invalid email', code: 'VALIDATION' }, 400);
     }
 
     // Create Supabase client with service role key (bypasses RLS)
@@ -81,6 +107,10 @@ Deno.serve(async (req) => {
       }
     };
 
+    if (honeypotValue) {
+      return jsonResponse({ success: true, trapped: true }, 202);
+    }
+
     // Check if class exists and is open
     const { data: danceClass, error: classError } = await supabase
       .from('dance_classes')
@@ -89,27 +119,18 @@ Deno.serve(async (req) => {
       .single();
 
     if (classError || !danceClass) {
-      return new Response(
-        JSON.stringify({ error: 'Dance class not found', code: 'NOT_FOUND' }),
-        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return jsonResponse({ error: 'Dance class not found', code: 'NOT_FOUND' }, 404);
     }
 
     const now = new Date();
 
     // Registration opens at a specific time if configured.
     if (danceClass.registration_opens_at && new Date(danceClass.registration_opens_at) > now) {
-      return new Response(
-        JSON.stringify({ error: 'Registration is closed', code: 'CLOSED' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return jsonResponse({ error: 'Registration is closed', code: 'CLOSED' }, 400);
     }
 
     if (danceClass.registration_closes_at && new Date(danceClass.registration_closes_at) < now) {
-      return new Response(
-        JSON.stringify({ error: 'Registration deadline has passed', code: 'CLOSED' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return jsonResponse({ error: 'Registration deadline has passed', code: 'CLOSED' }, 400);
     }
 
     // Check for duplicate
@@ -117,14 +138,11 @@ Deno.serve(async (req) => {
       .from('registrations')
       .select('id')
       .eq('dance_class_id', dance_class_id)
-      .eq('email', email.toLowerCase().trim())
+      .eq('email', normalizedEmail)
       .maybeSingle();
 
     if (existing) {
-      return new Response(
-        JSON.stringify({ error: 'Already registered', code: 'DUPLICATE' }),
-        { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return jsonResponse({ error: 'Already registered', code: 'DUPLICATE' }, 409);
     }
 
     // Check capacity
@@ -144,11 +162,11 @@ Deno.serve(async (req) => {
       .from('registrations')
       .insert({
         dance_class_id,
-        email: email.toLowerCase().trim(),
-        name: name.trim(),
+        email: normalizedEmail,
+        name: normalizedName,
         role,
-        partner_name: partner_name?.trim() || null,
-        comment: comment?.trim() || null,
+        partner_name: normalizedPartnerName || null,
+        comment: normalizedComment || null,
         status,
         locale: normalizedLocale,
       })
@@ -157,10 +175,7 @@ Deno.serve(async (req) => {
 
     if (insertError) {
       console.error('Insert error:', insertError);
-      return new Response(
-        JSON.stringify({ error: 'Registration failed', code: 'INSERT_ERROR' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return jsonResponse({ error: 'Registration failed', code: 'INSERT_ERROR' }, 500);
     }
 
     await insertHistory({
@@ -183,7 +198,7 @@ Deno.serve(async (req) => {
         event_type: 'email_skipped',
         triggered_by: 'public_registration',
         email_type: 'participant_confirmation',
-        email_recipient: email.toLowerCase().trim(),
+        email_recipient: normalizedEmail,
         note: 'RESEND_API_KEY is not configured',
       });
     }
@@ -193,7 +208,7 @@ Deno.serve(async (req) => {
       const classTitle = isDE ? danceClass.title_de : danceClass.title_en;
       const fromAddress = Deno.env.get('EMAIL_FROM') || 'Amadeus Shagadeus <onboarding@resend.dev>';
       const overrideTo = Deno.env.get('EMAIL_TO_OVERRIDE');
-      const realTo = email.toLowerCase().trim();
+      const realTo = normalizedEmail;
       const toAddress = overrideTo || realTo;
       const organizerRealTo = Deno.env.get('ORGANIZER_NOTIFICATION_EMAIL') || 'info@shagadeus.at';
       const organizerToAddress = overrideTo || organizerRealTo;
@@ -207,12 +222,12 @@ Deno.serve(async (req) => {
       }
 
       const participantBody = isDE
-        ? `<h2 style="margin:0 0 16px;font-size:20px;">Hallo ${name.trim()}!</h2>
+      ? `<h2 style="margin:0 0 16px;font-size:20px;">Hallo ${normalizedName}!</h2>
            <p>Deine Anmeldung für <strong>${classTitle}</strong> als <strong>${role === 'lead' ? 'Lead' : 'Follow'}</strong> ist eingegangen.</p>
            ${status === 'waitlisted' ? '<p>Aktuell sind alle Plätze belegt. Du stehst auf der Warteliste.</p>' : ''}
            <p>Wir werden deine Anmeldung prüfen und bestätigen. Du erhältst dann eine weitere E-Mail.</p>
            <p>Vera & Josef</p>`
-        : `<h2 style="margin:0 0 16px;font-size:20px;">Hello ${name.trim()}!</h2>
+      : `<h2 style="margin:0 0 16px;font-size:20px;">Hello ${normalizedName}!</h2>
            <p>Your registration for <strong>${classTitle}</strong> as <strong>${role === 'lead' ? 'Lead' : 'Follow'}</strong> has been received.</p>
            ${status === 'waitlisted' ? '<p>All spots are currently taken. You have been placed on the waitlist.</p>' : ''}
            <p>We will review and confirm your registration. You will then receive another email.</p>
@@ -267,14 +282,14 @@ Deno.serve(async (req) => {
         });
       }
 
-      const organizerBody = `<h2 style="margin:0 0 16px;font-size:20px;">Neue Workshop-Anmeldung</h2>
+    const organizerBody = `<h2 style="margin:0 0 16px;font-size:20px;">Neue Workshop-Anmeldung</h2>
          <p><strong>Workshop:</strong> ${danceClass.title_de} / ${danceClass.title_en}</p>
-         <p><strong>Name:</strong> ${name.trim()}</p>
+      <p><strong>Name:</strong> ${normalizedName}</p>
          <p><strong>E-Mail:</strong> ${realTo}</p>
          <p><strong>Rolle:</strong> ${role === 'lead' ? 'Lead' : 'Follow'}</p>
          <p><strong>Status:</strong> ${status}</p>
-         ${partner_name?.trim() ? `<p><strong>Partner:</strong> ${partner_name.trim()}</p>` : ''}
-         ${comment?.trim() ? `<p><strong>Kommentar:</strong> ${comment.trim()}</p>` : ''}`;
+      ${normalizedPartnerName ? `<p><strong>Partner:</strong> ${normalizedPartnerName}</p>` : ''}
+      ${normalizedComment ? `<p><strong>Kommentar:</strong> ${normalizedComment}</p>` : ''}`;
 
       try {
         const { data: organizerSendData, error: organizerSendError } = await resend.emails.send({
@@ -326,15 +341,9 @@ Deno.serve(async (req) => {
       }
     }
 
-    return new Response(
-      JSON.stringify({ success: true, status, id: registration.id }),
-      { status: 201, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    return jsonResponse({ success: true, status, id: registration.id }, 201);
   } catch (err) {
     console.error('Unexpected error:', err);
-    return new Response(
-      JSON.stringify({ error: 'Internal server error', code: 'SERVER_ERROR' }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    return jsonResponse({ error: 'Internal server error', code: 'SERVER_ERROR' }, 500);
   }
 });
