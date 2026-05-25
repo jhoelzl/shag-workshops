@@ -51,8 +51,3 @@ jobs:
       - name: Deploy admin-register
         run: supabase functions deploy admin-register --project-ref "$SUPABASE_PROJECT_REF"
 
-      - name: Deploy admin-backup
-        run: supabase functions deploy admin-backup --project-ref "$SUPABASE_PROJECT_REF"
-
-      - name: Deploy admin-restore
-        run: supabase functions deploy admin-restore --project-ref "$SUPABASE_PROJECT_REF"

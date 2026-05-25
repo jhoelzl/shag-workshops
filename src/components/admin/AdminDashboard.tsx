@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import type { DanceClass, ClassSession, Registration, RegistrationHistory } from '../../lib/database.types';
 import { getClassState } from '../../lib/classState';
@@ -18,16 +18,11 @@ function getTabFromUrl(): Tab {
 export default function AdminDashboard() {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [backupLoading, setBackupLoading] = useState(false);
-  const [restoreLoading, setRestoreLoading] = useState(false);
-  const [backupError, setBackupError] = useState('');
-  const [backupSuccess, setBackupSuccess] = useState('');
   const [tab, setTabState] = useState<Tab>(getTabFromUrl);
   const [classes, setClasses] = useState<DanceClass[]>([]);
   const [registrations, setRegistrations] = useState<Registration[]>([]);
   const [registrationHistory, setRegistrationHistory] = useState<RegistrationHistory[]>([]);
   const [sessionsMap, setSessionsMap] = useState<Record<string, ClassSession[]>>({});
-  const restoreInputRef = useRef<HTMLInputElement>(null);
   const base = import.meta.env.BASE_URL?.replace(/\/$/, '') ?? '';
 
   function setTab(newTab: Tab) {
@@ -80,105 +75,6 @@ export default function AdminDashboard() {
   async function handleLogout() {
     await supabase.auth.signOut();
     window.location.href = `${base}/admin/login/`;
-  }
-
-  async function handleDownloadBackup() {
-    setBackupLoading(true);
-    setBackupError('');
-    setBackupSuccess('');
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) {
-        setBackupError('Not authenticated. Please sign in again.');
-        return;
-      }
-
-      const functionsUrl = `${import.meta.env.PUBLIC_SUPABASE_URL}/functions/v1`;
-      const response = await fetch(`${functionsUrl}/admin-backup`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${session.access_token}`,
-        },
-      });
-
-      if (!response.ok) {
-        const body = await response.json().catch(() => ({}));
-        setBackupError(body?.error || 'Backup failed');
-        return;
-      }
-
-      const blob = await response.blob();
-      const disposition = response.headers.get('content-disposition') || '';
-      const filenameMatch = disposition.match(/filename="([^"]+)"/i);
-      const filename = filenameMatch?.[1] || `shag-workshops-backup-${new Date().toISOString().slice(0, 10)}.json`;
-
-      const downloadUrl = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = downloadUrl;
-      link.download = filename;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      URL.revokeObjectURL(downloadUrl);
-    } catch (err) {
-      setBackupError(err instanceof Error ? err.message : 'Backup failed');
-    } finally {
-      setBackupLoading(false);
-    }
-  }
-
-  function handleOpenRestorePicker() {
-    setBackupError('');
-    setBackupSuccess('');
-    restoreInputRef.current?.click();
-  }
-
-  async function handleRestoreSelected(event: React.ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    event.currentTarget.value = '';
-    if (!file) return;
-
-    const confirmed = confirm('This will replace ALL current workshop data with the selected backup. Continue?');
-    if (!confirmed) return;
-
-    setRestoreLoading(true);
-    setBackupError('');
-    setBackupSuccess('');
-
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) {
-        setBackupError('Not authenticated. Please sign in again.');
-        return;
-      }
-
-      const text = await file.text();
-      const backup = JSON.parse(text);
-      const functionsUrl = `${import.meta.env.PUBLIC_SUPABASE_URL}/functions/v1`;
-      const response = await fetch(`${functionsUrl}/admin-restore`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({ backup }),
-      });
-
-      const body = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        setBackupError(body?.error || 'Restore failed');
-        return;
-      }
-
-      const restoredRows = Number(body?.restored_rows ?? 0);
-      setBackupSuccess(`Restore complete. Imported ${restoredRows} rows from ${file.name}.`);
-      await loadData();
-    } catch (err) {
-      setBackupError(err instanceof Error ? err.message : 'Restore failed');
-    } finally {
-      setRestoreLoading(false);
-    }
   }
 
   if (loading) {
@@ -281,29 +177,6 @@ export default function AdminDashboard() {
           <div className="flex items-center gap-3">
             <span className="hidden sm:inline text-xs text-text-muted tabular-nums">{user?.email}</span>
             <button
-              onClick={handleDownloadBackup}
-              disabled={backupLoading || restoreLoading}
-              className="inline-flex items-center gap-1.5 text-xs font-semibold text-teal-dark hover:text-teal border border-teal/20 hover:border-teal/40 px-3 py-1.5 rounded-full transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
-            >
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" /></svg>
-              {backupLoading ? 'Creating backup...' : 'Download backup'}
-            </button>
-            <button
-              onClick={handleOpenRestorePicker}
-              disabled={backupLoading || restoreLoading}
-              className="inline-flex items-center gap-1.5 text-xs font-semibold text-accent-dark hover:text-accent-dark border border-accent/25 hover:border-accent/40 px-3 py-1.5 rounded-full transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
-            >
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 14l5-5 5 5M12 9v12" /></svg>
-              {restoreLoading ? 'Restoring...' : 'Restore backup'}
-            </button>
-            <input
-              ref={restoreInputRef}
-              type="file"
-              accept="application/json,.json"
-              onChange={handleRestoreSelected}
-              className="hidden"
-            />
-            <button
               onClick={handleLogout}
               className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary/80 hover:text-primary border border-primary/15 hover:border-primary/30 px-3 py-1.5 rounded-full transition-colors"
             >
@@ -340,18 +213,6 @@ export default function AdminDashboard() {
 
       {/* Content */}
       <div className="max-w-6xl mx-auto px-5 sm:px-6 py-8">
-        {backupError && (
-          <div className="mb-4 rounded-xl border border-coral/25 bg-coral/10 px-4 py-3 text-sm text-coral-dark">
-            Backup error: {backupError}
-          </div>
-        )}
-
-        {backupSuccess && (
-          <div className="mb-4 rounded-xl border border-teal/25 bg-teal/10 px-4 py-3 text-sm text-teal-dark">
-            {backupSuccess}
-          </div>
-        )}
-
         {tab === 'overview' && (
           <OverviewTab
             classes={classes}

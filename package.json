@@ -12,7 +12,7 @@
     "test:coverage": "vitest run --coverage",
     "check:i18n": "node scripts/check-i18n.mjs",
     "setup:hooks": "git config core.hooksPath .githooks",
-    "deploy:functions": "supabase functions deploy register --no-verify-jwt && supabase functions deploy admin-register && supabase functions deploy confirm-registration && supabase functions deploy admin-backup && supabase functions deploy admin-restore",
+    "deploy:functions": "supabase functions deploy register --no-verify-jwt && supabase functions deploy admin-register && supabase functions deploy confirm-registration",
     "flyer:export": "node scripts/export-flyer.mjs"
   },
   "description": "Collegiate Shag Workshops Salzburg",
