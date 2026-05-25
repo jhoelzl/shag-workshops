@@ -20,12 +20,14 @@ type WorkshopResult = { classId: string; className: string; type: 'success' | 'e
 
 export default function RegistrationForm({ locale, danceClasses, supabaseFunctionsUrl, supabaseAnonKey, selectedClassIds, onToggleClass }: Props) {
   const i18n = translations[locale];
+  const submitLockRef = useRef(false);
 
   const [role, setRole] = useState<'lead' | 'follow'>('lead');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [partnerName, setPartnerName] = useState('');
   const [comment, setComment] = useState('');
+  const [website, setWebsite] = useState('');
   const [privacyConsent, setPrivacyConsent] = useState(false);
   const [privacyError, setPrivacyError] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -90,6 +92,7 @@ export default function RegistrationForm({ locale, danceClasses, supabaseFunctio
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (submitLockRef.current || submitting) return;
     if (selectedClassIds.size === 0) return;
 
     // Surface any pending field errors that the user hasn't seen yet
@@ -102,81 +105,87 @@ export default function RegistrationForm({ locale, danceClasses, supabaseFunctio
       return;
     }
 
+    submitLockRef.current = true;
     setSubmitting(true);
     setResults([]);
 
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-    };
-    if (supabaseAnonKey) {
-      headers.apikey = supabaseAnonKey;
-    }
-
-    const classIds = Array.from(selectedClassIds);
-
-    // Fire all registration requests in parallel for better perceived performance
-    const settled = await Promise.allSettled(
-      classIds.map((classId) =>
-        fetch(`${supabaseFunctionsUrl}/register`, {
-          method: 'POST',
-          headers,
-          body: JSON.stringify({
-            dance_class_id: classId,
-            role,
-            name: name.trim(),
-            email: email.trim().toLowerCase(),
-            partner_name: partnerName.trim() || null,
-            comment: comment.trim() || null,
-            locale,
-          }),
-        }).then(async (response) => {
-          const data = await response.json().catch(() => ({}));
-          return { response, data };
-        })
-      )
-    );
-
-    const newResults: WorkshopResult[] = settled.map((outcome, idx) => {
-      const classId = classIds[idx];
-      const dc = danceClasses.find((c) => c.id === classId);
-      const className = dc ? (locale === 'de' ? dc.title_de : dc.title_en) : classId;
-
-      if (outcome.status === 'rejected') {
-        return { classId, className, type: 'error', message: i18n.registration.error_generic };
+    try {
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+      if (supabaseAnonKey) {
+        headers.apikey = supabaseAnonKey;
       }
 
-      const { response, data } = outcome.value;
-      if (!response.ok) {
-        let message: string;
-        if (data.code === 'DUPLICATE') {
-          message = i18n.registration.error_duplicate;
-        } else if (data.code === 'CLOSED') {
-          message = i18n.registration.error_closed;
-        } else if (data.code === 'VALIDATION') {
-          message = i18n.registration.error_validation;
-        } else {
-          message = data.message || data.error || i18n.registration.error_generic;
+      const classIds = Array.from(selectedClassIds);
+
+      // Fire all registration requests in parallel for better perceived performance
+      const settled = await Promise.allSettled(
+        classIds.map((classId) =>
+          fetch(`${supabaseFunctionsUrl}/register`, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({
+              dance_class_id: classId,
+              role,
+              name: name.trim(),
+              email: email.trim().toLowerCase(),
+              partner_name: partnerName.trim() || null,
+              comment: comment.trim() || null,
+              locale,
+              website: website.trim(),
+            }),
+          }).then(async (response) => {
+            const data = await response.json().catch(() => ({}));
+            return { response, data };
+          })
+        )
+      );
+
+      const newResults: WorkshopResult[] = settled.map((outcome, idx) => {
+        const classId = classIds[idx];
+        const dc = danceClasses.find((c) => c.id === classId);
+        const className = dc ? (locale === 'de' ? dc.title_de : dc.title_en) : classId;
+
+        if (outcome.status === 'rejected') {
+          return { classId, className, type: 'error', message: i18n.registration.error_generic };
         }
-        return { classId, className, type: 'error', message };
+
+        const { response, data } = outcome.value;
+        if (!response.ok) {
+          let message: string;
+          if (data.code === 'DUPLICATE') {
+            message = i18n.registration.error_duplicate;
+          } else if (data.code === 'CLOSED') {
+            message = i18n.registration.error_closed;
+          } else if (data.code === 'VALIDATION') {
+            message = i18n.registration.error_validation;
+          } else {
+            message = data.message || data.error || i18n.registration.error_generic;
+          }
+          return { classId, className, type: 'error', message };
+        }
+
+        return { classId, className, type: 'success', message: i18n.registration.success_message };
+      });
+
+      setResults(newResults);
+
+      // Deselect successfully registered workshops
+      if (newResults.some((r) => r.type === 'success')) {
+        setName('');
+        setEmail('');
+        setPartnerName('');
+        setComment('');
+        setWebsite('');
+        setPrivacyConsent(false);
+        setTouched({ name: false, email: false });
+        newResults.filter((r) => r.type === 'success').forEach((r) => onToggleClass(r.classId));
       }
-
-      return { classId, className, type: 'success', message: i18n.registration.success_message };
-    });
-
-    setResults(newResults);
-
-    // Deselect successfully registered workshops
-    if (newResults.some((r) => r.type === 'success')) {
-      setName('');
-      setEmail('');
-      setPartnerName('');
-      setComment('');
-      setPrivacyConsent(false);
-      setTouched({ name: false, email: false });
-      newResults.filter((r) => r.type === 'success').forEach((r) => onToggleClass(r.classId));
+    } finally {
+      submitLockRef.current = false;
+      setSubmitting(false);
     }
-
-    setSubmitting(false);
   }
 
   // Show full confirmation view when all submissions succeeded
@@ -348,12 +357,26 @@ export default function RegistrationForm({ locale, danceClasses, supabaseFunctio
   }
 
   return (
-    <form ref={formRef} onSubmit={handleSubmit} className="w-full bg-surface rounded-2xl shadow-lg border border-bg-warm p-6 max-w-lg">
+    <form ref={formRef} onSubmit={handleSubmit} aria-busy={submitting} className="w-full bg-surface rounded-2xl shadow-lg border border-bg-warm p-6 max-w-lg">
       <div className="sr-only" aria-live="polite" aria-atomic="true">
         {liveFeedbackMessages.join(' ')}
       </div>
 
       <h2 className="font-display text-2xl font-bold text-primary mb-6">{i18n.registration.title}</h2>
+
+      <div aria-hidden="true" className="absolute left-[-9999px] top-auto h-px w-px overflow-hidden">
+        <label htmlFor="website">Website</label>
+        <input
+          id="website"
+          type="text"
+          tabIndex={-1}
+          autoComplete="off"
+          value={website}
+          onChange={(e) => setWebsite(e.target.value)}
+        />
+      </div>
+
+      <fieldset disabled={submitting} className="contents">
 
       {/* Dance Class Selection */}
       <div className="mb-4">
@@ -619,6 +642,7 @@ export default function RegistrationForm({ locale, danceClasses, supabaseFunctio
       >
         {submitting ? i18n.registration.submitting : i18n.registration.submit}
       </button>
+      </fieldset>
     </form>
   );
 }

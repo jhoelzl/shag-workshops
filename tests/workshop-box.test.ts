@@ -33,8 +33,8 @@ describe('renderWorkshopBoxText', () => {
 
   it('contains all session dates and times (DE format)', () => {
     const text = renderWorkshopBoxText(BASE_INPUT);
-    expect(text).toContain('18.06.2026');
-    expect(text).toContain('25.06.2026');
+    expect(text).toContain('18. Juni');
+    expect(text).toContain('25. Juni');
     expect(text).toContain('19:00');
     expect(text).toContain('19:55');
   });
@@ -48,12 +48,20 @@ describe('renderWorkshopBoxText', () => {
 
   it('contains the price', () => {
     const text = renderWorkshopBoxText(BASE_INPUT);
-    expect(text).toContain('10 €');
+    expect(text).toContain('€');
+    expect(text).toContain('10');
   });
 
-  it('shows "Auf Spendenbasis" when is_donation is true', () => {
+  it('shows the website donation copy when is_donation is true', () => {
     const text = renderWorkshopBoxText({ ...BASE_INPUT, isDonation: true });
-    expect(text).toContain('Auf Spendenbasis');
+    expect(text).toContain('Preis: Freiwillige Spende');
+    expect(text).toContain('Zur Deckung der Saalmiete');
+  });
+
+  it('shows the website-like cost secondary line for fixed prices', () => {
+    const text = renderWorkshopBoxText(BASE_INPUT);
+    expect(text).toContain('Preis:');
+    expect(text).toContain('Kosten');
   });
 
   it('does not contain Google Calendar URLs', () => {
@@ -71,18 +79,31 @@ describe('renderWorkshopBoxText', () => {
     expect(text).toContain('https://shagadeus.at/de/workshops');
   });
 
-  it('uses English labels and ISO date format when lang=en', () => {
+  it('uses English labels and website wording when lang=en', () => {
     const text = renderWorkshopBoxText({ ...BASE_INPUT, lang: 'en' });
-    expect(text).toContain('Dates:');
+    expect(text).toContain('2 Sessions:');
     expect(text).toContain('Location:');
     expect(text).toContain('Price:');
-    expect(text).toContain('2026-06-18');
+    expect(text).toContain('18 Jun');
   });
 
   it('skips dates section when no valid sessions are provided', () => {
     const text = renderWorkshopBoxText({ ...BASE_INPUT, sessions: [] });
+    expect(text).not.toContain('Termin:');
     expect(text).not.toContain('Termine:');
     expect(text).not.toContain('calendar.google.com');
+  });
+
+  it('uses singular session label for exactly one session', () => {
+    const text = renderWorkshopBoxText({ ...BASE_INPUT, sessions: [BASE_INPUT.sessions[0]] });
+    expect(text).toContain('1 Termin:');
+    expect(text).not.toContain('1 Termine:');
+  });
+
+  it('uses singular English session label for exactly one session', () => {
+    const text = renderWorkshopBoxText({ ...BASE_INPUT, lang: 'en', sessions: [BASE_INPUT.sessions[0]] });
+    expect(text).toContain('1 Session:');
+    expect(text).not.toContain('1 Sessions:');
   });
 });
 
@@ -118,5 +139,11 @@ describe('renderWorkshopBoxHtml', () => {
     const html = renderWorkshopBoxHtml(BASE_INPUT);
     expect(html).toContain('Tanzstudio Salzburg');
     expect(html).not.toMatch(/<a href="https:\/\/maps\.example\.com\/salzburg"/);
+  });
+
+  it('renders donation as two lines in HTML like the website badge', () => {
+    const html = renderWorkshopBoxHtml({ ...BASE_INPUT, isDonation: true });
+    expect(html).toContain('Freiwillige Spende');
+    expect(html).toContain('Zur Deckung der Saalmiete');
   });
 });

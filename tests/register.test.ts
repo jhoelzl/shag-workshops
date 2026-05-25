@@ -18,6 +18,7 @@ interface RegisterInput {
   partner_name?: string;
   comment?: string;
   locale?: string;
+  website?: string;
 }
 
 interface DanceClass {
@@ -41,6 +42,7 @@ interface SupabaseMock {
   findDuplicate: (classId: string, email: string) => boolean;
   getCounts: (classId: string) => RegistrationCounts | null;
   insertRegistration: (data: Record<string, unknown>) => { id: string } | null;
+  logAttempt: (entry: { classId: string; ip?: string | null; email?: string | null; honeypotTriggered: boolean }) => void;
 }
 
 const DEFAULT_ALLOWED_ORIGINS = [
@@ -69,12 +71,19 @@ function processRegistration(
   db: SupabaseMock,
   now: Date,
   originHeader: string | null = null,
+  clientIp: string | null = '127.0.0.1',
 ): RegistrationResult {
   if (!isAllowedOrigin(originHeader)) {
     return { error: 'Forbidden origin', code: 'FORBIDDEN_ORIGIN', status: 403 };
   }
 
-  const { dance_class_id, role, name, email, partner_name, comment } = input;
+  const { dance_class_id, role, name, email, partner_name, comment, website } = input;
+  const normalizedEmail = email?.toLowerCase().trim() ?? '';
+
+  if (website?.trim()) {
+    db.logAttempt({ classId: dance_class_id ?? 'unknown', ip: clientIp, email: normalizedEmail, honeypotTriggered: true });
+    return { success: true, registration_status: 'trapped', id: 'honeypot', status: 202 };
+  }
 
   // Input validation
   if (!dance_class_id || !role || !name || !email) {
@@ -106,7 +115,6 @@ function processRegistration(
   }
 
   // Check duplicate
-  const normalizedEmail = email.toLowerCase().trim();
   if (db.findDuplicate(dance_class_id, normalizedEmail)) {
     return { error: 'Already registered', code: 'DUPLICATE', status: 409 };
   }
@@ -155,6 +163,7 @@ function makeDb(overrides: Partial<SupabaseMock> = {}): SupabaseMock {
     findDuplicate: () => false,
     getCounts: () => ({ dance_class_id: 'class-1', leads_available: 5, follows_available: 5 }),
     insertRegistration: (data) => ({ id: 'reg-123' }),
+    logAttempt: () => undefined,
     ...overrides,
   };
 }
@@ -213,6 +222,15 @@ describe('Registration: Input validation', () => {
   it('accepts valid follow role', () => {
     const result = processRegistration({ ...VALID_INPUT, role: 'follow' }, makeDb(), NOW);
     expect(result).toMatchObject({ success: true });
+  });
+});
+
+describe('Registration: Spam guards', () => {
+  it('traps honeypot submissions without creating a registration error', () => {
+    const logAttempt = vi.fn();
+    const result = processRegistration({ ...VALID_INPUT, website: 'https://spam.example' }, makeDb({ logAttempt }), NOW);
+    expect(result).toMatchObject({ success: true, status: 202, id: 'honeypot' });
+    expect(logAttempt).toHaveBeenCalledWith(expect.objectContaining({ honeypotTriggered: true }));
   });
 });
 
