@@ -23,6 +23,40 @@ interface Props {
 
 export default function WorkshopPage({ locale, initialClasses }: Props) {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [loading, setLoading] = useState(true);
+
+  function WorkshopCardSkeleton({ compact = false }: { compact?: boolean }) {
+    return (
+      <div className={`bg-surface rounded-2xl border border-primary/10 shadow-sm overflow-hidden animate-pulse ${compact ? 'opacity-80' : ''}`}>
+        <div className="px-5 pt-5 pb-3 flex justify-between items-start gap-3">
+          <div className="flex-1 space-y-2">
+            <div className="h-2.5 w-28 rounded bg-primary/10" />
+            <div className="h-6 w-2/3 rounded bg-primary/10" />
+          </div>
+          <div className="h-6 w-16 rounded-full bg-primary/10 shrink-0" />
+        </div>
+        <div className="px-5 pb-3 space-y-2 min-h-[4.75rem]">
+          <div className="h-3 w-full rounded bg-primary/5" />
+          <div className="h-3 w-5/6 rounded bg-primary/5" />
+          <div className="h-3 w-2/3 rounded bg-primary/5" />
+        </div>
+        <div className="px-5 pb-4 space-y-3">
+          <div className="rounded-xl border border-primary/10 bg-primary/5 px-4 py-3.5 flex items-start gap-3">
+            <div className="w-8 h-8 rounded-lg bg-primary/10 shrink-0" />
+            <div className="flex-1 space-y-2">
+              <div className="h-3.5 w-24 rounded bg-primary/10" />
+              <div className="h-3 w-40 rounded bg-primary/10" />
+              <div className="h-3 w-36 rounded bg-primary/10" />
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <div className="h-10 flex-1 rounded-2xl bg-primary/5" />
+            <div className="h-10 w-24 rounded-2xl bg-primary/5 shrink-0" />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   function toggleSelectedId(id: string) {
     setSelectedIds((prev) => {
@@ -42,6 +76,7 @@ export default function WorkshopPage({ locale, initialClasses }: Props) {
     const params = new URLSearchParams(window.location.search);
     const classParam = params.get('class');
     if (classParam) setSelectedIds(new Set([classParam]));
+    setLoading(false);
   }, []);
 
   const allClasses = initialClasses;
@@ -77,6 +112,36 @@ export default function WorkshopPage({ locale, initialClasses }: Props) {
   const openClasses = classes.filter((dc) => !dc.is_preview && getClassState(dc.sessions || [], dc.registration_opens_at, dc.registration_closes_at) === 'open');
   const supabaseFunctionsUrl = `${import.meta.env.PUBLIC_SUPABASE_URL}/functions/v1`;
   const supabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY;
+
+  if (loading) {
+    return (
+      <div className="pt-2 space-y-8" aria-hidden="true">
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-5">
+          <div className="min-w-0 lg:col-span-3 space-y-4">
+            {[0, 1, 2].map((i) => (
+              <WorkshopCardSkeleton key={i} />
+            ))}
+          </div>
+          <div className="min-w-0 lg:col-span-2">
+            <div className="bg-surface rounded-2xl border border-primary/10 shadow-sm p-5 animate-pulse space-y-3">
+              <div className="h-6 w-2/3 rounded bg-primary/10" />
+              <div className="h-4 w-full rounded bg-primary/5" />
+              <div className="h-4 w-5/6 rounded bg-primary/5" />
+              <div className="h-10 w-full rounded-xl bg-primary/10" />
+              <div className="h-10 w-full rounded-xl bg-primary/10" />
+              <div className="h-12 w-full rounded-full bg-primary/10" />
+            </div>
+          </div>
+        </div>
+        <div className="space-y-3">
+          <div className="h-5 w-40 rounded bg-primary/10 mx-auto" />
+          {[0, 1].map((i) => (
+            <WorkshopCardSkeleton key={`compact-${i}`} compact />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   function renderMetaBadges(dc: ClassWithCounts) {
     if (dc.is_preview) return null;
