@@ -78,7 +78,7 @@ function processRegistration(
   }
 
   const { dance_class_id, role, name, email, partner_name, comment, website } = input;
-  const normalizedEmail = email?.toLowerCase().trim();
+  const normalizedEmail = email?.toLowerCase().trim() ?? '';
 
   if (website?.trim()) {
     db.logAttempt({ classId: dance_class_id ?? 'unknown', ip: clientIp, email: normalizedEmail, honeypotTriggered: true });
