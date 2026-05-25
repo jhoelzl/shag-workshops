@@ -24,9 +24,6 @@ export interface WorkshopBoxInput {
   lang: 'de' | 'en';
 }
 
-const WEEKDAYS_DE = ['So.', 'Mo.', 'Di.', 'Mi.', 'Do.', 'Fr.', 'Sa.'];
-const WEEKDAYS_EN = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-
 function escapeHtml(s: string): string {
   return s
     .replace(/&/g, '&amp;')
@@ -37,30 +34,40 @@ function escapeHtml(s: string): string {
 }
 
 /**
- * Formats a session as e.g. "Do., 18.06.2026 · 19:00 – 19:55".
+ * Formats a session in the same visual style as the website workshop cards,
+ * e.g. "Do., 18. Juni, 19:00–19:55".
  * Interprets the date as a wall-clock date (no timezone shift) to avoid
  * off-by-one errors near midnight in non-Vienna locales.
  */
 function formatSession(session: CalendarSession, lang: 'de' | 'en'): string {
   const [y, m, d] = session.session_date.split('-').map((n) => parseInt(n, 10));
-  // Construct a UTC date purely for weekday lookup; the wall-clock values are
-  // used directly without timezone conversion.
-  const weekdayIdx = new Date(Date.UTC(y, m - 1, d)).getUTCDay();
-  const weekday = (lang === 'de' ? WEEKDAYS_DE : WEEKDAYS_EN)[weekdayIdx];
-  const datePart = lang === 'de'
-    ? `${String(d).padStart(2, '0')}.${String(m).padStart(2, '0')}.${y}`
-    : `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+  const utcDate = new Date(Date.UTC(y, m - 1, d));
+  const datePart = new Intl.DateTimeFormat(lang === 'de' ? 'de-AT' : 'en-AT', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+    timeZone: 'UTC',
+  }).format(utcDate);
   const start = session.start_time.slice(0, 5);
   const end = session.end_time.slice(0, 5);
-  return `${weekday}, ${datePart} · ${start} – ${end}`;
+  return `${datePart}, ${start}–${end}`;
 }
 
-function formatPrice(input: WorkshopBoxInput): string {
+function formatPriceParts(input: WorkshopBoxInput): { primary: string; secondary?: string } | null {
   if (input.isDonation) {
-    return input.lang === 'de' ? 'Auf Spendenbasis' : 'Donation based';
+    return input.lang === 'de'
+      ? { primary: 'Freiwillige Spende', secondary: 'Zur Deckung der Saalmiete' }
+      : { primary: 'Voluntary donation', secondary: 'To help cover the studio rental' };
   }
-  if (input.priceEur == null) return '';
-  return `${input.priceEur} €`;
+  if (input.priceEur == null) return null;
+  const currency = new Intl.NumberFormat(input.lang === 'de' ? 'de-AT' : 'en-AT', {
+    style: 'currency',
+    currency: 'EUR',
+  }).format(Number(input.priceEur));
+  return {
+    primary: currency,
+    secondary: input.lang === 'de' ? 'Kosten' : 'Cost',
+  };
 }
 
 /** ICS attachment filename — base name without extension. */
@@ -78,7 +85,8 @@ export function workshopBoxIcsFilename(input: WorkshopBoxInput): string {
 const LABELS = {
   de: {
     workshop: 'Workshop',
-    dates: 'Termine',
+    session: 'Termin',
+    sessions: 'Termine',
     location: 'Ort',
     price: 'Preis',
     teachers: 'Lehrer',
@@ -90,7 +98,8 @@ const LABELS = {
   },
   en: {
     workshop: 'Workshop',
-    dates: 'Dates',
+    session: 'Session',
+    sessions: 'Sessions',
     location: 'Location',
     price: 'Price',
     teachers: 'Teachers',
@@ -101,6 +110,12 @@ const LABELS = {
     moreInfo: 'Workshop details on shagadeus.at',
   },
 } as const;
+
+function sessionHeading(count: number, lang: 'de' | 'en'): string {
+  const labels = LABELS[lang];
+  const noun = count === 1 ? labels.session : labels.sessions;
+  return `${count} ${noun}`;
+}
 
 /**
  * Renders the workshop box as inline-styled, table-based HTML safe for
@@ -123,7 +138,7 @@ export function renderWorkshopBoxHtml(input: WorkshopBoxInput): string {
   const locationLabel = locationParts.length ? escapeHtml(locationParts.join(', ')) : '';
   const locationHtml = locationLabel;
 
-  const priceLabel = formatPrice(input);
+  const price = formatPriceParts(input);
 
   const teacherLine = input.teachers
     ? `<span style="color:#6b7280;">${escapeHtml(L.teachers)}: ${escapeHtml(input.teachers)}</span>`
@@ -157,22 +172,23 @@ export function renderWorkshopBoxHtml(input: WorkshopBoxInput): string {
         ${sessionRows ? `
         <tr>
           <td style="padding:8px 0;border-top:1px solid #e5e7eb;">
-            <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:#6b7280;margin-bottom:6px;">${escapeHtml(L.dates)}</div>
+            <div style="font-size:14px;font-weight:600;color:#1f2937;margin-bottom:6px;">${escapeHtml(sessionHeading(validSessions.length, input.lang))}:</div>
             <table role="presentation" cellpadding="0" cellspacing="0" border="0">${sessionRows}</table>
           </td>
         </tr>` : ''}
         ${locationHtml ? `
         <tr>
           <td style="padding:8px 0;border-top:1px solid #e5e7eb;">
-            <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:#6b7280;margin-bottom:4px;">${escapeHtml(L.location)}</div>
+            <div style="font-size:12px;font-weight:600;color:#6b7280;margin-bottom:4px;">${escapeHtml(L.location)}</div>
             <div style="font-size:14px;color:#1f2937;">${locationHtml}</div>
           </td>
         </tr>` : ''}
-        ${priceLabel ? `
+        ${price ? `
         <tr>
           <td style="padding:8px 0;border-top:1px solid #e5e7eb;">
-            <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:#6b7280;margin-bottom:4px;">${escapeHtml(L.price)}</div>
-            <div style="font-size:14px;color:#1f2937;font-weight:600;">${escapeHtml(priceLabel)}</div>
+            <div style="font-size:12px;font-weight:600;color:#6b7280;margin-bottom:4px;">${escapeHtml(L.price)}</div>
+            <div style="font-size:14px;color:#1f2937;font-weight:600;">${escapeHtml(price.primary)}</div>
+            ${price.secondary ? `<div style="font-size:12px;color:#6b7280;margin-top:2px;">${escapeHtml(price.secondary)}</div>` : ''}
           </td>
         </tr>` : ''}
       </table>
@@ -216,7 +232,7 @@ export function renderWorkshopBoxText(input: WorkshopBoxInput): string {
   lines.push('');
 
   if (validSessions.length) {
-    lines.push(`${L.dates}:`);
+    lines.push(`${sessionHeading(validSessions.length, input.lang)}:`);
     for (const s of validSessions) {
       lines.push(`  • ${formatSession(s, input.lang)}`);
     }
@@ -230,8 +246,11 @@ export function renderWorkshopBoxText(input: WorkshopBoxInput): string {
     lines.push(`${L.location}: ${locationParts.join(', ')}`);
   }
 
-  const priceLabel = formatPrice(input);
-  if (priceLabel) lines.push(`${L.price}: ${priceLabel}`);
+  const price = formatPriceParts(input);
+  if (price) {
+    lines.push(`${L.price}: ${price.primary}`);
+    if (price.secondary) lines.push(`       ${price.secondary}`);
+  }
 
   if (validSessions.length) {
     lines.push('');
