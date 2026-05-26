@@ -26,6 +26,12 @@ export default function ClassList({ locale }: { locale: Locale }) {
   const base = import.meta.env.BASE_URL?.replace(/\/$/, '') ?? '';
   const dtLocale = locale === 'de' ? 'de-AT' : 'en-AT';
   const fmtCurrency = (v: number) => new Intl.NumberFormat(dtLocale, { style: 'currency', currency: 'EUR' }).format(v);
+  const fmtDateTime = (value: string) => {
+    const dt = new Date(value);
+    const date = dt.toLocaleDateString(dtLocale, { day: 'numeric', month: 'long', year: 'numeric' });
+    const time = dt.toLocaleTimeString(dtLocale, { hour: '2-digit', minute: '2-digit', hour12: false });
+    return `${date}, ${time}`;
+  };
 
   useEffect(() => {
     async function fetchClasses() {
@@ -287,20 +293,20 @@ export default function ClassList({ locale }: { locale: Locale }) {
         {/* Registration status + CTA */}
         {classState === 'upcoming' && dc.registration_opens_at && (
           <div className="px-6 py-3 text-sm font-medium bg-amber-50/80 text-amber-700 border-t border-amber-100">
-            {i18n.workshops.registration_opens} {new Date(dc.registration_opens_at).toLocaleString(dtLocale, { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false })}
+            {i18n.workshops.registration_opens} {fmtDateTime(dc.registration_opens_at)}
           </div>
         )}
         {classState === 'open' && !isPreview && (
           <>
             {dc.registration_closes_at && (
               <div className="px-6 py-3 text-sm font-medium bg-gray-50 text-text-muted border-t border-gray-100">
-                {i18n.workshops.registration_closes} {new Date(dc.registration_closes_at).toLocaleString(dtLocale, { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false })}
+                {i18n.workshops.registration_closes} {fmtDateTime(dc.registration_closes_at)}
               </div>
             )}
             <div className="px-6 pb-6 pt-3">
               <a
                 href={`${base}/${locale}/workshops/?class=${dc.id}`}
-                className="flex items-center justify-center gap-1.5 w-full bg-gradient-to-br from-coral to-coral-dark hover:from-coral-dark hover:to-coral text-white font-semibold py-3 px-4 rounded-full transition-all shadow-[0_8px_20px_-8px_rgba(231,111,81,0.55)] hover:shadow-[0_14px_28px_-10px_rgba(231,111,81,0.6)] hover:-translate-y-0.5"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-teal px-5 py-3 font-semibold text-white transition-all hover:bg-teal-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
               >
                 {i18n.workshops.register}
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
