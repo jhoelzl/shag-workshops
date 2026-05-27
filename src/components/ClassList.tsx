@@ -30,7 +30,7 @@ export default function ClassList({ locale }: { locale: Locale }) {
     const dt = new Date(value);
     const date = dt.toLocaleDateString(dtLocale, { day: 'numeric', month: 'long', year: 'numeric' });
     const time = dt.toLocaleTimeString(dtLocale, { hour: '2-digit', minute: '2-digit', hour12: false });
-    return `${date}, ${time}`;
+    return locale === 'de' ? `${date}, ${time} Uhr` : `${date}, ${time}`;
   };
 
   useEffect(() => {
