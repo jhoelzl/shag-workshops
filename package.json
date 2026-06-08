@@ -17,7 +17,7 @@
   },
   "description": "Collegiate Shag Workshops Salzburg",
   "dependencies": {
-    "@astrojs/react": "^5.0.5",
+    "@astrojs/react": "^5.0.7",
     "@supabase/supabase-js": "^2.106.1",
     "@tailwindcss/vite": "^4.3.0",
     "astro": "^6.1.10",
