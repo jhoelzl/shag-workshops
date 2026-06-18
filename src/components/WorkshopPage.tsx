@@ -235,10 +235,19 @@ export default function WorkshopPage({ locale, initialClasses }: Props) {
       </div>
     )}
 
+    {filteredClasses.length === 0 && filteredOngoing.length > 0 && (
+      <div className="bg-surface rounded-2xl border border-bg-warm p-4 text-center mb-8">
+        <p className="font-semibold text-text">{i18n.workshops.no_current_workshops_ongoing}</p>
+        <p className="text-sm text-text-muted mt-1.5">
+          {i18n.workshops.no_current_workshops_ongoing_info}
+        </p>
+      </div>
+    )}
+
     <div className="grid grid-cols-1 gap-8 lg:grid-cols-5">
       {/* Class list */}
       <div className="min-w-0 lg:col-span-3 space-y-4">
-        {filteredClasses.length === 0 && (
+        {filteredClasses.length === 0 && filteredOngoing.length === 0 && (
           <div className="bg-surface rounded-2xl border border-bg-warm p-6 text-center">
             <p className="font-semibold text-primary">{i18n.workshops.no_current_workshops}</p>
             {filterLevel !== 'all' && (
