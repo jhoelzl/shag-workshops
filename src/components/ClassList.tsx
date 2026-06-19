@@ -21,7 +21,14 @@ interface ClassWithCounts extends DanceClass {
 export default function ClassList({ locale }: { locale: Locale }) {
   const [classes, setClasses] = useState<ClassWithCounts[]>([]);
   const [archivedClasses, setArchivedClasses] = useState<ClassWithCounts[]>([]);
+  const [expandedArchived, setExpandedArchived] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
+  const toggleArchived = (id: string) =>
+    setExpandedArchived((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
   const i18n = translations[locale];
   const base = import.meta.env.BASE_URL?.replace(/\/$/, '') ?? '';
   const dtLocale = locale === 'de' ? 'de-AT' : 'en-AT';
@@ -320,20 +327,101 @@ export default function ClassList({ locale }: { locale: Locale }) {
 
   return (
     <div>
-      {classes.length > 0 && (
+      {classes.length > 0 ? (
         <div className="grid gap-6 lg:grid-cols-2">
           {classes.map(renderClassCard)}
         </div>
+      ) : (
+        <div className="flex flex-col items-center justify-center gap-4 rounded-3xl border border-accent/20 bg-gradient-to-br from-bg-warm via-accent/[0.07] to-coral/[0.08] shadow-soft px-6 py-14 text-center">
+          <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-accent/15 text-accent-dark">
+            <svg className="h-7 w-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <rect x="3" y="4" width="18" height="18" rx="2" strokeWidth="1.8" />
+              <path d="M16 2v4M8 2v4M3 10h18" strokeWidth="1.8" strokeLinecap="round" />
+            </svg>
+          </span>
+          <p className="font-display text-xl font-bold text-primary">{i18n.workshops.no_current_workshops}</p>
+          <p className="max-w-sm text-sm text-text-muted">{i18n.workshops.no_current_workshops_hint}</p>
+        </div>
       )}
       {archivedClasses.length > 0 && (
-        <div className={classes.length > 0 ? 'mt-16' : ''}>
+        <div className="mt-8">
           <div className="flex items-center gap-3 mb-6">
             <span className="h-px flex-1 bg-text-muted/20"></span>
             <h3 className="font-display text-lg font-bold text-text-muted">{i18n.workshops.archive}</h3>
             <span className="h-px flex-1 bg-text-muted/20"></span>
           </div>
-          <div className="grid gap-6 lg:grid-cols-2">
-            {archivedClasses.map(renderClassCard)}
+          <div className="grid gap-3 lg:grid-cols-2 lg:items-start">
+            {archivedClasses.map((dc) => {
+              const title = locale === 'de' ? dc.title_de : dc.title_en;
+              const description = locale === 'de' ? dc.description_de : dc.description_en;
+              const whatToBring = locale === 'de' ? dc.what_to_bring_de : dc.what_to_bring_en;
+              const sessions = dc.sessions || [];
+              const isExpanded = expandedArchived.has(dc.id);
+              return (
+                <div
+                  key={dc.id}
+                  onClick={() => toggleArchived(dc.id)}
+                  className="bg-surface/60 rounded-2xl border border-bg-warm opacity-70 cursor-pointer hover:opacity-90 hover:shadow-lift hover:-translate-y-0.5 transition-all duration-300 overflow-hidden"
+                >
+                  <div className="p-4">
+                    <div className="flex justify-between items-center">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 mb-0.5">
+                          {dc.dance && <span className="text-[11px] font-bold uppercase tracking-widest text-accent-dark">{dc.dance}</span>}
+                          {dc.dance && dc.teachers && <span className="text-text-muted/30">·</span>}
+                          {dc.teachers && <span className="text-[11px] font-medium text-text-muted tracking-wide">{dc.teachers}</span>}
+                        </div>
+                        <h4 className="font-display font-semibold text-text">{title}</h4>
+                      </div>
+                      <div className="mt-2 flex gap-2 items-start shrink-0">
+                        {dc.level && (
+                          <span className="text-xs bg-gray-100 text-text-muted font-medium px-3 py-1 rounded-full">{dc.level}</span>
+                        )}
+                        <span className="text-text-muted text-sm transition-transform duration-200" style={{ transform: isExpanded ? 'rotate(180deg)' : 'none' }}>▼</span>
+                      </div>
+                    </div>
+                    {!isExpanded && sessions.length > 0 && (
+                      <p className="text-sm text-text-muted mt-1.5 flex items-center gap-1.5">
+                        <svg className="w-3.5 h-3.5 text-teal shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" strokeWidth="2" /><path d="M16 2v4M8 2v4M3 10h18" strokeWidth="2" strokeLinecap="round" /></svg>
+                        {new Date(sessions[0].session_date).toLocaleDateString(dtLocale, { month: 'short', year: 'numeric' })}
+                        {sessions.length > 1 && ` – ${new Date(sessions[sessions.length - 1].session_date).toLocaleDateString(dtLocale, { month: 'short', year: 'numeric' })}`}
+                        {' '}({sessions.length}x)
+                      </p>
+                    )}
+                  </div>
+                  {isExpanded && (
+                    <div className="px-4 pb-4 space-y-3">
+                      {description && <div className="text-text-muted text-sm leading-relaxed [&_strong]:text-text" dangerouslySetInnerHTML={{ __html: simpleMarkdown(description) }} />}
+                      {whatToBring && (
+                        <div>
+                          <p className="text-xs font-bold uppercase tracking-wider text-teal mb-1.5">{i18n.workshops.what_to_bring}</p>
+                          <div className="text-text-muted text-sm leading-relaxed [&_li]:ml-4" dangerouslySetInnerHTML={{ __html: simpleMarkdown(whatToBring) }} />
+                        </div>
+                      )}
+                      {sessions.length > 0 && (
+                        <div className="rounded-xl border border-teal/12 bg-gradient-to-br from-white to-teal/[0.04] px-4 py-3.5">
+                          <div className="flex items-start gap-3">
+                            <AddToCalendar danceClass={dc} sessions={sessions} locale={locale} variant="icon" />
+                            <div className="text-sm flex-1">
+                              <span className="font-semibold text-text">{sessions.length} {sessions.length === 1 ? i18n.workshops.session : i18n.workshops.sessions}:</span>
+                              <div className="mt-1.5 space-y-1 text-text-muted">
+                                {sessions.map((s) => (
+                                  <div key={s.id} className="flex items-baseline gap-1.5 tabular-nums">
+                                    <span>{new Date(s.session_date).toLocaleDateString(dtLocale, { weekday: 'short', day: 'numeric', month: 'short' })},</span>
+                                    <span className="text-text">{s.start_time.slice(0, 5)}–{s.end_time.slice(0, 5)}</span>
+                                    {s.note && <span className="text-xs text-accent-dark italic ml-1">{s.note}</span>}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
       )}

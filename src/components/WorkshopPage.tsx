@@ -245,16 +245,24 @@ export default function WorkshopPage({ locale, initialClasses }: Props) {
     )}
 
     <div className="grid grid-cols-1 gap-8 lg:grid-cols-5">
+      {filteredClasses.length === 0 && filteredOngoing.length === 0 && (
+        <div className="flex flex-col items-center justify-center gap-4 rounded-3xl border border-accent/20 bg-gradient-to-br from-bg-warm via-accent/[0.07] to-coral/[0.08] shadow-soft px-6 py-14 text-center lg:col-span-5">
+          <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-accent/15 text-accent-dark">
+            <svg className="h-7 w-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <rect x="3" y="4" width="18" height="18" rx="2" strokeWidth="1.8" />
+              <path d="M16 2v4M8 2v4M3 10h18" strokeWidth="1.8" strokeLinecap="round" />
+            </svg>
+          </span>
+          <p className="font-display text-xl font-bold text-primary">{i18n.workshops.no_current_workshops}</p>
+          {filterLevel !== 'all' ? (
+            <p className="max-w-sm text-sm text-text-muted">{i18n.workshops.no_current_workshops_for_level}</p>
+          ) : (
+            <p className="max-w-sm text-sm text-text-muted">{i18n.workshops.no_current_workshops_hint}</p>
+          )}
+        </div>
+      )}
       {/* Class list */}
       <div className="min-w-0 lg:col-span-3 space-y-4">
-        {filteredClasses.length === 0 && filteredOngoing.length === 0 && (
-          <div className="bg-surface rounded-2xl border border-bg-warm p-6 text-center">
-            <p className="font-semibold text-primary">{i18n.workshops.no_current_workshops}</p>
-            {filterLevel !== 'all' && (
-              <p className="text-sm text-text-muted mt-2">{i18n.workshops.no_current_workshops_for_level}</p>
-            )}
-          </div>
-        )}
         {filteredClasses.map((dc) => {
           const title = locale === 'de' ? dc.title_de : dc.title_en;
           const description = locale === 'de' ? dc.description_de : dc.description_en;
@@ -476,13 +484,13 @@ export default function WorkshopPage({ locale, initialClasses }: Props) {
 
     {/* Archive section */}
     {filteredArchived.length > 0 && (
-      <div className="mt-16">
+      <div className="mt-8">
         <div className="flex items-center gap-3 mb-6">
           <span className="h-px flex-1 bg-text-muted/20"></span>
           <h3 className="font-display text-lg font-bold text-text-muted">{i18n.workshops.archive}</h3>
           <span className="h-px flex-1 bg-text-muted/20"></span>
         </div>
-        <div className="space-y-3">
+        <div className="grid gap-3 lg:grid-cols-2 lg:items-start">
           {filteredArchived.map((dc) => {
             const title = locale === 'de' ? dc.title_de : dc.title_en;
             const description = locale === 'de' ? dc.description_de : dc.description_en;
