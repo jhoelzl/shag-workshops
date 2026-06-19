@@ -332,8 +332,8 @@ export default function ClassList({ locale }: { locale: Locale }) {
           {classes.map(renderClassCard)}
         </div>
       ) : (
-        <div className="flex flex-col items-center justify-center gap-4 rounded-3xl border border-dashed border-teal/25 bg-gradient-to-br from-teal/[0.06] via-surface to-coral/[0.04] px-6 py-14 text-center">
-          <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-teal/10 text-teal">
+        <div className="flex flex-col items-center justify-center gap-4 rounded-3xl border border-accent/20 bg-gradient-to-br from-bg-warm via-accent/[0.07] to-coral/[0.08] shadow-soft px-6 py-14 text-center">
+          <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-accent/15 text-accent-dark">
             <svg className="h-7 w-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
               <rect x="3" y="4" width="18" height="18" rx="2" strokeWidth="1.8" />
               <path d="M16 2v4M8 2v4M3 10h18" strokeWidth="1.8" strokeLinecap="round" />
@@ -344,7 +344,7 @@ export default function ClassList({ locale }: { locale: Locale }) {
         </div>
       )}
       {archivedClasses.length > 0 && (
-        <div className={classes.length > 0 ? 'mt-16' : ''}>
+        <div className="mt-8">
           <div className="flex items-center gap-3 mb-6">
             <span className="h-px flex-1 bg-text-muted/20"></span>
             <h3 className="font-display text-lg font-bold text-text-muted">{i18n.workshops.archive}</h3>
