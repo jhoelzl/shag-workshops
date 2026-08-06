@@ -197,6 +197,7 @@ Deno.serve(async (req) => {
       const resend = new Resend(resendKey);
       const isDE = locale !== 'en';
       const classTitle = isDE ? danceClass.title_de : danceClass.title_en;
+      const teacherName = danceClass.teachers || 'Vera & Josef';
       const roleLabel = role === 'lead' ? (isDE ? 'Lead' : 'Lead') : (isDE ? 'Follow' : 'Follow');
 
       const subject = status === 'confirmed'
@@ -208,20 +209,20 @@ Deno.serve(async (req) => {
           ? `<h2>Hallo ${name.trim()}!</h2>
              <p>Du wurdest für <strong>${classTitle}</strong> als <strong>${roleLabel}</strong> angemeldet und deine Teilnahme ist bereits <strong>bestätigt</strong>.</p>
              <p>Wir freuen uns auf dich!</p>
-             <p>Vera & Josef</p>`
+             <p>${teacherName}</p>`
           : `<h2>Hello ${name.trim()}!</h2>
              <p>You have been registered for <strong>${classTitle}</strong> as <strong>${roleLabel}</strong> and your spot is already <strong>confirmed</strong>.</p>
              <p>We look forward to seeing you!</p>
-             <p>Vera & Josef</p>`)
+             <p>${teacherName}</p>`)
         : (isDE
           ? `<h2>Hallo ${name.trim()}!</h2>
              <p>Du wurdest für <strong>${classTitle}</strong> als <strong>${roleLabel}</strong> auf die <strong>Warteliste</strong> gesetzt.</p>
              <p>Wir melden uns, sobald ein Platz frei wird.</p>
-             <p>Vera & Josef</p>`
+             <p>${teacherName}</p>`
           : `<h2>Hello ${name.trim()}!</h2>
              <p>You have been placed on the <strong>waitlist</strong> for <strong>${classTitle}</strong> as <strong>${roleLabel}</strong>.</p>
              <p>We will notify you when a spot becomes available.</p>
-             <p>Vera & Josef</p>`);
+             <p>${teacherName}</p>`);
 
       try {
         const { data: sendData, error: sendError } = await resend.emails.send({

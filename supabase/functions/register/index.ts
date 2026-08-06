@@ -221,17 +221,18 @@ Deno.serve(async (req) => {
         console.log(`EMAIL_TO_OVERRIDE active - redirecting organizer mail for ${organizerRealTo} to ${overrideTo}`);
       }
 
+      const teacherName = danceClass.teachers || 'Vera & Josef';
       const participantBody = isDE
       ? `<h2 style="margin:0 0 16px;font-size:20px;">Hallo ${normalizedName}!</h2>
            <p>Deine Anmeldung für <strong>${classTitle}</strong> als <strong>${role === 'lead' ? 'Lead' : 'Follow'}</strong> ist eingegangen.</p>
            ${status === 'waitlisted' ? '<p>Aktuell sind alle Plätze belegt. Du stehst auf der Warteliste.</p>' : ''}
            <p>Wir werden deine Anmeldung prüfen und bestätigen. Du erhältst dann eine weitere E-Mail.</p>
-           <p>Vera & Josef</p>`
+           <p>${teacherName}</p>`
       : `<h2 style="margin:0 0 16px;font-size:20px;">Hello ${normalizedName}!</h2>
            <p>Your registration for <strong>${classTitle}</strong> as <strong>${role === 'lead' ? 'Lead' : 'Follow'}</strong> has been received.</p>
            ${status === 'waitlisted' ? '<p>All spots are currently taken. You have been placed on the waitlist.</p>' : ''}
            <p>We will review and confirm your registration. You will then receive another email.</p>
-           <p>Vera & Josef</p>`;
+           <p>${teacherName}</p>`;
 
       try {
         const { data: sendData, error: sendError } = await resend.emails.send({

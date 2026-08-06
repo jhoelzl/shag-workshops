@@ -163,28 +163,28 @@ Deno.serve(async (req) => {
 
       const bodies: Record<string, { de: string; en: string }> = {
         confirmed: {
-        de: renderConfirmationTemplate({ lang: 'de', name: registration.name, classTitle: dc.title_de }),
-        en: renderConfirmationTemplate({ lang: 'en', name: registration.name, classTitle: dc.title_en }),
+        de: renderConfirmationTemplate({ lang: 'de', name: registration.name, classTitle: dc.title_de, teachers: dc.teachers }),
+        en: renderConfirmationTemplate({ lang: 'en', name: registration.name, classTitle: dc.title_en, teachers: dc.teachers }),
         },
         waitlisted: {
           de: `<h2>Hallo ${registration.name}!</h2>
                <p>Du stehst jetzt auf der <strong>Warteliste</strong> für <strong>${dc.title_de}</strong>.</p>
                <p>Wir melden uns, sobald ein Platz frei wird.</p>
-               <p>Vera & Josef</p>`,
+               <p>${dc.teachers || 'Vera & Josef'}</p>`,
           en: `<h2>Hello ${registration.name}!</h2>
                <p>You have been placed on the <strong>waitlist</strong> for <strong>${dc.title_en}</strong>.</p>
                <p>We will notify you when a spot becomes available.</p>
-               <p>Vera & Josef</p>`,
+               <p>${dc.teachers || 'Vera & Josef'}</p>`,
         },
         cancelled: {
           de: `<h2>Hallo ${registration.name}!</h2>
                <p>Leider wurde deine Anmeldung für <strong>${dc.title_de}</strong> <strong>abgesagt</strong>.</p>
                <p>Bei Fragen kontaktiere uns gerne.</p>
-               <p>Vera & Josef</p>`,
+               <p>${dc.teachers || 'Vera & Josef'}</p>`,
           en: `<h2>Hello ${registration.name}!</h2>
                <p>Unfortunately your registration for <strong>${dc.title_en}</strong> has been <strong>cancelled</strong>.</p>
                <p>Please contact us if you have any questions.</p>
-               <p>Vera & Josef</p>`,
+               <p>${dc.teachers || 'Vera & Josef'}</p>`,
         },
       };
 
@@ -248,8 +248,9 @@ Deno.serve(async (req) => {
           const boxText = renderWorkshopBoxText(boxInput);
 
           // Insert the workshop box between the greeting and the signature.
-          // The signature line begins with "<p>Vera & Josef</p>" in all locales.
-          const signatureMarker = '<p>Vera &amp; Josef</p>';
+          // The signature line begins with the teacher name in all locales.
+          const teacherName = dc.teachers || 'Vera & Josef';
+          const signatureMarker = `<p>${teacherName.replace(/&/g, '&amp;')}</p>`;
           const bodyEscaped = body.replace(/Vera & Josef/g, 'Vera &amp; Josef');
           htmlBody = bodyEscaped.includes(signatureMarker)
             ? bodyEscaped.replace(signatureMarker, `${boxHtml}\n${signatureMarker}`)
@@ -257,7 +258,7 @@ Deno.serve(async (req) => {
 
           // Compose plain-text fallback from base text + workshop box text.
           const baseText = htmlToText(body);
-          const sigIdx = baseText.indexOf('Vera & Josef');
+          const sigIdx = baseText.indexOf(teacherName);
           textBody = sigIdx >= 0
             ? `${baseText.slice(0, sigIdx).trimEnd()}\n\n${boxText}\n\n${baseText.slice(sigIdx)}`
             : `${baseText}\n\n${boxText}`;
