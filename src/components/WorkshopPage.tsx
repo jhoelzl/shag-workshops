@@ -294,27 +294,45 @@ export default function WorkshopPage({ locale, initialClasses }: Props) {
                     : 'border-transparent shadow-sm hover:shadow-md hover:-translate-y-0.5 cursor-pointer'
               }`}
             >
-              {/* Header */}
-              <div className="px-5 pt-5 pb-3">
-                <div className="flex justify-between items-start gap-3">
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      {dc.dance && <span className="text-[11px] font-bold uppercase tracking-widest text-accent-dark">{dc.dance}</span>}
-                      {dc.dance && dc.teachers && !isPreview && <span className="text-text-muted/30">·</span>}
-                      {dc.teachers && !isPreview && <span className="text-[11px] font-medium text-text-muted tracking-wide">{dc.teachers}</span>}
+              {/* Header with optional background image */}
+              <div
+                className={`relative ${dc.image_url ? 'min-h-[160px] sm:min-h-[180px]' : ''}`}
+              >
+                {dc.image_url && (
+                  <>
+                    <div
+                      className="absolute inset-0 bg-cover bg-center"
+                      style={{ backgroundImage: `url(${dc.image_url})` }}
+                    />
+                    {/* Gradient overlay for text readability */}
+                    <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/30 to-black/60" />
+                    {/* Additional gradient for smooth transition to card body */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-surface via-surface/20 to-transparent" />
+                    {/* Subtle shadow effect */}
+                    <div className="absolute inset-0 shadow-[inset_0_-20px_40px_-10px_rgba(0,0,0,0.3)]" />
+                  </>
+                )}
+                <div className={`relative px-5 pt-5 pb-3 ${dc.image_url ? 'flex flex-col justify-end min-h-[160px] sm:min-h-[180px]' : ''}`}>
+                  <div className="flex justify-between items-start gap-3">
+                    <div className="min-w-0">
+                      <div className={`flex items-center gap-2 mb-1 ${dc.image_url ? 'drop-shadow-lg' : ''}`}>
+                        {dc.dance && <span className={`text-[11px] font-bold uppercase tracking-widest ${dc.image_url ? 'text-white/90' : 'text-accent-dark'}`}>{dc.dance}</span>}
+                        {dc.dance && dc.teachers && !isPreview && <span className={`${dc.image_url ? 'text-white/50' : 'text-text-muted/30'}`}>·</span>}
+                        {dc.teachers && !isPreview && <span className={`text-[11px] font-medium tracking-wide ${dc.image_url ? 'text-white/80' : 'text-text-muted'}`}>{dc.teachers}</span>}
+                      </div>
+                      <h3 className={`font-display text-xl font-bold leading-tight ${dc.image_url ? 'text-white drop-shadow-lg' : 'text-primary'}`}>{title}</h3>
                     </div>
-                    <h3 className="font-display text-xl font-bold text-primary leading-tight">{title}</h3>
-                  </div>
-                  <div className="mt-2 flex gap-2 items-start shrink-0">
-                    {dc.level && (
-                      <span className="text-xs bg-teal/10 text-teal-dark font-semibold px-3 py-1 rounded-full">{dc.level}</span>
-                    )}
-                    {isPreview && (
-                      <span className="text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-700 px-2.5 py-1 rounded-full border border-amber-200">{locale === 'de' ? 'Vorschau' : 'Preview'}</span>
-                    )}
-                    {isSelected && !isPlanned && !isPreview && (
-                      <span className="w-7 h-7 bg-teal text-white rounded-full flex items-center justify-center text-sm">✓</span>
-                    )}
+                    <div className="mt-2 flex gap-2 items-start shrink-0">
+                      {dc.level && (
+                        <span className={`text-xs font-semibold px-3 py-1 rounded-full ${dc.image_url ? 'bg-white/90 text-primary shadow-lg backdrop-blur-sm' : 'bg-teal/10 text-teal-dark'}`}>{dc.level}</span>
+                      )}
+                      {isPreview && (
+                        <span className="text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-700 px-2.5 py-1 rounded-full border border-amber-200">{locale === 'de' ? 'Vorschau' : 'Preview'}</span>
+                      )}
+                      {isSelected && !isPlanned && !isPreview && (
+                        <span className="w-7 h-7 bg-teal text-white rounded-full flex items-center justify-center text-sm shadow-lg">✓</span>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>

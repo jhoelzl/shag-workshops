@@ -546,6 +546,82 @@ function TextArea({ label, value, onChange, hint, rows = 3 }: { label: string; v
   );
 }
 
+function ImageInput({ value, onChange }: { value: string; onChange: (v: string | null) => void }) {
+  const [uploading, setUploading] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${crypto.randomUUID()}.${fileExt}`;
+      const filePath = `class-images/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage.from('public').upload(filePath, file, { contentType: file.type });
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage.from('public').getPublicUrl(filePath);
+      onChange(publicUrl);
+    } catch (err) {
+      console.error('Image upload error:', err);
+      alert('Failed to upload image. Please try again.');
+    } finally {
+      setUploading(false);
+      if (inputRef.current) inputRef.current.value = '';
+    }
+  }
+
+  async function handleRemove() {
+    if (!value) return;
+    try {
+      // Try to extract path from URL and remove from storage
+      const url = new URL(value);
+      const pathMatch = url.pathname.match(/class-images\/[^/]+$/);
+      if (pathMatch) {
+        await supabase.storage.from('public').remove([pathMatch[0]]);
+      }
+    } catch {
+      // Ignore errors - image may not be in our storage
+    }
+    onChange(null);
+  }
+
+  if (value) {
+    return (
+      <div className="space-y-3">
+        <div className="relative rounded-xl overflow-hidden border border-primary/10 shadow-soft">
+          <img src={value} alt="Class header" className="w-full h-40 object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+          <div className="absolute bottom-3 left-3 right-3 flex gap-2">
+            <button type="button" onClick={() => window.open(value, '_blank')} className="flex-1 text-xs font-medium bg-white/90 hover:bg-white text-primary px-3 py-2 rounded-lg transition-colors backdrop-blur-sm">View Full Size</button>
+            <button type="button" onClick={handleRemove} className="flex-1 text-xs font-medium bg-coral/90 hover:bg-coral text-white px-3 py-2 rounded-lg transition-colors backdrop-blur-sm">Remove Image</button>
+          </div>
+        </div>
+        <Input label="Image URL" value={value} onChange={onChange} placeholder="https://example.com/image.jpg" hint="Or paste a direct image URL" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="relative border-2 border-dashed border-primary/20 rounded-xl p-8 text-center hover:border-primary/40 hover:bg-primary/[0.02] transition-all">
+        <input ref={inputRef} type="file" accept="image/*" onChange={handleFileChange} disabled={uploading} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+        <div className="text-4xl mb-2">📷</div>
+        <p className="text-sm font-medium text-text-muted mb-1">{uploading ? 'Uploading...' : 'Click to upload or drag and drop'}</p>
+        <p className="text-xs text-text-muted/70">PNG, JPG, WEBP up to 5MB</p>
+        {uploading && <div className="absolute inset-0 flex items-center justify-center bg-white/80"><Spinner /></div>}
+      </div>
+      <div className="text-center">
+        <span className="text-xs text-text-muted">— or —</span>
+      </div>
+      <Input label="Image URL" value={value} onChange={onChange} placeholder="https://example.com/image.jpg" hint="Paste a direct image URL" />
+    </div>
+  );
+}
+
 // ===== CLASS LIST HELPER COMPONENTS =====
 function StatusBadge({ state }: { state: ClassState }) {
   const styles: Record<ClassState, string> = {
@@ -691,6 +767,9 @@ function ClassForm({
                 <TextArea label="German" value={editing.what_to_bring_de ?? ''} onChange={(v) => setEditing({ ...editing, what_to_bring_de: v })} hint="One item per line, use - for bullet list" rows={4} />
                 <TextArea label="English" value={editing.what_to_bring_en ?? ''} onChange={(v) => setEditing({ ...editing, what_to_bring_en: v })} hint="One item per line, use - for bullet list" rows={4} />
               </div>
+            </SectionCard>
+            <SectionCard title="Class Image" icon="🖼️">
+              <ImageInput value={editing.image_url ?? ''} onChange={(v) => setEditing({ ...editing, image_url: v || null })} />
             </SectionCard>
           </div>
         )}
@@ -1008,6 +1087,12 @@ function ClassDetailView({ dc, sessions, classRegs, regCounts, history, currentU
             <span className="text-text-muted text-xs uppercase tracking-wider">Preview Text</span>
             {dc.preview_text_de && <p className="text-sm mt-0.5 bg-amber-50 border border-amber-200 rounded px-3 py-2"><span className="font-semibold">DE:</span> {dc.preview_text_de}</p>}
             {dc.preview_text_en && <p className="text-sm mt-0.5 bg-amber-50 border border-amber-200 rounded px-3 py-2"><span className="font-semibold">EN:</span> {dc.preview_text_en}</p>}
+          </div>
+        )}
+        {dc.image_url && (
+          <div className="md:col-span-2 mt-2">
+            <span className="text-text-muted text-xs uppercase tracking-wider mb-2 block">Class Image</span>
+            <img src={dc.image_url} alt="Class header" className="w-full h-32 object-cover rounded-lg border border-primary/10" />
           </div>
         )}
         {sessions.length > 0 && (
