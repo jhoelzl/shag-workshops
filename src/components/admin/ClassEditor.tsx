@@ -19,6 +19,31 @@ interface SessionDraft {
   note: string;
 }
 
+function haveSessionsChanged(
+  original: ClassSession[],
+  current: SessionDraft[]
+): boolean {
+  // Quick length check
+  if (original.length !== current.length) return true;
+
+  // Compare each session
+  for (let i = 0; i < original.length; i++) {
+    const orig = original[i];
+    const curr = current[i];
+
+    // For existing sessions, check by id
+    if (curr.id && curr.id !== orig.id) return true;
+
+    // Compare fields (handle time format differences - orig has ":00" suffix)
+    if (orig.session_date !== curr.session_date) return true;
+    if (orig.start_time.slice(0, 5) !== curr.start_time) return true;
+    if (orig.end_time.slice(0, 5) !== curr.end_time) return true;
+    if ((orig.note || '') !== curr.note) return true;
+  }
+
+  return false;
+}
+
 const EMPTY_CLASS = {
   title_de: '',
   title_en: '',
@@ -321,19 +346,25 @@ export default function ClassEditor({ classes, registrations, history, currentUs
     }
 
     if (classId) {
-      await supabase.from('class_sessions').delete().eq('dance_class_id', classId);
-      if (sessions.length > 0) {
-        const sessionPayload = sessions
-          .filter((s) => s.session_date && s.start_time && s.end_time)
-          .map((s) => ({
-            dance_class_id: classId!,
-            session_date: s.session_date,
-            start_time: s.start_time,
-            end_time: s.end_time,
-            note: s.note || null,
-          }));
-        if (sessionPayload.length > 0) {
-          await supabase.from('class_sessions').insert(sessionPayload);
+      // Only update sessions if they have actually changed
+      const originalSessions = classSessionsMap[classId] || [];
+      const hasSessionChanges = haveSessionsChanged(originalSessions, sessions);
+
+      if (hasSessionChanges) {
+        await supabase.from('class_sessions').delete().eq('dance_class_id', classId);
+        if (sessions.length > 0) {
+          const sessionPayload = sessions
+            .filter((s) => s.session_date && s.start_time && s.end_time)
+            .map((s) => ({
+              dance_class_id: classId!,
+              session_date: s.session_date,
+              start_time: s.start_time,
+              end_time: s.end_time,
+              note: s.note || null,
+            }));
+          if (sessionPayload.length > 0) {
+            await supabase.from('class_sessions').insert(sessionPayload);
+          }
         }
       }
     }
