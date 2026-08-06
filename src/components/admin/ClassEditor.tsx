@@ -750,6 +750,9 @@ function ClassForm({
                 <Toggle label="Preview Mode" description="Show preview text instead of session dates" checked={editing.is_preview ?? false} onChange={(v) => setEditing({ ...editing, is_preview: v })} />
               </div>
             </SectionCard>
+            <SectionCard title="Notification Settings" icon="📧">
+              <Input label="Additional Notification Email" value={editing.notification_email ?? ''} onChange={(v) => setEditing({ ...editing, notification_email: v || null })} placeholder="e.g. teacher@example.com" hint="Optional: receives organizer notifications in addition to info@shagadeus.at" />
+            </SectionCard>
             {(editing.is_preview ?? false) && (
               <SectionCard title="Preview Text" icon="📝">
                 <div className="grid gap-4 sm:grid-cols-2">
@@ -999,6 +1002,7 @@ function ClassDetailView({ dc, sessions, classRegs, regCounts, history, currentU
         <div><span className="text-text-muted text-xs uppercase tracking-wider">Preview Mode</span><p>{dc.is_preview ? 'Yes' : 'No'}</p></div>
         <div><span className="text-text-muted text-xs uppercase tracking-wider">Registration opens</span><p>{fmtDate(dc.registration_opens_at)}</p></div>
         <div><span className="text-text-muted text-xs uppercase tracking-wider">Registration closes</span><p>{fmtDate(dc.registration_closes_at)}</p></div>
+        <div className="md:col-span-2"><span className="text-text-muted text-xs uppercase tracking-wider">Additional Notification Email</span><p>{dc.notification_email || '—'}</p></div>
         {(dc.preview_text_de || dc.preview_text_en) && (
           <div className="md:col-span-2 mt-2">
             <span className="text-text-muted text-xs uppercase tracking-wider">Preview Text</span>
