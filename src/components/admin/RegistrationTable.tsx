@@ -334,7 +334,7 @@ export default function RegistrationTable({ registrations, history, classes, cur
             disabled={filtered.length === 0}
             className="text-xs font-semibold bg-primary/5 hover:bg-primary/10 text-primary px-4 py-2 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Als CSV exportieren
+            Export as CSV
           </button>
           {!showAdd ? (
             <button
@@ -465,7 +465,7 @@ export default function RegistrationTable({ registrations, history, classes, cur
                         </span>
                       </td>
                       <td className="py-3 px-4 text-text-muted text-xs tabular-nums">
-                        {new Date(reg.created_at).toLocaleDateString('de-AT')}
+                        {new Date(reg.created_at).toLocaleDateString('en-US')}
                       </td>
                       <td className="py-3 px-4">
                         <div className="flex items-center justify-end gap-1.5 flex-wrap">
@@ -534,7 +534,7 @@ export default function RegistrationTable({ registrations, history, classes, cur
                                     <div>
                                       <div className="flex flex-wrap items-center gap-2">
                                         <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${tone}`}>{formatHistoryEventLabel(entry)}</span>
-                                        <span className="text-[11px] text-text-muted">{new Date(entry.created_at).toLocaleString('de-AT')}</span>
+                                        <span className="text-[11px] text-text-muted">{new Date(entry.created_at).toLocaleString('en-US')}</span>
                                       </div>
                                       <p className="text-xs text-primary mt-1">{formatHistoryDetails(entry)}</p>
                                       {(entry.event_type === 'email_sent' || entry.event_type === 'email_failed') && (() => { const id = getMetadataRecord(entry)?.id as string | undefined; return id ? <a href={`https://resend.com/emails/${id}`} target="_blank" rel="noopener noreferrer" className="text-[11px] text-teal-dark underline mt-0.5 inline-block">Resend Log →</a> : null; })()}

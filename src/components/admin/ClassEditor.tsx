@@ -195,7 +195,7 @@ export default function ClassEditor({ classes, registrations, history, currentUs
     setEditing({
       ...dc,
       id: undefined,
-      title_de: `${dc.title_de} (Kopie)`,
+      title_de: `${dc.title_de} (Copy)`,
       title_en: `${dc.title_en} (Copy)`,
       is_public: false,
     });
@@ -355,9 +355,9 @@ export default function ClassEditor({ classes, registrations, history, currentUs
   function getClassDateSummary(classId: string): string {
     const s = classSessionsMap[classId];
     if (!s || s.length === 0) return 'No dates';
-    const first = new Date(s[0].session_date).toLocaleDateString('de-AT');
+    const first = new Date(s[0].session_date).toLocaleDateString('en-US');
     if (s.length === 1) return first;
-    const last = new Date(s[s.length - 1].session_date).toLocaleDateString('de-AT');
+    const last = new Date(s[s.length - 1].session_date).toLocaleDateString('en-US');
     return `${first} – ${last} (${s.length}x)`;
   }
 
@@ -910,7 +910,7 @@ function InlineRegistrations({
                       <td className="py-2.5 px-3">
                         <RegStatusPill status={status} />
                       </td>
-                      <td className="py-2.5 px-3 text-text-muted text-xs tabular-nums">{new Date(reg.created_at).toLocaleDateString('de-AT')}</td>
+                      <td className="py-2.5 px-3 text-text-muted text-xs tabular-nums">{new Date(reg.created_at).toLocaleDateString('en-US')}</td>
                       <td className="py-2.5 px-3">
                         <div className="flex flex-wrap gap-1">
                           {transitions.map((t) => (
@@ -964,7 +964,7 @@ function InlineRegistrations({
                                     <div>
                                       <div className="flex flex-wrap items-center gap-2">
                                         <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${tone}`}>{formatHistoryEventLabel(entry)}</span>
-                                        <span className="text-[11px] text-text-muted">{new Date(entry.created_at).toLocaleString('de-AT')}</span>
+                                        <span className="text-[11px] text-text-muted">{new Date(entry.created_at).toLocaleString('en-US')}</span>
                                       </div>
                                       <p className="text-xs text-primary mt-1">{formatHistoryDetails(entry)}</p>
                                       {(entry.event_type === 'email_sent' || entry.event_type === 'email_failed') && (() => { const id = getMetadataRecord(entry)?.id as string | undefined; return id ? <a href={`https://resend.com/emails/${id}`} target="_blank" rel="noopener noreferrer" className="text-[11px] text-teal-dark underline mt-0.5 inline-block">Resend Log →</a> : null; })()}
@@ -1009,7 +1009,7 @@ function ClassDetailView({ dc, sessions, classRegs, regCounts, history, currentU
   const fmt = (v: string | null | undefined) => v || '-';
   const fmtDate = (v: string | null | undefined) => {
     if (!v) return '-';
-    return new Date(v).toLocaleString('de-DE', { dateStyle: 'medium', timeStyle: 'short' });
+    return new Date(v).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' });
   };
 
   return (
@@ -1103,7 +1103,7 @@ function ClassDetailView({ dc, sessions, classRegs, regCounts, history, currentU
               .map((s, i) => (
                 <div key={s.id || i} className="flex items-center gap-3 text-sm bg-white rounded px-3 py-1.5 border border-gray-100">
                   <span className="font-medium">
-                    {s.session_date ? new Date(s.session_date + 'T00:00:00').toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' }) : '-'}
+                    {s.session_date ? new Date(s.session_date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' }) : '-'}
                   </span>
                   <span className="text-text-muted">
                     {s.start_time?.slice(0, 5) || '?'} – {s.end_time?.slice(0, 5) || '?'}
@@ -1293,7 +1293,7 @@ function ClassForm({
               value={editing.donation_text_de ?? ''}
               onChange={(v) => setEditing({ ...editing, donation_text_de: v })}
               placeholder="z.B. Freiwillige Spende"
-              hint="Haupttext für Spenden-Button (Standard: Freiwillige Spende)"
+              hint="Main text for donation button (default: Freiwillige Spende)"
             />
             <Input
               label="Donation Text (EN)"
@@ -1307,7 +1307,7 @@ function ClassForm({
               value={editing.donation_subtext_de ?? ''}
               onChange={(v) => setEditing({ ...editing, donation_subtext_de: v })}
               placeholder="z.B. Zur Deckung der Saalmiete"
-              hint="Unterzeile für Spenden-Button (Standard: Zur Deckung der Saalmiete)"
+              hint="Subtext for donation button (default: Zur Deckung der Saalmiete)"
             />
             <Input
               label="Donation Subtext (EN)"
@@ -1335,8 +1335,8 @@ function ClassForm({
       <fieldset className="space-y-4 border-t pt-4">
         <legend className="text-xs font-bold uppercase tracking-wider text-text-muted mb-2">What to Bring</legend>
         <div className="grid gap-4 sm:grid-cols-2">
-          <TextArea label="What to Bring (DE)" value={editing.what_to_bring_de ?? ''} onChange={(v) => setEditing({ ...editing, what_to_bring_de: v })} hint="One item per line, use - for bullet list" />
-          <TextArea label="What to Bring (EN)" value={editing.what_to_bring_en ?? ''} onChange={(v) => setEditing({ ...editing, what_to_bring_en: v })} hint="One item per line, use - for bullet list" />
+          <TextArea label="What to Bring (DE)" value={editing.what_to_bring_de ?? ''} onChange={(v) => setEditing({ ...editing, what_to_bring_de: v })} hint="One item per line, use - for bullet list. Default: bequeme Kleidung..." />
+          <TextArea label="What to Bring (EN)" value={editing.what_to_bring_en ?? ''} onChange={(v) => setEditing({ ...editing, what_to_bring_en: v })} hint="One item per line, use - for bullet list. Default: comfortable clothing..." />
         </div>
       </fieldset>
 
@@ -1364,7 +1364,7 @@ function ClassForm({
             label="Preview Text (DE)"
             value={editing.preview_text_de ?? ''}
             onChange={(v) => setEditing({ ...editing, preview_text_de: v })}
-            hint='z.B. "Geplant für Mai 2026" - leer lassen um echte Sessions anzuzeigen'
+            hint='e.g. "Geplant für Mai 2026" - leave empty to show actual sessions'
           />
           <Input
             label="Preview Text (EN)"
