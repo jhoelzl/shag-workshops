@@ -42,6 +42,10 @@ const EMPTY_CLASS = {
   is_preview: false,
   preview_text_de: '',
   preview_text_en: '',
+  donation_text_de: '',
+  donation_text_en: '',
+  donation_subtext_de: '',
+  donation_subtext_en: '',
   what_to_bring_de: '- bequeme Kleidung (und zusätzliche T-Shirt)\n- deine Lieblings-Tanzschuhe\n- Wasserflasche',
   what_to_bring_en: '- comfortable clothing (perhaps an extra shirt)\n- your favorite dance shoes\n- water bottle',
 };
@@ -285,6 +289,10 @@ export default function ClassEditor({ classes, registrations, history, currentUs
       what_to_bring_en: editing.what_to_bring_en || null,
       preview_text_de: editing.preview_text_de || null,
       preview_text_en: editing.preview_text_en || null,
+      donation_text_de: editing.donation_text_de || null,
+      donation_text_en: editing.donation_text_en || null,
+      donation_subtext_de: editing.donation_subtext_de || null,
+      donation_subtext_en: editing.donation_subtext_en || null,
     };
 
     let classId = editing.id;
@@ -1276,6 +1284,38 @@ function ClassForm({
             </label>
           </div>
         </div>
+        {(editing.is_donation ?? false) && (
+          <div className="grid gap-4 sm:grid-cols-2 mt-4">
+            <Input
+              label="Donation Text (DE)"
+              value={editing.donation_text_de ?? ''}
+              onChange={(v) => setEditing({ ...editing, donation_text_de: v })}
+              placeholder="z.B. Freiwillige Spende"
+              hint="Haupttext für Spenden-Button (Standard: Freiwillige Spende)"
+            />
+            <Input
+              label="Donation Text (EN)"
+              value={editing.donation_text_en ?? ''}
+              onChange={(v) => setEditing({ ...editing, donation_text_en: v })}
+              placeholder="e.g. Voluntary donation"
+              hint="Main text for donation button (default: Voluntary donation)"
+            />
+            <Input
+              label="Donation Subtext (DE)"
+              value={editing.donation_subtext_de ?? ''}
+              onChange={(v) => setEditing({ ...editing, donation_subtext_de: v })}
+              placeholder="z.B. Zur Deckung der Saalmiete"
+              hint="Unterzeile für Spenden-Button (Standard: Zur Deckung der Saalmiete)"
+            />
+            <Input
+              label="Donation Subtext (EN)"
+              value={editing.donation_subtext_en ?? ''}
+              onChange={(v) => setEditing({ ...editing, donation_subtext_en: v })}
+              placeholder="e.g. To help cover the studio rental"
+              hint="Subtext for donation button (default: To help cover the studio rental)"
+            />
+          </div>
+        )}
       </fieldset>
 
       {/* ── Capacity ── */}
