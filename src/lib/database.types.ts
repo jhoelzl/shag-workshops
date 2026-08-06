@@ -35,6 +35,7 @@ export interface Database {
           auto_confirm: boolean;
           is_preview: boolean;
           is_public: boolean;
+          notification_email: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -70,6 +71,7 @@ export interface Database {
           auto_confirm?: boolean;
           is_preview?: boolean;
           is_public?: boolean;
+          notification_email?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -104,6 +106,7 @@ export interface Database {
           auto_confirm?: boolean;
           is_preview?: boolean;
           is_public?: boolean;
+          notification_email?: string | null;
           created_at?: string;
           updated_at?: string;
         };
