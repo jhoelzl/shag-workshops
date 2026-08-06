@@ -25,6 +25,7 @@ const pathTranslations: Record<string, string> = {
   '/impressum/': '/imprint/',
   '/datenschutz/': '/privacy/',
   '/ueber-uns/': '/about/',
+  '/archiv/': '/archive/',
 };
 
 /** Translate a currentPath from one locale to the other. */
