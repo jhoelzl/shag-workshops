@@ -33,7 +33,7 @@ export default function WorkshopPage({ locale, initialClasses }: Props) {
     async function fetchFreshData() {
       const { data: publicClassesData } = await supabase
         .from('dance_classes')
-        .select('*')
+        .select('*, image_url, image_overlay_alpha, headline_color')
         .eq('is_public', true);
 
       if (!publicClassesData || publicClassesData.length === 0) {
@@ -69,6 +69,20 @@ export default function WorkshopPage({ locale, initialClasses }: Props) {
           follows_available: Number(counts?.follows_available ?? dc.max_follows),
           sessions: sessionsMap.get(dc.id) || [],
         };
+      });
+
+      // Sort classes chronologically by first session date and time
+      merged.sort((a, b) => {
+        const firstA = a.sessions?.[0];
+        const firstB = b.sessions?.[0];
+
+        if (!firstA && !firstB) return 0;
+        if (!firstA) return 1;
+        if (!firstB) return -1;
+
+        const firstDateTimeA = `${firstA.session_date}T${firstA.start_time}`;
+        const firstDateTimeB = `${firstB.session_date}T${firstB.start_time}`;
+        return firstDateTimeA.localeCompare(firstDateTimeB);
       });
 
       setClassesData(merged);
@@ -142,7 +156,14 @@ export default function WorkshopPage({ locale, initialClasses }: Props) {
   const classes = useMemo(
     () => allClasses.filter((dc) => {
       const state = getClassState(dc.sessions || [], dc.registration_opens_at, dc.registration_closes_at);
-      return state === 'upcoming' || state === 'open';
+      return (state === 'upcoming' || state === 'open') && !dc.is_preview;
+    }),
+    [allClasses]
+  );
+  const previewClasses = useMemo(
+    () => allClasses.filter((dc) => {
+      const state = getClassState(dc.sessions || [], dc.registration_opens_at, dc.registration_closes_at);
+      return (state === 'upcoming' || state === 'open') && dc.is_preview;
     }),
     [allClasses]
   );
@@ -166,9 +187,10 @@ export default function WorkshopPage({ locale, initialClasses }: Props) {
   }, [allClasses]);
 
   const filteredClasses = filterLevel === 'all' ? classes : classes.filter((dc) => dc.level === filterLevel);
+  const filteredPreview = filterLevel === 'all' ? previewClasses : previewClasses.filter((dc) => dc.level === filterLevel);
   const filteredOngoing = filterLevel === 'all' ? ongoingClasses : ongoingClasses.filter((dc) => dc.level === filterLevel);
   const filteredArchived = filterLevel === 'all' ? archivedClasses : archivedClasses.filter((dc) => dc.level === filterLevel);
-  const openClasses = classes.filter((dc) => !dc.is_preview && getClassState(dc.sessions || [], dc.registration_opens_at, dc.registration_closes_at) === 'open');
+  const openClasses = classes.filter((dc) => getClassState(dc.sessions || [], dc.registration_opens_at, dc.registration_closes_at) === 'open');
   const supabaseFunctionsUrl = `${import.meta.env.PUBLIC_SUPABASE_URL}/functions/v1`;
   const supabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY;
 
@@ -464,6 +486,91 @@ export default function WorkshopPage({ locale, initialClasses }: Props) {
             </div>
           );
         })}
+        {/* Preview classes come after regular classes */}
+        {filteredPreview.length > 0 && (
+          <div className="space-y-4 mt-8">
+            {filteredPreview.map((dc) => {
+              const title = locale === 'de' ? dc.title_de : dc.title_en;
+              const description = locale === 'de' ? dc.description_de : dc.description_en;
+              const whatToBring = locale === 'de' ? dc.what_to_bring_de : dc.what_to_bring_en;
+              const previewText = locale === 'de' ? dc.preview_text_de : dc.preview_text_en;
+              const sessions = dc.sessions || [];
+              const isSelected = selectedIds.has(dc.id);
+
+              const alpha = dc.image_overlay_alpha ?? 40;
+              const isDark = dc.headline_color !== 'black';
+              const overlayOpacity = Math.max(alpha / 100 * 0.7, 0);
+
+              return (
+                <div
+                  key={dc.id}
+                  className="bg-surface rounded-2xl border-2 border-transparent shadow-sm overflow-hidden opacity-80"
+                >
+                  {/* Same header structure as regular classes */}
+                  <div className={`relative ${dc.image_url ? 'min-h-[160px] sm:min-h-[180px]' : ''}`}>
+                    {dc.image_url && (
+                      <>
+                        <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${dc.image_url})` }} />
+                        <div className="absolute inset-0 bg-black/60" style={{ opacity: overlayOpacity }} />
+                        <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-black/40" />
+                        <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/10 to-transparent" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-surface via-surface/30 to-transparent" style={{ opacity: Math.min(overlayOpacity + 0.2, 1) }} />
+                        <div className="absolute inset-0 shadow-[inset_0_-20px_40px_-10px_rgba(0,0,0,0.4)]" />
+                      </>
+                    )}
+                    <div className={`relative px-5 pt-5 pb-3 ${dc.image_url ? 'flex flex-col justify-end min-h-[160px] sm:min-h-[180px]' : ''}`}>
+                      <div className="flex justify-between items-start gap-3">
+                        <div className="min-w-0">
+                          <div className={`flex items-center gap-2 mb-1 ${dc.image_url ? 'drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]' : ''}`}>
+                            {dc.dance && <span className={`text-[11px] font-bold uppercase tracking-widest ${dc.image_url ? (isDark ? 'text-white' : 'text-black') : 'text-accent-dark'}`} style={{ textShadow: dc.image_url ? (isDark ? '0 1px 2px rgba(0,0,0,0.8)' : '0 1px 2px rgba(255,255,255,0.8)') : undefined }}>{dc.dance}</span>}
+                            {dc.dance && dc.teachers && <span className={`${dc.image_url ? (isDark ? 'text-white/70' : 'text-black/60') : 'text-text-muted/30'}`}>·</span>}
+                            {dc.teachers && <span className={`text-[11px] font-medium tracking-wide ${dc.image_url ? (isDark ? 'text-white/95' : 'text-black/85') : 'text-text-muted'}`} style={{ textShadow: dc.image_url ? (isDark ? '0 1px 2px rgba(0,0,0,0.7)' : '0 1px 2px rgba(255,255,255,0.7)') : undefined }}>{dc.teachers}</span>}
+                          </div>
+                          <h3 className={`font-display text-xl font-bold leading-tight ${dc.image_url ? (isDark ? 'text-white' : 'text-black') : 'text-primary'}`} style={{ textShadow: dc.image_url ? (isDark ? '0 2px 4px rgba(0,0,0,0.6)' : '0 1px 2px rgba(255,255,255,0.9)') : undefined }}>{title}</h3>
+                        </div>
+                        <div className="mt-2 flex gap-2 items-start shrink-0">
+                          <span className="text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-700 px-2.5 py-1 rounded-full border border-amber-200">{locale === 'de' ? 'Vorschau' : 'Preview'}</span>
+                          {dc.level && (
+                            <span className={`text-xs font-semibold px-3 py-1 rounded-full ${dc.image_url ? (isDark ? 'bg-white/95 text-primary shadow-lg backdrop-blur-sm' : 'bg-black/90 text-white shadow-lg backdrop-blur-sm') : 'bg-teal/10 text-teal-dark'}`}>{dc.level}</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Rest of preview card */}
+                  {description && (
+                    <div className="px-5 pb-3">
+                      <div className="text-text-muted text-sm leading-relaxed [&_strong]:text-text" dangerouslySetInnerHTML={{ __html: simpleMarkdown(description) }} />
+                    </div>
+                  )}
+                  {whatToBring && (
+                    <div className="px-5 pb-3">
+                      <p className="text-xs font-bold uppercase tracking-wider text-teal mb-1.5">{i18n.workshops.what_to_bring}</p>
+                      <div className="text-text-muted text-sm leading-relaxed [&_li]:ml-4" dangerouslySetInnerHTML={{ __html: simpleMarkdown(whatToBring) }} />
+                    </div>
+                  )}
+                  <div className="px-5 pb-4 space-y-3">
+                    {previewText ? (
+                      <div className="rounded-xl border border-amber-200/80 bg-amber-50/60 px-4 py-3.5">
+                        <div className="flex items-start gap-3">
+                          <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center shrink-0">
+                            <svg className="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" strokeWidth="2" /><path d="M16 2v4M8 2v4M3 10h18" strokeWidth="2" strokeLinecap="round" /></svg>
+                          </div>
+                          <div className="self-center">
+                            <p className="text-sm font-medium text-amber-800">{previewText}</p>
+                            <p className="text-sm text-amber-800 mt-0.5">{i18n.workshops.preview_come_back}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ) : null}
+                    {renderMetaBadges(dc)}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Registration form (sticky on desktop) - only for open classes */}
