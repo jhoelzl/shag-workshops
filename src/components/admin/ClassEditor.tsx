@@ -19,6 +19,31 @@ interface SessionDraft {
   note: string;
 }
 
+function haveSessionsChanged(
+  original: ClassSession[],
+  current: SessionDraft[]
+): boolean {
+  // Quick length check
+  if (original.length !== current.length) return true;
+
+  // Compare each session
+  for (let i = 0; i < original.length; i++) {
+    const orig = original[i];
+    const curr = current[i];
+
+    // For existing sessions, check by id
+    if (curr.id && curr.id !== orig.id) return true;
+
+    // Compare fields (handle time format differences - orig has ":00" suffix)
+    if (orig.session_date !== curr.session_date) return true;
+    if (orig.start_time.slice(0, 5) !== curr.start_time) return true;
+    if (orig.end_time.slice(0, 5) !== curr.end_time) return true;
+    if ((orig.note || '') !== curr.note) return true;
+  }
+
+  return false;
+}
+
 const EMPTY_CLASS = {
   title_de: '',
   title_en: '',
@@ -124,10 +149,34 @@ export default function ClassEditor({ classes, registrations, history, currentUs
       const dc = classes.find((c) => c.id === editParam);
       if (dc) {
         setEditing({ ...dc });
+        // Load sessions when initializing from URL
+        const existing = classSessionsMap[dc.id] || [];
+        setSessions(existing.map((s) => ({
+          id: s.id,
+          session_date: s.session_date,
+          start_time: s.start_time.slice(0, 5),
+          end_time: s.end_time.slice(0, 5),
+          note: s.note || '',
+        })));
       }
     }
     if (viewParam) setViewClassId(viewParam);
-  }, [classes]);
+  }, [classes, classSessionsMap]);
+
+  // Load sessions for current editing class when classSessionsMap becomes available
+  // This handles the F5 refresh case where sessions load after URL init
+  useEffect(() => {
+    if (editing?.id && sessions.length === 0 && classSessionsMap[editing.id]?.length > 0) {
+      const existing = classSessionsMap[editing.id];
+      setSessions(existing.map((s) => ({
+        id: s.id,
+        session_date: s.session_date,
+        start_time: s.start_time.slice(0, 5),
+        end_time: s.end_time.slice(0, 5),
+        note: s.note || '',
+      })));
+    }
+  }, [editing?.id, classSessionsMap, sessions.length]);
 
   // Sync back/forward browser navigation
   useEffect(() => {
@@ -143,7 +192,18 @@ export default function ClassEditor({ classes, registrations, history, currentUs
         setSessions([]);
       } else {
         const dc = classes.find((c) => c.id === editParam);
-        if (dc) setEditing({ ...dc });
+        if (dc) {
+          setEditing({ ...dc });
+          // Load sessions when navigating via back/forward
+          const existing = classSessionsMap[dc.id] || [];
+          setSessions(existing.map((s) => ({
+            id: s.id,
+            session_date: s.session_date,
+            start_time: s.start_time.slice(0, 5),
+            end_time: s.end_time.slice(0, 5),
+            note: s.note || '',
+          })));
+        }
       }
       setViewClassId(viewParam);
     }
@@ -321,19 +381,25 @@ export default function ClassEditor({ classes, registrations, history, currentUs
     }
 
     if (classId) {
-      await supabase.from('class_sessions').delete().eq('dance_class_id', classId);
-      if (sessions.length > 0) {
-        const sessionPayload = sessions
-          .filter((s) => s.session_date && s.start_time && s.end_time)
-          .map((s) => ({
-            dance_class_id: classId!,
-            session_date: s.session_date,
-            start_time: s.start_time,
-            end_time: s.end_time,
-            note: s.note || null,
-          }));
-        if (sessionPayload.length > 0) {
-          await supabase.from('class_sessions').insert(sessionPayload);
+      // Only update sessions if they have actually changed
+      const originalSessions = classSessionsMap[classId] || [];
+      const hasSessionChanges = haveSessionsChanged(originalSessions, sessions);
+
+      if (hasSessionChanges) {
+        await supabase.from('class_sessions').delete().eq('dance_class_id', classId);
+        if (sessions.length > 0) {
+          const sessionPayload = sessions
+            .filter((s) => s.session_date && s.start_time && s.end_time)
+            .map((s) => ({
+              dance_class_id: classId!,
+              session_date: s.session_date,
+              start_time: s.start_time,
+              end_time: s.end_time,
+              note: s.note || null,
+            }));
+          if (sessionPayload.length > 0) {
+            await supabase.from('class_sessions').insert(sessionPayload);
+          }
         }
       }
     }
