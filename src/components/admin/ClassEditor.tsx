@@ -378,14 +378,14 @@ export default function ClassEditor({ classes, registrations, history, currentUs
           return (
             <div key={dc.id}>
               {isEditingThis(dc.id) ? (
-                <ClassForm editing={editing!} setEditing={setEditing} sessions={sessions} setSessions={setSessions} addSession={addSession} removeSession={removeSession} updateSession={updateSession} generateWeeklyDates={generateWeeklyDates} handleSave={handleSave} saving={saving} onCancel={() => { setUrlParam('edit', null); setEditing(null); }} title={`Edit: ${dc.title_de}`} />
+                <ClassForm editing={editing!} setEditing={setEditing} sessions={sessions} setSessions={setSessions} addSession={addSession} removeSession={removeSession} updateSession={updateSession} generateWeeklyDates={generateWeeklyDates} handleSave={handleSave} saving={saving} onCancel={() => { setUrlParam('edit', null); setEditing(null); }} title={`Edit: ${dc.title_en || dc.title_de}`} />
               ) : (
                 <div className={`bg-surface/80 backdrop-blur rounded-2xl border shadow-soft transition-all ${editing ? 'opacity-40 pointer-events-none' : 'border-primary/5 hover:shadow-lift hover:-translate-y-0.5'}`}>
                   <div className="p-4 cursor-pointer" onClick={() => { const next = isViewing ? null : dc.id; setUrlParam('view', next); setViewClassId(next); }}>
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap mb-1">
-                          <h3 className="font-display font-bold text-base truncate text-primary">{dc.title_de}</h3>
+                          <h3 className="font-display font-bold text-base truncate text-primary">{dc.title_en || dc.title_de}</h3>
                           <StatusBadge state={state} />
                           {!dc.is_public && <span className="text-[10px] font-semibold uppercase tracking-wider bg-primary/8 text-primary/60 px-2 py-0.5 rounded-full">Draft</span>}
                           <svg className={`w-4 h-4 text-text-muted transition-transform ${isViewing ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
