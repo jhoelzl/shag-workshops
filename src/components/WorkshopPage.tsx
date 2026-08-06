@@ -396,10 +396,13 @@ export default function WorkshopPage({ locale, initialClasses }: Props) {
                 <div className={`relative px-5 pt-5 pb-3 ${dc.image_url ? 'flex flex-col justify-end min-h-[160px] sm:min-h-[180px]' : ''}`}>
                   <div className="flex justify-between items-start gap-3">
                     <div className="min-w-0">
-                      <div className={`flex items-center gap-2 mb-1 ${dc.image_url ? 'drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]' : ''}`}>
-                        {dc.dance && <span className={`text-[11px] font-bold uppercase tracking-widest ${dc.image_url ? (isDark ? 'text-white' : 'text-black') : 'text-accent-dark'}`} style={{ textShadow: dc.image_url ? (isDark ? '0 1px 2px rgba(0,0,0,0.8)' : '0 1px 2px rgba(255,255,255,0.8)') : undefined }}>{dc.dance}</span>}
-                        {dc.dance && dc.teachers && <span className={`${dc.image_url ? (isDark ? 'text-white/70' : 'text-black/60') : 'text-text-muted/30'}`}>·</span>}
-                        {dc.teachers && <span className={`text-[11px] font-medium tracking-wide ${dc.image_url ? (isDark ? 'text-white/95' : 'text-black/85') : 'text-text-muted'}`} style={{ textShadow: dc.image_url ? (isDark ? '0 1px 2px rgba(0,0,0,0.7)' : '0 1px 2px rgba(255,255,255,0.7)') : undefined }}>{dc.teachers}</span>}
+                      <div className={`flex items-center gap-2 mb-2 ${dc.image_url ? 'drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]' : ''}`}>
+                        {dc.dance && (
+                          <span className={`inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.12em] ${dc.image_url ? (isDark ? 'text-white' : 'text-black') : 'text-accent-dark'}`} style={{ textShadow: dc.image_url ? (isDark ? '0 1px 2px rgba(0,0,0,0.8)' : '0 1px 2px rgba(255,255,255,0.8)') : undefined }}>
+                            <span className={`w-1.5 h-1.5 rounded-full ${dc.image_url ? (isDark ? 'bg-amber-300' : 'bg-accent-dark') : 'bg-accent-dark'}`} />
+                            {dc.dance}
+                          </span>
+                        )}
                       </div>
                       <h3 className={`font-display text-xl font-bold leading-tight ${dc.image_url ? (isDark ? 'text-white' : 'text-black') : 'text-primary'}`} style={{ textShadow: dc.image_url ? (isDark ? '0 2px 4px rgba(0,0,0,0.6)' : '0 1px 2px rgba(255,255,255,0.9)') : undefined }}>{title}</h3>
                     </div>
@@ -452,7 +455,12 @@ export default function WorkshopPage({ locale, initialClasses }: Props) {
                     <div className="flex items-start gap-3">
                       <AddToCalendar danceClass={dc} sessions={sessions} locale={locale} variant="icon" />
                       <div className="text-sm flex-1">
-                        <span className="font-semibold text-text">{sessions.length} {sessions.length === 1 ? i18n.workshops.session : i18n.workshops.sessions}:</span>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-semibold text-text">{sessions.length} {sessions.length === 1 ? i18n.workshops.session : i18n.workshops.sessions}:</span>
+                          {dc.teachers && (
+                            <span className="text-xs text-text-muted">{dc.teachers}</span>
+                          )}
+                        </div>
                         <div className="mt-1.5 space-y-1 text-text-muted">
                           {sessions.map((s) => (
                             <div key={s.id} className="flex items-baseline gap-1.5 tabular-nums">
@@ -523,10 +531,13 @@ export default function WorkshopPage({ locale, initialClasses }: Props) {
                     <div className={`relative px-5 pt-5 pb-3 ${dc.image_url ? 'flex flex-col justify-end min-h-[160px] sm:min-h-[180px]' : ''}`}>
                       <div className="flex justify-between items-start gap-3">
                         <div className="min-w-0">
-                          <div className={`flex items-center gap-2 mb-1 ${dc.image_url ? 'drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]' : ''}`}>
-                            {dc.dance && <span className={`text-[11px] font-bold uppercase tracking-widest ${dc.image_url ? (isDark ? 'text-white' : 'text-black') : 'text-accent-dark'}`} style={{ textShadow: dc.image_url ? (isDark ? '0 1px 2px rgba(0,0,0,0.8)' : '0 1px 2px rgba(255,255,255,0.8)') : undefined }}>{dc.dance}</span>}
-                            {dc.dance && dc.teachers && <span className={`${dc.image_url ? (isDark ? 'text-white/70' : 'text-black/60') : 'text-text-muted/30'}`}>·</span>}
-                            {dc.teachers && <span className={`text-[11px] font-medium tracking-wide ${dc.image_url ? (isDark ? 'text-white/95' : 'text-black/85') : 'text-text-muted'}`} style={{ textShadow: dc.image_url ? (isDark ? '0 1px 2px rgba(0,0,0,0.7)' : '0 1px 2px rgba(255,255,255,0.7)') : undefined }}>{dc.teachers}</span>}
+                          <div className={`flex items-center gap-2 mb-2 ${dc.image_url ? 'drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]' : ''}`}>
+                            {dc.dance && (
+                              <span className={`inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.12em] ${dc.image_url ? (isDark ? 'text-white' : 'text-black') : 'text-accent-dark'}`} style={{ textShadow: dc.image_url ? (isDark ? '0 1px 2px rgba(0,0,0,0.8)' : '0 1px 2px rgba(255,255,255,0.8)') : undefined }}>
+                                <span className={`w-1.5 h-1.5 rounded-full ${dc.image_url ? (isDark ? 'bg-amber-300' : 'bg-accent-dark') : 'bg-accent-dark'}`} />
+                                {dc.dance}
+                              </span>
+                            )}
                           </div>
                           <h3 className={`font-display text-xl font-bold leading-tight ${dc.image_url ? (isDark ? 'text-white' : 'text-black') : 'text-primary'}`} style={{ textShadow: dc.image_url ? (isDark ? '0 2px 4px rgba(0,0,0,0.6)' : '0 1px 2px rgba(255,255,255,0.9)') : undefined }}>{title}</h3>
                         </div>
