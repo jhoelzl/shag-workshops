@@ -39,6 +39,7 @@ const EMPTY_CLASS = {
   registration_closes_at: '',
   is_public: false,
   is_donation: false,
+  auto_confirm: false,
   is_preview: false,
   preview_text_de: '',
   preview_text_en: '',
@@ -284,6 +285,7 @@ export default function ClassEditor({ classes, registrations, history, currentUs
       registration_closes_at: editing.registration_closes_at || null,
       is_public: editing.is_public ?? false,
       is_donation: editing.is_donation ?? false,
+      auto_confirm: editing.auto_confirm ?? false,
       is_preview: editing.is_preview ?? false,
       what_to_bring_de: editing.what_to_bring_de || null,
       what_to_bring_en: editing.what_to_bring_en || null,
@@ -1347,6 +1349,10 @@ function ClassForm({
           <div className="flex items-center gap-2 pt-6">
             <input type="checkbox" id="is_public" checked={editing.is_public ?? false} onChange={(e) => setEditing({ ...editing, is_public: e.target.checked })} className="accent-primary" />
             <label htmlFor="is_public" className="text-sm">Public (visible on website)</label>
+          </div>
+          <div className="flex items-center gap-2 pt-6">
+            <input type="checkbox" id="auto_confirm" checked={editing.auto_confirm ?? false} onChange={(e) => setEditing({ ...editing, auto_confirm: e.target.checked })} className="accent-primary" />
+            <label htmlFor="auto_confirm" className="text-sm">Auto Confirm (automatically confirm registrations)</label>
           </div>
           <div className="flex items-center gap-2 pt-6">
             <input type="checkbox" id="is_preview" checked={editing.is_preview ?? false} onChange={(e) => setEditing({ ...editing, is_preview: e.target.checked })} className="accent-primary" />

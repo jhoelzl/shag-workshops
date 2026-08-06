@@ -1,6 +1,13 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { Resend } from 'https://esm.sh/resend@4';
-import { REPLY_TO, htmlToText, wrapHtml } from '../_shared/email.ts';
+import { REPLY_TO, htmlToText, renderConfirmationTemplate, wrapHtml } from '../_shared/email.ts';
+import { buildIcsContent } from '../_shared/calendar.ts';
+import {
+  renderWorkshopBoxHtml,
+  renderWorkshopBoxText,
+  workshopBoxIcsFilename,
+  type WorkshopBoxInput,
+} from '../_shared/workshop-box.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -154,7 +161,15 @@ Deno.serve(async (req) => {
 
     const roleField = role === 'lead' ? 'leads_available' : 'follows_available';
     const spotsAvailable = counts ? Number(counts[roleField]) : (role === 'lead' ? danceClass.max_leads : danceClass.max_follows);
-    const status = spotsAvailable > 0 ? 'pending' : 'waitlisted';
+
+    // Determine status: auto-confirm if enabled and spots are available
+    const isAutoConfirm = danceClass.auto_confirm === true;
+    let status: 'pending' | 'confirmed' | 'waitlisted';
+    if (spotsAvailable > 0) {
+      status = isAutoConfirm ? 'confirmed' : 'pending';
+    } else {
+      status = 'waitlisted';
+    }
 
     // Insert registration
     const normalizedLocale = locale === 'en' ? 'en' : 'de';
@@ -339,6 +354,148 @@ Deno.serve(async (req) => {
           email_subject: organizerSubject,
           note: e instanceof Error ? e.message : String(e),
         });
+      }
+
+      // If auto-confirm is enabled and registration is confirmed, send confirmation email with workshop box
+      if (isAutoConfirm && status === 'confirmed') {
+        const confirmSubject = isDE
+          ? `Bestätigt: ${classTitle}`
+          : `Confirmed: ${classTitle}`;
+
+        try {
+          let confirmBody = renderConfirmationTemplate({
+            lang: isDE ? 'de' : 'en',
+            name: normalizedName,
+            classTitle,
+            teachers: danceClass.teachers,
+          });
+
+          // Get sessions for workshop box
+          const { data: sessions } = await supabase
+            .from('class_sessions')
+            .select('*')
+            .eq('dance_class_id', dance_class_id)
+            .order('session_date', { ascending: true })
+            .order('start_time', { ascending: true });
+
+          const workshopPageUrl = isDE
+            ? 'https://shagadeus.at/de/workshops'
+            : 'https://shagadeus.at/en/workshops';
+
+          const boxInput: WorkshopBoxInput = {
+            classId: danceClass.id,
+            titleDe: danceClass.title_de,
+            titleEn: danceClass.title_en,
+            dance: danceClass.dance,
+            teachers: danceClass.teachers,
+            level: danceClass.level,
+            location: danceClass.location,
+            locationDetails: danceClass.location_details,
+            locationUrl: danceClass.location_url,
+            priceEur: danceClass.price_eur,
+            isDonation: danceClass.is_donation,
+            donationTextDe: danceClass.donation_text_de,
+            donationTextEn: danceClass.donation_text_en,
+            donationSubtextDe: danceClass.donation_subtext_de,
+            donationSubtextEn: danceClass.donation_subtext_en,
+            sessions: sessions ?? [],
+            workshopPageUrl,
+            lang: isDE ? 'de' : 'en',
+          };
+
+          const boxHtml = renderWorkshopBoxHtml(boxInput);
+          const boxText = renderWorkshopBoxText(boxInput);
+
+          // Insert workshop box before signature
+          const teacherName = danceClass.teachers || 'Vera & Josef';
+          const signatureMarker = `<p>${teacherName.replace(/&/g, '&amp;')}</p>`;
+          const bodyEscaped = confirmBody.replace(/Vera & Josef/g, 'Vera &amp; Josef');
+          const htmlBody = bodyEscaped.includes(signatureMarker)
+            ? bodyEscaped.replace(signatureMarker, `${boxHtml}\n${signatureMarker}`)
+            : `${bodyEscaped}\n${boxHtml}`;
+
+          // Compose plain-text fallback
+          const baseText = htmlToText(confirmBody);
+          const sigIdx = baseText.indexOf(teacherName);
+          const textBody = sigIdx >= 0
+            ? `${baseText.slice(0, sigIdx).trimEnd()}\n\n${boxText}\n\n${baseText.slice(sigIdx)}`
+            : `${baseText}\n\n${boxText}`;
+
+          // Build ICS attachment
+          // deno-lint-ignore no-explicit-any
+          const attachments: any[] = [];
+          const icsContent = buildIcsContent(
+            {
+              id: danceClass.id,
+              title: isDE ? danceClass.title_de : danceClass.title_en,
+              location: danceClass.location,
+              locationDetails: danceClass.location_details,
+              url: workshopPageUrl,
+            },
+            sessions ?? []
+          );
+          if (icsContent) {
+            const utf8Bytes = new TextEncoder().encode(icsContent);
+            let binary = '';
+            for (let i = 0; i < utf8Bytes.length; i++) {
+              binary += String.fromCharCode(utf8Bytes[i]);
+            }
+            attachments.push({
+              filename: workshopBoxIcsFilename(boxInput),
+              content: btoa(binary),
+              contentType: 'text/calendar; charset=utf-8; method=PUBLISH',
+            });
+          }
+
+          const { data: confirmSendData, error: confirmSendError } = await resend.emails.send({
+            from: fromAddress,
+            to: [toAddress],
+            replyTo: REPLY_TO,
+            subject: confirmSubject,
+            html: wrapHtml(htmlBody, { title: confirmSubject }),
+            text: textBody,
+            ...(attachments.length ? { attachments } : {}),
+          });
+
+          if (confirmSendError) {
+            console.error('Resend auto-confirm send error:', JSON.stringify(confirmSendError), 'from:', fromAddress, 'to:', toAddress);
+            await insertHistory({
+              registration_id: registration.id,
+              dance_class_id,
+              event_type: 'email_failed',
+              triggered_by: 'public_registration',
+              email_type: 'participant_auto_confirm',
+              email_recipient: toAddress,
+              email_subject: confirmSubject,
+              note: confirmSendError.message || 'Auto-confirm email failed',
+              metadata: confirmSendError,
+            });
+          } else {
+            console.log('Resend auto-confirm send ok:', JSON.stringify(confirmSendData), 'to:', toAddress);
+            await insertHistory({
+              registration_id: registration.id,
+              dance_class_id,
+              event_type: 'email_sent',
+              triggered_by: 'public_registration',
+              email_type: 'participant_auto_confirm',
+              email_recipient: toAddress,
+              email_subject: confirmSubject,
+              metadata: confirmSendData,
+            });
+          }
+        } catch (e) {
+          console.error('Resend auto-confirm send threw:', e instanceof Error ? e.message : String(e), 'from:', fromAddress, 'to:', toAddress);
+          await insertHistory({
+            registration_id: registration.id,
+            dance_class_id,
+            event_type: 'email_failed',
+            triggered_by: 'public_registration',
+            email_type: 'participant_auto_confirm',
+            email_recipient: toAddress,
+            email_subject: confirmSubject,
+            note: e instanceof Error ? e.message : String(e),
+          });
+        }
       }
     }
 

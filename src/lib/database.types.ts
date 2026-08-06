@@ -32,6 +32,7 @@ export interface Database {
           donation_text_en: string | null;
           donation_subtext_de: string | null;
           donation_subtext_en: string | null;
+          auto_confirm: boolean;
           is_preview: boolean;
           is_public: boolean;
           created_at: string;
@@ -66,6 +67,7 @@ export interface Database {
           donation_text_en?: string | null;
           donation_subtext_de?: string | null;
           donation_subtext_en?: string | null;
+          auto_confirm?: boolean;
           is_preview?: boolean;
           is_public?: boolean;
           created_at?: string;
@@ -99,6 +101,7 @@ export interface Database {
           donation_text_en?: string | null;
           donation_subtext_de?: string | null;
           donation_subtext_en?: string | null;
+          auto_confirm?: boolean;
           is_preview?: boolean;
           is_public?: boolean;
           created_at?: string;

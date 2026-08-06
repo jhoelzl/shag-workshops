@@ -78,6 +78,8 @@
     "submitting": "Wird gesendet...",
     "success_title": "Anmeldung eingegangen!",
     "success_message": "Du erhältst eine Bestätigungs-E-Mail. Wir werden deine Anmeldung prüfen und bestätigen.",
+    "success_auto_title": "Anmeldung bestätigt!",
+    "success_auto_message": "Du erhältst gleich eine E-Mail mit allen Details zum Workshop.",
     "partial_success": "Einige Anmeldungen waren erfolgreich, andere fehlgeschlagen. Bitte prüfe die Details unten.",
     "confirmation_title": "Anmeldung erfolgreich!",
     "confirmation_subtitle_one": "Du hast dich für folgenden Workshop angemeldet:",

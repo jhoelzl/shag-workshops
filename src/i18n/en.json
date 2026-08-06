@@ -78,6 +78,8 @@
     "submitting": "Submitting...",
     "success_title": "Registration received!",
     "success_message": "You will receive a confirmation email. The organizer will review and confirm your registration.",
+    "success_auto_title": "Registration confirmed!",
+    "success_auto_message": "You will receive an email shortly with all workshop details.",
     "partial_success": "Some registrations were successful, others failed. Please check the details below.",
     "confirmation_title": "Registration successful!",
     "confirmation_subtitle_one": "You have registered for the following workshop:",

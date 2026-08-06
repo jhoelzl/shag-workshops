@@ -16,7 +16,7 @@ interface Props {
   onToggleClass: (id: string) => void;
 }
 
-type WorkshopResult = { classId: string; className: string; type: 'success' | 'error'; message: string };
+type WorkshopResult = { classId: string; className: string; type: 'success' | 'error'; message: string; status?: 'pending' | 'confirmed' | 'waitlisted' };
 
 export default function RegistrationForm({ locale, danceClasses, supabaseFunctionsUrl, supabaseAnonKey, selectedClassIds, onToggleClass }: Props) {
   const i18n = translations[locale];
@@ -166,7 +166,13 @@ export default function RegistrationForm({ locale, danceClasses, supabaseFunctio
           return { classId, className, type: 'error', message };
         }
 
-        return { classId, className, type: 'success', message: i18n.registration.success_message };
+        // Check if registration was auto-confirmed
+        const isConfirmed = data.status === 'confirmed';
+        const successMessage = isConfirmed
+          ? i18n.registration.success_auto_message
+          : i18n.registration.success_message;
+
+        return { classId, className, type: 'success', message: successMessage, status: data.status };
       });
 
       setResults(newResults);
@@ -190,6 +196,9 @@ export default function RegistrationForm({ locale, danceClasses, supabaseFunctio
 
   // Show full confirmation view when all submissions succeeded
   const allSucceeded = results.length > 0 && results.every((r) => r.type === 'success');
+  // Check if any registration was auto-confirmed (for showing different UI)
+  const hasAutoConfirmed = results.some((r) => r.status === 'confirmed');
+  const allConfirmed = results.every((r) => r.status === 'confirmed');
   const confirmationHeadingRef = useRef<HTMLHeadingElement>(null);
   const resultContainerRef = useRef<HTMLDivElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
@@ -262,7 +271,7 @@ export default function RegistrationForm({ locale, danceClasses, supabaseFunctio
           tabIndex={-1}
           className="font-display text-2xl font-bold text-text text-center mb-2 outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded"
         >
-          {i18n.registration.confirmation_title}
+          {hasAutoConfirmed ? i18n.registration.success_auto_title : i18n.registration.confirmation_title}
         </h2>
         <p className="text-sm text-text-muted text-center mb-4">{subtitle}</p>
 
@@ -305,17 +314,36 @@ export default function RegistrationForm({ locale, danceClasses, supabaseFunctio
             </div>
           </li>
 
-          {/* Step 2 — current (pending) */}
+          {/* Step 2 — completed if auto-confirmed, otherwise current (pending) */}
           <li className="relative pl-10 pb-5">
-            <span className="absolute left-0 top-0 flex items-center justify-center w-7 h-7 rounded-full bg-white border-2 border-primary text-primary z-10">
-              <span className="absolute inset-0 rounded-full bg-primary/20 animate-ping" aria-hidden="true"></span>
-              <span className="relative w-2 h-2 rounded-full bg-primary"></span>
-            </span>
-            <span className="absolute left-[13px] top-7 bottom-0 w-0.5 bg-bg-warm" aria-hidden="true"></span>
-            <div>
-              <div className="font-semibold text-text">{i18n.registration.step_confirmation_title}</div>
-              <div className="text-xs text-text-muted mt-0.5">{i18n.registration.step_confirmation_desc}</div>
-            </div>
+            {hasAutoConfirmed ? (
+              <>
+                <span className="absolute left-0 top-0 flex items-center justify-center w-7 h-7 rounded-full bg-success text-white shadow-sm shadow-success/30 z-10">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24" aria-hidden="true">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                </span>
+                <span className="absolute left-[13px] top-7 bottom-0 w-0.5 bg-success/40" aria-hidden="true"></span>
+                <div>
+                  <div className="font-semibold text-text">{i18n.registration.step_confirmation_title}</div>
+                  <div className="text-xs text-text-muted mt-0.5">
+                    {locale === 'de' ? 'Deine Anmeldung wurde sofort bestätigt.' : 'Your registration has been confirmed immediately.'}
+                  </div>
+                </div>
+              </>
+            ) : (
+              <>
+                <span className="absolute left-0 top-0 flex items-center justify-center w-7 h-7 rounded-full bg-white border-2 border-primary text-primary z-10">
+                  <span className="absolute inset-0 rounded-full bg-primary/20 animate-ping" aria-hidden="true"></span>
+                  <span className="relative w-2 h-2 rounded-full bg-primary"></span>
+                </span>
+                <span className="absolute left-[13px] top-7 bottom-0 w-0.5 bg-bg-warm" aria-hidden="true"></span>
+                <div>
+                  <div className="font-semibold text-text">{i18n.registration.step_confirmation_title}</div>
+                  <div className="text-xs text-text-muted mt-0.5">{i18n.registration.step_confirmation_desc}</div>
+                </div>
+              </>
+            )}
           </li>
 
           {/* Step 3 — upcoming */}
