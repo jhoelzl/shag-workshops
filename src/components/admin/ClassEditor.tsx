@@ -486,11 +486,30 @@ function NumberInput({ label, value, onChange, required, min, hint }: { label: s
 }
 
 function DateTimeInput({ label, value, onChange, hint }: { label: string; value: string | null | undefined; onChange: (v: string | undefined) => void; hint?: string }) {
-  const displayValue = value ? value.slice(0, 16) : '';
+  // Convert UTC ISO string to local datetime-local format for display
+  function utcToLocalInput(utcIsoString: string | null | undefined): string {
+    if (!utcIsoString) return '';
+    const date = new Date(utcIsoString);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+  }
+
+  // Convert local datetime-local to UTC ISO string for saving
+  function localInputToUtc(localString: string): string | undefined {
+    if (!localString) return undefined;
+    const date = new Date(localString);
+    return date.toISOString();
+  }
+
+  const displayValue = utcToLocalInput(value);
   return (
     <div>
       <label className="block text-sm font-medium text-text-muted mb-1.5">{label}</label>
-      <input type="datetime-local" value={displayValue} onChange={(e) => onChange(e.target.value ? new Date(e.target.value).toISOString() : undefined)} className="w-full border border-primary/15 bg-white rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" />
+      <input type="datetime-local" value={displayValue} onChange={(e) => onChange(localInputToUtc(e.target.value))} className="w-full border border-primary/15 bg-white rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none" />
       {hint && <p className="text-xs text-text-muted mt-1">{hint}</p>}
     </div>
   );
