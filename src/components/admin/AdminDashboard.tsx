@@ -426,9 +426,9 @@ function OverviewTab({
                 return (
                   <div key={session.id} className="p-4 hover:bg-bg-warm/40 transition-colors cursor-pointer flex items-center gap-3" onClick={() => onNavigate('classes')}>
                     <div className={`text-center rounded-xl px-3 py-2 min-w-[58px] ${isToday ? 'bg-gradient-to-br from-coral to-coral-dark text-white shadow-[0_6px_18px_-6px_rgba(231,111,81,0.5)]' : 'bg-bg-warm/60 text-primary'}`}>
-                      <div className="text-[10px] font-bold uppercase tracking-wider opacity-80">{date.toLocaleDateString('de-AT', { weekday: 'short' })}</div>
+                      <div className="text-[10px] font-bold uppercase tracking-wider opacity-80">{date.toLocaleDateString('en-US', { weekday: 'short' })}</div>
                       <div className="text-xl font-bold leading-none font-display">{date.getDate()}</div>
-                      <div className="text-[10px] opacity-80">{date.toLocaleDateString('de-AT', { month: 'short' })}</div>
+                      <div className="text-[10px] opacity-80">{date.toLocaleDateString('en-US', { month: 'short' })}</div>
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="font-semibold text-sm truncate">{danceClass.title_de}</div>
@@ -482,7 +482,7 @@ function OverviewTab({
                     <td className="py-3 px-5">
                       <StatusPill status={r.status} size="sm" />
                     </td>
-                    <td className="py-3 px-5 text-text-muted text-xs tabular-nums">{new Date(r.created_at).toLocaleDateString('de-AT')}</td>
+                    <td className="py-3 px-5 text-text-muted text-xs tabular-nums">{new Date(r.created_at).toLocaleDateString('en-US')}</td>
                   </tr>
                 ))}
               </tbody>
