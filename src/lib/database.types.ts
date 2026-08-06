@@ -28,6 +28,10 @@ export interface Database {
           what_to_bring_en: string | null;
           preview_text_de: string | null;
           preview_text_en: string | null;
+          donation_text_de: string | null;
+          donation_text_en: string | null;
+          donation_subtext_de: string | null;
+          donation_subtext_en: string | null;
           is_preview: boolean;
           is_public: boolean;
           created_at: string;
@@ -58,6 +62,10 @@ export interface Database {
           what_to_bring_en?: string | null;
           preview_text_de?: string | null;
           preview_text_en?: string | null;
+          donation_text_de?: string | null;
+          donation_text_en?: string | null;
+          donation_subtext_de?: string | null;
+          donation_subtext_en?: string | null;
           is_preview?: boolean;
           is_public?: boolean;
           created_at?: string;
@@ -87,6 +95,10 @@ export interface Database {
           what_to_bring_en?: string | null;
           preview_text_de?: string | null;
           preview_text_en?: string | null;
+          donation_text_de?: string | null;
+          donation_text_en?: string | null;
+          donation_subtext_de?: string | null;
+          donation_subtext_en?: string | null;
           is_preview?: boolean;
           is_public?: boolean;
           created_at?: string;
