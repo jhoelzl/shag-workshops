@@ -392,17 +392,14 @@ export default function WorkshopPage({ locale, initialClasses }: Props) {
                     <div className="min-w-0">
                       <div className={`flex items-center gap-2 mb-1 ${dc.image_url ? 'drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]' : ''}`}>
                         {dc.dance && <span className={`text-[11px] font-bold uppercase tracking-widest ${dc.image_url ? (isDark ? 'text-white' : 'text-black') : 'text-accent-dark'}`} style={{ textShadow: dc.image_url ? (isDark ? '0 1px 2px rgba(0,0,0,0.8)' : '0 1px 2px rgba(255,255,255,0.8)') : undefined }}>{dc.dance}</span>}
-                        {dc.dance && dc.teachers && !isPreview && <span className={`${dc.image_url ? (isDark ? 'text-white/70' : 'text-black/60') : 'text-text-muted/30'}`}>·</span>}
-                        {dc.teachers && !isPreview && <span className={`text-[11px] font-medium tracking-wide ${dc.image_url ? (isDark ? 'text-white/95' : 'text-black/85') : 'text-text-muted'}`} style={{ textShadow: dc.image_url ? (isDark ? '0 1px 2px rgba(0,0,0,0.7)' : '0 1px 2px rgba(255,255,255,0.7)') : undefined }}>{dc.teachers}</span>}
+                        {dc.dance && dc.teachers && <span className={`${dc.image_url ? (isDark ? 'text-white/70' : 'text-black/60') : 'text-text-muted/30'}`}>·</span>}
+                        {dc.teachers && <span className={`text-[11px] font-medium tracking-wide ${dc.image_url ? (isDark ? 'text-white/95' : 'text-black/85') : 'text-text-muted'}`} style={{ textShadow: dc.image_url ? (isDark ? '0 1px 2px rgba(0,0,0,0.7)' : '0 1px 2px rgba(255,255,255,0.7)') : undefined }}>{dc.teachers}</span>}
                       </div>
                       <h3 className={`font-display text-xl font-bold leading-tight ${dc.image_url ? (isDark ? 'text-white' : 'text-black') : 'text-primary'}`} style={{ textShadow: dc.image_url ? (isDark ? '0 2px 4px rgba(0,0,0,0.6)' : '0 1px 2px rgba(255,255,255,0.9)') : undefined }}>{title}</h3>
                     </div>
                     <div className="mt-2 flex gap-2 items-start shrink-0">
                       {dc.level && (
                         <span className={`text-xs font-semibold px-3 py-1 rounded-full ${dc.image_url ? (isDark ? 'bg-white/95 text-primary shadow-lg backdrop-blur-sm' : 'bg-black/90 text-white shadow-lg backdrop-blur-sm') : 'bg-teal/10 text-teal-dark'}`}>{dc.level}</span>
-                      )}
-                      {isPreview && (
-                        <span className="text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-700 px-2.5 py-1 rounded-full border border-amber-200">{locale === 'de' ? 'Vorschau' : 'Preview'}</span>
                       )}
                       {isSelected && !isPlanned && !isPreview && (
                         <span className="w-7 h-7 bg-teal text-white rounded-full flex items-center justify-center text-sm shadow-lg">✓</span>
@@ -518,11 +515,12 @@ export default function WorkshopPage({ locale, initialClasses }: Props) {
                         <div className="min-w-0">
                           <div className={`flex items-center gap-2 mb-1 ${dc.image_url ? 'drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]' : ''}`}>
                             {dc.dance && <span className={`text-[11px] font-bold uppercase tracking-widest ${dc.image_url ? (isDark ? 'text-white' : 'text-black') : 'text-accent-dark'}`} style={{ textShadow: dc.image_url ? (isDark ? '0 1px 2px rgba(0,0,0,0.8)' : '0 1px 2px rgba(255,255,255,0.8)') : undefined }}>{dc.dance}</span>}
+                            {dc.dance && dc.teachers && <span className={`${dc.image_url ? (isDark ? 'text-white/70' : 'text-black/60') : 'text-text-muted/30'}`}>·</span>}
+                            {dc.teachers && <span className={`text-[11px] font-medium tracking-wide ${dc.image_url ? (isDark ? 'text-white/95' : 'text-black/85') : 'text-text-muted'}`} style={{ textShadow: dc.image_url ? (isDark ? '0 1px 2px rgba(0,0,0,0.7)' : '0 1px 2px rgba(255,255,255,0.7)') : undefined }}>{dc.teachers}</span>}
                           </div>
                           <h3 className={`font-display text-xl font-bold leading-tight ${dc.image_url ? (isDark ? 'text-white' : 'text-black') : 'text-primary'}`} style={{ textShadow: dc.image_url ? (isDark ? '0 2px 4px rgba(0,0,0,0.6)' : '0 1px 2px rgba(255,255,255,0.9)') : undefined }}>{title}</h3>
                         </div>
                         <div className="mt-2 flex gap-2 items-start shrink-0">
-                          <span className="text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-700 px-2.5 py-1 rounded-full border border-amber-200">{locale === 'de' ? 'Vorschau' : 'Preview'}</span>
                           {dc.level && (
                             <span className={`text-xs font-semibold px-3 py-1 rounded-full ${dc.image_url ? (isDark ? 'bg-white/95 text-primary shadow-lg backdrop-blur-sm' : 'bg-black/90 text-white shadow-lg backdrop-blur-sm') : 'bg-teal/10 text-teal-dark'}`}>{dc.level}</span>
                           )}
