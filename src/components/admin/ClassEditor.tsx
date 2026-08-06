@@ -149,10 +149,34 @@ export default function ClassEditor({ classes, registrations, history, currentUs
       const dc = classes.find((c) => c.id === editParam);
       if (dc) {
         setEditing({ ...dc });
+        // Load sessions when initializing from URL
+        const existing = classSessionsMap[dc.id] || [];
+        setSessions(existing.map((s) => ({
+          id: s.id,
+          session_date: s.session_date,
+          start_time: s.start_time.slice(0, 5),
+          end_time: s.end_time.slice(0, 5),
+          note: s.note || '',
+        })));
       }
     }
     if (viewParam) setViewClassId(viewParam);
-  }, [classes]);
+  }, [classes, classSessionsMap]);
+
+  // Load sessions for current editing class when classSessionsMap becomes available
+  // This handles the F5 refresh case where sessions load after URL init
+  useEffect(() => {
+    if (editing?.id && sessions.length === 0 && classSessionsMap[editing.id]?.length > 0) {
+      const existing = classSessionsMap[editing.id];
+      setSessions(existing.map((s) => ({
+        id: s.id,
+        session_date: s.session_date,
+        start_time: s.start_time.slice(0, 5),
+        end_time: s.end_time.slice(0, 5),
+        note: s.note || '',
+      })));
+    }
+  }, [editing?.id, classSessionsMap, sessions.length]);
 
   // Sync back/forward browser navigation
   useEffect(() => {
@@ -168,7 +192,18 @@ export default function ClassEditor({ classes, registrations, history, currentUs
         setSessions([]);
       } else {
         const dc = classes.find((c) => c.id === editParam);
-        if (dc) setEditing({ ...dc });
+        if (dc) {
+          setEditing({ ...dc });
+          // Load sessions when navigating via back/forward
+          const existing = classSessionsMap[dc.id] || [];
+          setSessions(existing.map((s) => ({
+            id: s.id,
+            session_date: s.session_date,
+            start_time: s.start_time.slice(0, 5),
+            end_time: s.end_time.slice(0, 5),
+            note: s.note || '',
+          })));
+        }
       }
       setViewClassId(viewParam);
     }
