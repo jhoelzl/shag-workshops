@@ -180,6 +180,12 @@ export default function ClassList({ locale }: { locale: Locale }) {
               <div className="absolute inset-0 bg-gradient-to-t from-surface via-surface/30 to-transparent" style={{ opacity: Math.min(overlayOpacity + 0.2, 1) }} />
               {/* Subtle shadow effect */}
               <div className="absolute inset-0 shadow-[inset_0_-20px_40px_-10px_rgba(0,0,0,0.4)]" />
+              {/* Preview ribbon */}
+              {isPreview && (
+                <div className="absolute top-4 -right-8 bg-amber-400/90 backdrop-blur-sm text-amber-900 text-[11px] font-bold uppercase tracking-wider py-1.5 px-14 shadow-lg z-20" style={{ transform: 'rotate(35deg)' }}>
+                  {locale === 'de' ? 'Vorschau' : 'Preview'}
+                </div>
+              )}
             </>
           )}
           <div className={`relative px-6 pt-6 pb-3 ${dc.image_url ? 'flex flex-col justify-end min-h-[160px]' : ''}`}>
