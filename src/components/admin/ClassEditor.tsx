@@ -251,7 +251,7 @@ export default function ClassEditor({ classes, registrations, history, currentUs
     e.preventDefault();
     if (!editing) return;
     setSaving(true);
-    const basePayload: Database['public']['Tables']['dance_classes']['Update'] = {
+  const basePayload: Database['public']['Tables']['dance_classes']['Update'] = {
       description_de: editing.description_de || null, description_en: editing.description_en || null, level: editing.level || null, dance: editing.dance || null,
       teachers: editing.teachers || null, location: editing.location || null, location_details: editing.location_details || null, location_url: editing.location_url || null,
       max_leads: editing.max_leads ?? 10, max_follows: editing.max_follows ?? 10, min_leads: editing.min_leads ?? 3, min_follows: editing.min_follows ?? 3,
@@ -261,6 +261,8 @@ export default function ClassEditor({ classes, registrations, history, currentUs
       preview_text_de: editing.preview_text_de || null, preview_text_en: editing.preview_text_en || null,
       donation_text_de: editing.donation_text_de || null, donation_text_en: editing.donation_text_en || null,
       donation_subtext_de: editing.donation_subtext_de || null, donation_subtext_en: editing.donation_subtext_en || null,
+      notification_email: editing.notification_email || null, image_url: editing.image_url || null,
+      image_overlay_alpha: editing.image_overlay_alpha ?? 40, headline_color: editing.headline_color || 'white',
     };
     let classId = editing.id;
     if (classId) {
@@ -546,6 +548,21 @@ function TextArea({ label, value, onChange, hint, rows = 3 }: { label: string; v
   );
 }
 
+function RangeInput({ label, value, onChange, min, max, unit, hint }: {
+  label: string; value: number; onChange: (v: number) => void; min: number; max: number; unit?: string; hint?: string;
+}) {
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-2">
+        <label className="block text-sm font-medium text-text-muted">{label}</label>
+        <span className="text-sm font-semibold text-primary">{value}{unit}</span>
+      </div>
+      <input type="range" min={min} max={max} value={value} onChange={(e) => onChange(Number(e.target.value))} className="w-full h-2 bg-primary/10 rounded-lg appearance-none cursor-pointer accent-coral" />
+      {hint && <p className="text-xs text-text-muted mt-1">{hint}</p>}
+    </div>
+  );
+}
+
 function ImageInput({ value, onChange }: { value: string; onChange: (v: string | null) => void }) {
   const [uploading, setUploading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -770,6 +787,25 @@ function ClassForm({
             </SectionCard>
             <SectionCard title="Class Image" icon="🖼️">
               <ImageInput value={editing.image_url ?? ''} onChange={(v) => setEditing({ ...editing, image_url: v || null })} />
+              {editing.image_url && (
+                <div className="mt-6 pt-6 border-t border-primary/10 space-y-4">
+                  <RangeInput label="Overlay Darkness" value={editing.image_overlay_alpha ?? 40} onChange={(v) => setEditing({ ...editing, image_overlay_alpha: v })} min={0} max={100} unit="%" hint="Higher values make the image darker for better text readability" />
+                  <div>
+                    <label className="block text-sm font-medium text-text-muted mb-2">Headline Text Color</label>
+                    <div className="flex gap-3">
+                      <button type="button" onClick={() => setEditing({ ...editing, headline_color: 'white' })} className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 transition-all ${editing.headline_color !== 'black' ? 'border-primary bg-primary/5 text-primary' : 'border-primary/10 hover:border-primary/30'}`}>
+                        <span className="w-4 h-4 rounded-full bg-white border border-gray-200 shadow-sm"></span>
+                        <span className="text-sm font-medium">White</span>
+                      </button>
+                      <button type="button" onClick={() => setEditing({ ...editing, headline_color: 'black' })} className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 transition-all ${editing.headline_color === 'black' ? 'border-primary bg-primary/5 text-primary' : 'border-primary/10 hover:border-primary/30'}`}>
+                        <span className="w-4 h-4 rounded-full bg-black border border-gray-600 shadow-sm"></span>
+                        <span className="text-sm font-medium">Black</span>
+                      </button>
+                    </div>
+                    <p className="text-xs text-text-muted mt-2">Choose based on your image brightness</p>
+                  </div>
+                </div>
+              )}
             </SectionCard>
           </div>
         )}
@@ -1093,6 +1129,10 @@ function ClassDetailView({ dc, sessions, classRegs, regCounts, history, currentU
           <div className="md:col-span-2 mt-2">
             <span className="text-text-muted text-xs uppercase tracking-wider mb-2 block">Class Image</span>
             <img src={dc.image_url} alt="Class header" className="w-full h-32 object-cover rounded-lg border border-primary/10" />
+            <div className="flex gap-4 mt-2 text-xs text-text-muted">
+              <span>Overlay: {dc.image_overlay_alpha ?? 40}%</span>
+              <span>Headline: {dc.headline_color || 'white'}</span>
+            </div>
           </div>
         )}
         {sessions.length > 0 && (
