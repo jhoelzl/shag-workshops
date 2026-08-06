@@ -781,8 +781,8 @@ function ClassForm({
             </SectionCard>
             <SectionCard title="What to Bring" icon="🎒">
               <div className="grid gap-4 sm:grid-cols-2">
-                <TextArea label="German" value={editing.what_to_bring_de ?? ''} onChange={(v) => setEditing({ ...editing, what_to_bring_de: v })} hint="One item per line, use - for bullet list" rows={4} />
-                <TextArea label="English" value={editing.what_to_bring_en ?? ''} onChange={(v) => setEditing({ ...editing, what_to_bring_en: v })} hint="One item per line, use - for bullet list" rows={4} />
+                <TextArea label="(DE)" value={editing.what_to_bring_de ?? ''} onChange={(v) => setEditing({ ...editing, what_to_bring_de: v })} hint="One item per line, use - for bullet list" rows={4} />
+                <TextArea label="(EN)" value={editing.what_to_bring_en ?? ''} onChange={(v) => setEditing({ ...editing, what_to_bring_en: v })} hint="One item per line, use - for bullet list" rows={4} />
               </div>
             </SectionCard>
             <SectionCard title="Class Image" icon="🖼️">
@@ -871,8 +871,8 @@ function ClassForm({
             {(editing.is_preview ?? false) && (
               <SectionCard title="Preview Text" icon="📝">
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <Input label="German" value={editing.preview_text_de ?? ''} onChange={(v) => setEditing({ ...editing, preview_text_de: v })} placeholder="z.B. Geplant für Mai 2026" hint="Shown instead of dates" />
-                  <Input label="English" value={editing.preview_text_en ?? ''} onChange={(v) => setEditing({ ...editing, preview_text_en: v })} placeholder="e.g. Planned for May 2026" hint="Shown instead of dates" />
+                  <Input label="(DE)" value={editing.preview_text_de ?? ''} onChange={(v) => setEditing({ ...editing, preview_text_de: v })} placeholder="z.B. Geplant für Mai 2026" hint="Shown instead of dates" />
+                  <Input label="(EN)" value={editing.preview_text_en ?? ''} onChange={(v) => setEditing({ ...editing, preview_text_en: v })} placeholder="e.g. Planned for May 2026" hint="Shown instead of dates" />
                 </div>
               </SectionCard>
             )}
