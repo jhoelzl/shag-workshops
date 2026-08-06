@@ -762,8 +762,8 @@ function ClassForm({
           <div className="space-y-6">
             <SectionCard title="Class Titles" icon="🏷️">
               <div className="grid gap-4 sm:grid-cols-2">
-                <Input label="Title (German)" value={editing.title_de ?? ''} onChange={(v) => setEditing({ ...editing, title_de: v })} required placeholder="e.g. Collegiate Shag Beginner" />
-                <Input label="Title (English)" value={editing.title_en ?? ''} onChange={(v) => setEditing({ ...editing, title_en: v })} required placeholder="e.g. Collegiate Shag Beginner" />
+                <Input label="Title (DE)" value={editing.title_de ?? ''} onChange={(v) => setEditing({ ...editing, title_de: v })} required placeholder="e.g. Collegiate Shag Beginner" />
+                <Input label="Title (EN)" value={editing.title_en ?? ''} onChange={(v) => setEditing({ ...editing, title_en: v })} required placeholder="e.g. Collegiate Shag Beginner" />
               </div>
             </SectionCard>
             <SectionCard title="Details" icon="📋">
@@ -775,8 +775,8 @@ function ClassForm({
             </SectionCard>
             <SectionCard title="Descriptions" icon="📄">
               <div className="grid gap-4 sm:grid-cols-2">
-                <TextArea label="Description (German)" value={editing.description_de ?? ''} onChange={(v) => setEditing({ ...editing, description_de: v })} hint="Supports **bold**, lists with -, and paragraphs" rows={5} />
-                <TextArea label="Description (English)" value={editing.description_en ?? ''} onChange={(v) => setEditing({ ...editing, description_en: v })} hint="Supports **bold**, lists with -, and paragraphs" rows={5} />
+                <TextArea label="Description (DE)" value={editing.description_de ?? ''} onChange={(v) => setEditing({ ...editing, description_de: v })} hint="Supports **bold**, lists with -, and paragraphs" rows={5} />
+                <TextArea label="Description (EN)" value={editing.description_en ?? ''} onChange={(v) => setEditing({ ...editing, description_en: v })} hint="Supports **bold**, lists with -, and paragraphs" rows={5} />
               </div>
             </SectionCard>
             <SectionCard title="What to Bring" icon="🎒">
