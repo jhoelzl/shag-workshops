@@ -88,18 +88,20 @@ export function renderConfirmationTemplate(input: {
   lang: 'de' | 'en';
   name: string;
   classTitle: string;
+  teachers?: string | null;
 }): string {
+  const teacherName = input.teachers || 'Vera & Josef';
   if (input.lang === 'en') {
     return `<h2>Hello ${input.name}!</h2>
                <p>Your registration for <strong>${input.classTitle}</strong> has been <strong>confirmed</strong>!</p>
                <p>We look forward to seeing you!</p>
-               <p>Vera & Josef</p>`;
+               <p>${teacherName}</p>`;
   }
 
   return `<h2>Hallo ${input.name}!</h2>
                <p>Deine Anmeldung für <strong>${input.classTitle}</strong> wurde <strong>bestätigt</strong>!</p>
                <p>Wir freuen uns auf dich!</p>
-               <p>Vera & Josef</p>`;
+               <p>${teacherName}</p>`;
 }
 
 function escapeHtml(s: string): string {
