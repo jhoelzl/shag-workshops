@@ -220,7 +220,7 @@ export default function ClassList({ locale }: { locale: Locale }) {
         </div>
 
         {/* Description */}
-        <div className="px-6 pb-3 min-h-[5.25rem]">
+        <div className={`px-6 pb-3 min-h-[5.25rem] ${dc.image_url ? 'pt-4' : ''}`}>
           {description && (
             <div className="text-text-muted text-sm leading-relaxed [&_strong]:text-text" dangerouslySetInnerHTML={{ __html: simpleMarkdown(description) }} />
           )}
