@@ -192,8 +192,16 @@ export default function WorkshopPage({ locale, initialClasses }: Props) {
           <span className="inline-flex items-start gap-2 bg-teal/8 border border-teal/20 rounded-2xl px-3 py-2 shadow-sm">
             <span className="text-teal mt-0.5">♥</span>
             <span className="leading-tight">
-              <span className="block font-semibold text-teal-dark">{locale === 'de' ? 'Freiwillige Spende' : 'Voluntary donation'}</span>
-              <span className="block text-[11px] text-teal-dark/80 mt-0.5">{locale === 'de' ? 'Zur Deckung der Saalmiete' : 'To help cover the studio rental'}</span>
+              <span className="block font-semibold text-teal-dark">
+                {locale === 'de'
+                  ? (dc.donation_text_de || 'Freiwillige Spende')
+                  : (dc.donation_text_en || 'Voluntary donation')}
+              </span>
+              <span className="block text-[11px] text-teal-dark/80 mt-0.5">
+                {locale === 'de'
+                  ? (dc.donation_subtext_de || 'Zur Deckung der Saalmiete')
+                  : (dc.donation_subtext_en || 'To help cover the studio rental')}
+              </span>
             </span>
           </span>
         ) : dc.price_eur != null && (

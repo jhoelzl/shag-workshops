@@ -18,6 +18,10 @@ export interface WorkshopBoxInput {
   locationUrl?: string | null;
   priceEur?: number | null;
   isDonation?: boolean | null;
+  donationTextDe?: string | null;
+  donationTextEn?: string | null;
+  donationSubtextDe?: string | null;
+  donationSubtextEn?: string | null;
   sessions: CalendarSession[];
   /** Public workshop URL on shagadeus.at, e.g. https://shagadeus.at/de/workshops */
   workshopPageUrl?: string | null;
@@ -56,8 +60,14 @@ function formatSession(session: CalendarSession, lang: 'de' | 'en'): string {
 function formatPriceParts(input: WorkshopBoxInput): { primary: string; secondary?: string } | null {
   if (input.isDonation) {
     return input.lang === 'de'
-      ? { primary: 'Freiwillige Spende', secondary: 'Zur Deckung der Saalmiete' }
-      : { primary: 'Voluntary donation', secondary: 'To help cover the studio rental' };
+      ? {
+          primary: input.donationTextDe || 'Freiwillige Spende',
+          secondary: input.donationSubtextDe || 'Zur Deckung der Saalmiete'
+        }
+      : {
+          primary: input.donationTextEn || 'Voluntary donation',
+          secondary: input.donationSubtextEn || 'To help cover the studio rental'
+        };
   }
   if (input.priceEur == null) return null;
   const currency = new Intl.NumberFormat(input.lang === 'de' ? 'de-AT' : 'en-AT', {

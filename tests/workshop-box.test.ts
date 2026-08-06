@@ -58,6 +58,29 @@ describe('renderWorkshopBoxText', () => {
     expect(text).toContain('Zur Deckung der Saalmiete');
   });
 
+  it('shows custom donation text when provided', () => {
+    const text = renderWorkshopBoxText({
+      ...BASE_INPUT,
+      isDonation: true,
+      donationTextDe: 'Spende nach Wunsch',
+      donationSubtextDe: 'Für neue Türen',
+    });
+    expect(text).toContain('Preis: Spende nach Wunsch');
+    expect(text).toContain('Für neue Türen');
+  });
+
+  it('shows custom donation text in English when provided', () => {
+    const text = renderWorkshopBoxText({
+      ...BASE_INPUT,
+      lang: 'en',
+      isDonation: true,
+      donationTextEn: 'Pay what you want',
+      donationSubtextEn: 'Help us buy new mirrors',
+    });
+    expect(text).toContain('Price: Pay what you want');
+    expect(text).toContain('Help us buy new mirrors');
+  });
+
   it('shows the website-like cost secondary line for fixed prices', () => {
     const text = renderWorkshopBoxText(BASE_INPUT);
     expect(text).toContain('Preis:');
@@ -145,5 +168,17 @@ describe('renderWorkshopBoxHtml', () => {
     const html = renderWorkshopBoxHtml({ ...BASE_INPUT, isDonation: true });
     expect(html).toContain('Freiwillige Spende');
     expect(html).toContain('Zur Deckung der Saalmiete');
+  });
+
+  it('renders custom donation text in HTML when provided', () => {
+    const html = renderWorkshopBoxHtml({
+      ...BASE_INPUT,
+      isDonation: true,
+      donationTextDe: 'Spende nach Wunsch',
+      donationSubtextDe: 'Für neue Türen',
+    });
+    expect(html).toContain('Spende nach Wunsch');
+    expect(html).toContain('Für neue Türen');
+    expect(html).not.toContain('Freiwillige Spende');
   });
 });
