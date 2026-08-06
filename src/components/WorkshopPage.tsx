@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
+import { supabase } from '../lib/supabase';
 import { simpleMarkdown } from '../lib/markdown';
 import { getClassState } from '../lib/classState';
 import type { DanceClass, ClassSession } from '../lib/database.types';
@@ -22,8 +23,60 @@ interface Props {
 }
 
 export default function WorkshopPage({ locale, initialClasses }: Props) {
+  const [classesData, setClassesData] = useState<ClassWithCounts[]>(initialClasses);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
+  const [dataFetched, setDataFetched] = useState(false);
+
+  // Fetch fresh data on mount to ensure we have latest from DB
+  useEffect(() => {
+    async function fetchFreshData() {
+      const { data: publicClassesData } = await supabase
+        .from('dance_classes')
+        .select('*')
+        .eq('is_public', true);
+
+      if (!publicClassesData || publicClassesData.length === 0) {
+        setDataFetched(true);
+        return;
+      }
+
+      const classIds = publicClassesData.map((c) => c.id);
+
+      const [{ data: countsData }, { data: sessionsData }] = await Promise.all([
+        supabase.from('class_registration_counts').select('*').in('dance_class_id', classIds),
+        supabase
+          .from('class_sessions')
+          .select('*')
+          .in('dance_class_id', classIds)
+          .order('session_date', { ascending: true })
+          .order('start_time', { ascending: true }),
+      ]);
+
+      const sessionsMap = new Map<string, ClassSession[]>();
+      for (const s of sessionsData || []) {
+        if (!sessionsMap.has(s.dance_class_id)) sessionsMap.set(s.dance_class_id, []);
+        sessionsMap.get(s.dance_class_id)!.push(s);
+      }
+
+      const countsMap = new Map(countsData?.map((c) => [c.dance_class_id, c]));
+
+      const merged = publicClassesData.map((dc: DanceClass) => {
+        const counts = countsMap.get(dc.id);
+        return {
+          ...dc,
+          leads_available: Number(counts?.leads_available ?? dc.max_leads),
+          follows_available: Number(counts?.follows_available ?? dc.max_follows),
+          sessions: sessionsMap.get(dc.id) || [],
+        };
+      });
+
+      setClassesData(merged);
+      setDataFetched(true);
+    }
+
+    fetchFreshData();
+  }, []);
 
   function WorkshopCardSkeleton({ compact = false }: { compact?: boolean }) {
     return (
@@ -77,15 +130,15 @@ export default function WorkshopPage({ locale, initialClasses }: Props) {
     return `${date}, ${time}`;
   };
 
-  // Read ?class= from URL on mount
+  // Read ?class= from URL on mount and handle loading state
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const classParam = params.get('class');
     if (classParam) setSelectedIds(new Set([classParam]));
-    setLoading(false);
-  }, []);
+    if (dataFetched) setLoading(false);
+  }, [dataFetched]);
 
-  const allClasses = initialClasses;
+  const allClasses = classesData;
   const classes = useMemo(
     () => allClasses.filter((dc) => {
       const state = getClassState(dc.sessions || [], dc.registration_opens_at, dc.registration_closes_at);
