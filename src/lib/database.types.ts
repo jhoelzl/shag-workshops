@@ -36,6 +36,9 @@ export interface Database {
           is_preview: boolean;
           is_public: boolean;
           notification_email: string | null;
+          image_url: string | null;
+          image_overlay_alpha: number | null;
+          headline_color: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -72,6 +75,9 @@ export interface Database {
           is_preview?: boolean;
           is_public?: boolean;
           notification_email?: string | null;
+          image_url?: string | null;
+          image_overlay_alpha?: number | null;
+          headline_color?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -107,6 +113,9 @@ export interface Database {
           is_preview?: boolean;
           is_public?: boolean;
           notification_email?: string | null;
+          image_url?: string | null;
+          image_overlay_alpha?: number | null;
+          headline_color?: string | null;
           created_at?: string;
           updated_at?: string;
         };

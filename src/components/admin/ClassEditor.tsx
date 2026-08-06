@@ -251,7 +251,7 @@ export default function ClassEditor({ classes, registrations, history, currentUs
     e.preventDefault();
     if (!editing) return;
     setSaving(true);
-    const basePayload: Database['public']['Tables']['dance_classes']['Update'] = {
+  const basePayload: Database['public']['Tables']['dance_classes']['Update'] = {
       description_de: editing.description_de || null, description_en: editing.description_en || null, level: editing.level || null, dance: editing.dance || null,
       teachers: editing.teachers || null, location: editing.location || null, location_details: editing.location_details || null, location_url: editing.location_url || null,
       max_leads: editing.max_leads ?? 10, max_follows: editing.max_follows ?? 10, min_leads: editing.min_leads ?? 3, min_follows: editing.min_follows ?? 3,
@@ -261,6 +261,8 @@ export default function ClassEditor({ classes, registrations, history, currentUs
       preview_text_de: editing.preview_text_de || null, preview_text_en: editing.preview_text_en || null,
       donation_text_de: editing.donation_text_de || null, donation_text_en: editing.donation_text_en || null,
       donation_subtext_de: editing.donation_subtext_de || null, donation_subtext_en: editing.donation_subtext_en || null,
+      notification_email: editing.notification_email || null, image_url: editing.image_url || null,
+      image_overlay_alpha: editing.image_overlay_alpha ?? 40, headline_color: editing.headline_color || 'white',
     };
     let classId = editing.id;
     if (classId) {
@@ -546,6 +548,97 @@ function TextArea({ label, value, onChange, hint, rows = 3 }: { label: string; v
   );
 }
 
+function RangeInput({ label, value, onChange, min, max, unit, hint }: {
+  label: string; value: number; onChange: (v: number) => void; min: number; max: number; unit?: string; hint?: string;
+}) {
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-2">
+        <label className="block text-sm font-medium text-text-muted">{label}</label>
+        <span className="text-sm font-semibold text-primary">{value}{unit}</span>
+      </div>
+      <input type="range" min={min} max={max} value={value} onChange={(e) => onChange(Number(e.target.value))} className="w-full h-2 bg-primary/10 rounded-lg appearance-none cursor-pointer accent-coral" />
+      {hint && <p className="text-xs text-text-muted mt-1">{hint}</p>}
+    </div>
+  );
+}
+
+function ImageInput({ value, onChange }: { value: string; onChange: (v: string | null) => void }) {
+  const [uploading, setUploading] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${crypto.randomUUID()}.${fileExt}`;
+      const filePath = `class-images/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage.from('public').upload(filePath, file, { contentType: file.type });
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage.from('public').getPublicUrl(filePath);
+      onChange(publicUrl);
+    } catch (err) {
+      console.error('Image upload error:', err);
+      alert('Failed to upload image. Please try again.');
+    } finally {
+      setUploading(false);
+      if (inputRef.current) inputRef.current.value = '';
+    }
+  }
+
+  async function handleRemove() {
+    if (!value) return;
+    try {
+      // Try to extract path from URL and remove from storage
+      const url = new URL(value);
+      const pathMatch = url.pathname.match(/class-images\/[^/]+$/);
+      if (pathMatch) {
+        await supabase.storage.from('public').remove([pathMatch[0]]);
+      }
+    } catch {
+      // Ignore errors - image may not be in our storage
+    }
+    onChange(null);
+  }
+
+  if (value) {
+    return (
+      <div className="space-y-3">
+        <div className="relative rounded-xl overflow-hidden border border-primary/10 shadow-soft">
+          <img src={value} alt="Class header" className="w-full h-40 object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+          <div className="absolute bottom-3 left-3 right-3 flex gap-2">
+            <button type="button" onClick={() => window.open(value, '_blank')} className="flex-1 text-xs font-medium bg-white/90 hover:bg-white text-primary px-3 py-2 rounded-lg transition-colors backdrop-blur-sm">View Full Size</button>
+            <button type="button" onClick={handleRemove} className="flex-1 text-xs font-medium bg-coral/90 hover:bg-coral text-white px-3 py-2 rounded-lg transition-colors backdrop-blur-sm">Remove Image</button>
+          </div>
+        </div>
+        <Input label="Image URL" value={value} onChange={onChange} placeholder="https://example.com/image.jpg" hint="Or paste a direct image URL" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="relative border-2 border-dashed border-primary/20 rounded-xl p-8 text-center hover:border-primary/40 hover:bg-primary/[0.02] transition-all">
+        <input ref={inputRef} type="file" accept="image/*" onChange={handleFileChange} disabled={uploading} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+        <div className="text-4xl mb-2">📷</div>
+        <p className="text-sm font-medium text-text-muted mb-1">{uploading ? 'Uploading...' : 'Click to upload or drag and drop'}</p>
+        <p className="text-xs text-text-muted/70">PNG, JPG, WEBP up to 5MB</p>
+        {uploading && <div className="absolute inset-0 flex items-center justify-center bg-white/80"><Spinner /></div>}
+      </div>
+      <div className="text-center">
+        <span className="text-xs text-text-muted">— or —</span>
+      </div>
+      <Input label="Image URL" value={value} onChange={onChange} placeholder="https://example.com/image.jpg" hint="Paste a direct image URL" />
+    </div>
+  );
+}
+
 // ===== CLASS LIST HELPER COMPONENTS =====
 function StatusBadge({ state }: { state: ClassState }) {
   const styles: Record<ClassState, string> = {
@@ -691,6 +784,28 @@ function ClassForm({
                 <TextArea label="German" value={editing.what_to_bring_de ?? ''} onChange={(v) => setEditing({ ...editing, what_to_bring_de: v })} hint="One item per line, use - for bullet list" rows={4} />
                 <TextArea label="English" value={editing.what_to_bring_en ?? ''} onChange={(v) => setEditing({ ...editing, what_to_bring_en: v })} hint="One item per line, use - for bullet list" rows={4} />
               </div>
+            </SectionCard>
+            <SectionCard title="Class Image" icon="🖼️">
+              <ImageInput value={editing.image_url ?? ''} onChange={(v) => setEditing({ ...editing, image_url: v || null })} />
+              {editing.image_url && (
+                <div className="mt-6 pt-6 border-t border-primary/10 space-y-4">
+                  <RangeInput label="Overlay Darkness" value={editing.image_overlay_alpha ?? 40} onChange={(v) => setEditing({ ...editing, image_overlay_alpha: v })} min={0} max={100} unit="%" hint="Higher values make the image darker for better text readability" />
+                  <div>
+                    <label className="block text-sm font-medium text-text-muted mb-2">Headline Text Color</label>
+                    <div className="flex gap-3">
+                      <button type="button" onClick={() => setEditing({ ...editing, headline_color: 'white' })} className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 transition-all ${editing.headline_color !== 'black' ? 'border-primary bg-primary/5 text-primary' : 'border-primary/10 hover:border-primary/30'}`}>
+                        <span className="w-4 h-4 rounded-full bg-white border border-gray-200 shadow-sm"></span>
+                        <span className="text-sm font-medium">White</span>
+                      </button>
+                      <button type="button" onClick={() => setEditing({ ...editing, headline_color: 'black' })} className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl border-2 transition-all ${editing.headline_color === 'black' ? 'border-primary bg-primary/5 text-primary' : 'border-primary/10 hover:border-primary/30'}`}>
+                        <span className="w-4 h-4 rounded-full bg-black border border-gray-600 shadow-sm"></span>
+                        <span className="text-sm font-medium">Black</span>
+                      </button>
+                    </div>
+                    <p className="text-xs text-text-muted mt-2">Choose based on your image brightness</p>
+                  </div>
+                </div>
+              )}
             </SectionCard>
           </div>
         )}
@@ -1008,6 +1123,16 @@ function ClassDetailView({ dc, sessions, classRegs, regCounts, history, currentU
             <span className="text-text-muted text-xs uppercase tracking-wider">Preview Text</span>
             {dc.preview_text_de && <p className="text-sm mt-0.5 bg-amber-50 border border-amber-200 rounded px-3 py-2"><span className="font-semibold">DE:</span> {dc.preview_text_de}</p>}
             {dc.preview_text_en && <p className="text-sm mt-0.5 bg-amber-50 border border-amber-200 rounded px-3 py-2"><span className="font-semibold">EN:</span> {dc.preview_text_en}</p>}
+          </div>
+        )}
+        {dc.image_url && (
+          <div className="md:col-span-2 mt-2">
+            <span className="text-text-muted text-xs uppercase tracking-wider mb-2 block">Class Image</span>
+            <img src={dc.image_url} alt="Class header" className="w-full h-32 object-cover rounded-lg border border-primary/10" />
+            <div className="flex gap-4 mt-2 text-xs text-text-muted">
+              <span>Overlay: {dc.image_overlay_alpha ?? 40}%</span>
+              <span>Headline: {dc.headline_color || 'white'}</span>
+            </div>
           </div>
         )}
         {sessions.length > 0 && (

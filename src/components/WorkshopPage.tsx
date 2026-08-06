@@ -282,6 +282,10 @@ export default function WorkshopPage({ locale, initialClasses }: Props) {
           const isOpen = getClassState(sessions, dc.registration_opens_at, dc.registration_closes_at) === 'open';
           const isPreview = !!dc.is_preview;
 
+          const alpha = dc.image_overlay_alpha ?? 40;
+          const isDark = dc.headline_color !== 'black';
+          const overlayOpacity = Math.max(alpha / 100 * 0.7, 0);
+
           return (
             <div
               key={dc.id}
@@ -294,27 +298,49 @@ export default function WorkshopPage({ locale, initialClasses }: Props) {
                     : 'border-transparent shadow-sm hover:shadow-md hover:-translate-y-0.5 cursor-pointer'
               }`}
             >
-              {/* Header */}
-              <div className="px-5 pt-5 pb-3">
-                <div className="flex justify-between items-start gap-3">
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      {dc.dance && <span className="text-[11px] font-bold uppercase tracking-widest text-accent-dark">{dc.dance}</span>}
-                      {dc.dance && dc.teachers && !isPreview && <span className="text-text-muted/30">·</span>}
-                      {dc.teachers && !isPreview && <span className="text-[11px] font-medium text-text-muted tracking-wide">{dc.teachers}</span>}
+              {/* Header with optional background image */}
+              <div
+                className={`relative ${dc.image_url ? 'min-h-[160px] sm:min-h-[180px]' : ''}`}
+              >
+                {dc.image_url && (
+                  <>
+                    <div
+                      className="absolute inset-0 bg-cover bg-center"
+                      style={{ backgroundImage: `url(${dc.image_url})` }}
+                    />
+                    {/* Dark overlay for overall dimming */}
+                    <div className="absolute inset-0 bg-black/60" style={{ opacity: overlayOpacity }} />
+                    {/* Gradient overlay - stronger at top for header text, stronger at bottom for transition */}
+                    <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-black/40" />
+                    {/* Top-focused gradient for better meta text readability */}
+                    <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/10 to-transparent" />
+                    {/* Additional gradient for smooth transition to card body */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-surface via-surface/30 to-transparent" style={{ opacity: Math.min(overlayOpacity + 0.2, 1) }} />
+                    {/* Subtle shadow effect */}
+                    <div className="absolute inset-0 shadow-[inset_0_-20px_40px_-10px_rgba(0,0,0,0.4)]" />
+                  </>
+                )}
+                <div className={`relative px-5 pt-5 pb-3 ${dc.image_url ? 'flex flex-col justify-end min-h-[160px] sm:min-h-[180px]' : ''}`}>
+                  <div className="flex justify-between items-start gap-3">
+                    <div className="min-w-0">
+                      <div className={`flex items-center gap-2 mb-1 ${dc.image_url ? 'drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]' : ''}`}>
+                        {dc.dance && <span className={`text-[11px] font-bold uppercase tracking-widest ${dc.image_url ? (isDark ? 'text-white' : 'text-black') : 'text-accent-dark'}`} style={{ textShadow: dc.image_url ? (isDark ? '0 1px 2px rgba(0,0,0,0.8)' : '0 1px 2px rgba(255,255,255,0.8)') : undefined }}>{dc.dance}</span>}
+                        {dc.dance && dc.teachers && !isPreview && <span className={`${dc.image_url ? (isDark ? 'text-white/70' : 'text-black/60') : 'text-text-muted/30'}`}>·</span>}
+                        {dc.teachers && !isPreview && <span className={`text-[11px] font-medium tracking-wide ${dc.image_url ? (isDark ? 'text-white/95' : 'text-black/85') : 'text-text-muted'}`} style={{ textShadow: dc.image_url ? (isDark ? '0 1px 2px rgba(0,0,0,0.7)' : '0 1px 2px rgba(255,255,255,0.7)') : undefined }}>{dc.teachers}</span>}
+                      </div>
+                      <h3 className={`font-display text-xl font-bold leading-tight ${dc.image_url ? (isDark ? 'text-white' : 'text-black') : 'text-primary'}`} style={{ textShadow: dc.image_url ? (isDark ? '0 2px 4px rgba(0,0,0,0.6)' : '0 1px 2px rgba(255,255,255,0.9)') : undefined }}>{title}</h3>
                     </div>
-                    <h3 className="font-display text-xl font-bold text-primary leading-tight">{title}</h3>
-                  </div>
-                  <div className="mt-2 flex gap-2 items-start shrink-0">
-                    {dc.level && (
-                      <span className="text-xs bg-teal/10 text-teal-dark font-semibold px-3 py-1 rounded-full">{dc.level}</span>
-                    )}
-                    {isPreview && (
-                      <span className="text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-700 px-2.5 py-1 rounded-full border border-amber-200">{locale === 'de' ? 'Vorschau' : 'Preview'}</span>
-                    )}
-                    {isSelected && !isPlanned && !isPreview && (
-                      <span className="w-7 h-7 bg-teal text-white rounded-full flex items-center justify-center text-sm">✓</span>
-                    )}
+                    <div className="mt-2 flex gap-2 items-start shrink-0">
+                      {dc.level && (
+                        <span className={`text-xs font-semibold px-3 py-1 rounded-full ${dc.image_url ? (isDark ? 'bg-white/95 text-primary shadow-lg backdrop-blur-sm' : 'bg-black/90 text-white shadow-lg backdrop-blur-sm') : 'bg-teal/10 text-teal-dark'}`}>{dc.level}</span>
+                      )}
+                      {isPreview && (
+                        <span className="text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-700 px-2.5 py-1 rounded-full border border-amber-200">{locale === 'de' ? 'Vorschau' : 'Preview'}</span>
+                      )}
+                      {isSelected && !isPlanned && !isPreview && (
+                        <span className="w-7 h-7 bg-teal text-white rounded-full flex items-center justify-center text-sm shadow-lg">✓</span>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
