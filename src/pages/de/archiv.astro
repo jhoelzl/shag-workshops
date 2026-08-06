@@ -1,0 +1,207 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { t } from '../../i18n/index';
+import { supabase } from '../../lib/supabase';
+import { simpleMarkdown } from '../../lib/markdown';
+import type { DanceClass, ClassSession } from '../../lib/database.types';
+
+const locale = 'de';
+const i18n = t(locale);
+
+// Fetch all public classes
+const { data: publicClassesData } = await supabase
+  .from('dance_classes')
+  .select('*, image_url, image_overlay_alpha, headline_color')
+  .eq('is_public', true);
+const publicClasses = publicClassesData ?? [];
+
+const classIds = publicClasses.map((danceClass) => danceClass.id);
+
+const { data: classSessionsData } = classIds.length > 0
+  ? await supabase
+      .from('class_sessions')
+      .select('*')
+      .in('dance_class_id', classIds)
+      .order('session_date', { ascending: true })
+      .order('start_time', { ascending: true })
+  : { data: [] as ClassSession[] };
+const classSessions = classSessionsData ?? [];
+
+const sessionsByClass = classSessions.reduce((acc, session) => {
+  if (!acc.has(session.dance_class_id)) {
+    acc.set(session.dance_class_id, []);
+  }
+  acc.get(session.dance_class_id)!.push(session);
+  return acc;
+}, new Map<string, ClassSession[]>());
+
+// Get current date for comparison
+const now = new Date();
+
+// Filter archived classes (classes with all sessions in the past)
+const archivedClasses = publicClasses
+  .map((danceClass) => ({
+    ...danceClass,
+    sessions: sessionsByClass.get(danceClass.id) || [],
+  }))
+  .filter((dc) => {
+    const sessions = dc.sessions || [];
+    if (sessions.length === 0) return false;
+    // Check if all sessions are in the past
+    const lastSession = sessions[sessions.length - 1];
+    const lastSessionDate = new Date(lastSession.session_date);
+    return lastSessionDate < now;
+  })
+  .sort((a, b) => {
+    // Sort by last session date, newest first
+    const lastA = a.sessions[a.sessions.length - 1];
+    const lastB = b.sessions[b.sessions.length - 1];
+    if (!lastA || !lastB) return 0;
+    return new Date(lastB.session_date).getTime() - new Date(lastA.session_date).getTime();
+  });
+
+const dtLocale = 'de-AT';
+
+function getDateRange(sessions: ClassSession[]) {
+  if (sessions.length === 0) return '';
+  const first = new Date(sessions[0].session_date);
+  const last = new Date(sessions[sessions.length - 1].session_date);
+  const firstStr = first.toLocaleDateString(dtLocale, { month: 'short', year: 'numeric' });
+  const lastStr = last.toLocaleDateString(dtLocale, { month: 'short', year: 'numeric' });
+  if (firstStr === lastStr) {
+    return first.toLocaleDateString(dtLocale, { month: 'long', year: 'numeric' });
+  }
+  return `${firstStr} – ${lastStr}`;
+}
+---
+
+<BaseLayout title="Archiv" locale={locale} currentPath="/archiv/">
+  <section class="relative overflow-hidden">
+    <div class="blob bg-teal/25 w-96 h-96 -top-32 -right-20 animate-float-slow"></div>
+    <div class="blob bg-coral/20 w-80 h-80 -top-20 -left-20"></div>
+
+    <div class="relative max-w-6xl mx-auto px-6 pt-14 pb-6 sm:pt-20">
+      <div class="text-center mb-8 animate-fade-up">
+        <p class="eyebrow text-coral mb-3">Vergangene Workshops</p>
+        <h1 class="font-display text-5xl sm:text-6xl font-black text-primary tracking-tight mb-4">
+          Archiv
+        </h1>
+        <span class="section-divider">
+          <span class="text-accent text-lg">✦</span>
+        </span>
+      </div>
+    </div>
+  </section>
+
+  <div class="max-w-6xl mx-auto px-6 pb-12">
+    {archivedClasses.length === 0 ? (
+      <div class="flex flex-col items-center justify-center gap-4 rounded-3xl border border-accent/20 bg-gradient-to-br from-bg-warm via-accent/[0.07] to-coral/[0.08] shadow-soft px-6 py-14 text-center">
+        <span class="flex h-14 w-14 items-center justify-center rounded-2xl bg-accent/15 text-accent-dark">
+          <svg class="h-7 w-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <rect x="3" y="4" width="18" height="18" rx="2" strokeWidth="1.8" />
+            <path d="M16 2v4M8 2v4M3 10h18" strokeWidth="1.8" strokeLinecap="round" />
+          </svg>
+        </span>
+        <p class="font-display text-xl font-bold text-primary">Noch keine Workshops im Archiv</p>
+        <p class="max-w-sm text-sm text-text-muted">Hier findest du in Zukunft vergangene Workshops.</p>
+      </div>
+    ) : (
+      <div class={`grid gap-4 ${archivedClasses.length === 1 ? 'grid-cols-1 max-w-md mx-auto' : archivedClasses.length === 2 ? 'grid-cols-1 md:grid-cols-2 max-w-3xl mx-auto' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'}`}>
+        {archivedClasses.map((dc) => {
+          const title = dc.title_de;
+          const description = dc.description_de;
+          const sessions = dc.sessions || [];
+
+          const alpha = dc.image_overlay_alpha ?? 40;
+          const isDark = dc.headline_color !== 'black';
+          const overlayOpacity = Math.max(alpha / 100 * 0.7, 0);
+
+          return (
+            <div class="bg-surface rounded-2xl border border-bg-warm overflow-hidden hover:shadow-lift hover:-translate-y-0.5 transition-all duration-300">
+              {/* Header with optional background image */}
+              <div class={`relative ${dc.image_url ? 'min-h-[140px]' : 'py-4 px-5'}`}>
+                {dc.image_url && (
+                  <>
+                    <div
+                      class="absolute inset-0 bg-cover bg-center"
+                      style={`background-image: url(${dc.image_url})`}
+                    />
+                    <div class="absolute inset-0 bg-black/60" style={`opacity: ${overlayOpacity}`} />
+                    <div class="absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-black/40" />
+                    <div class="absolute inset-0 bg-gradient-to-b from-black/30 via-black/10 to-transparent" />
+                    <div class="absolute inset-0 bg-gradient-to-t from-surface via-surface/30 to-transparent" style={`opacity: ${Math.min(overlayOpacity + 0.2, 1)}`} />
+                    <div class="absolute inset-0 shadow-[inset_0_-20px_40px_-10px_rgba(0,0,0,0.4)]" />
+                  </>
+                )}
+                <div class={`relative ${dc.image_url ? 'px-5 py-4 flex flex-col justify-end min-h-[140px]' : ''}`}>
+                  <div class="flex justify-between items-start gap-2">
+                    <div class="min-w-0">
+                      {dc.dance && (
+                        <span class={`text-[11px] font-bold uppercase tracking-widest ${dc.image_url ? (isDark ? 'text-white' : 'text-black') : 'text-accent-dark'}`} style={dc.image_url ? (isDark ? 'text-shadow: 0 1px 2px rgba(0,0,0,0.8)' : 'text-shadow: 0 1px 2px rgba(255,255,255,0.8)') : ''}>
+                          {dc.dance}
+                        </span>
+                      )}
+                      <h3 class={`font-display font-semibold leading-tight mt-0.5 ${dc.image_url ? (isDark ? 'text-white' : 'text-black') : 'text-primary'}`} style={dc.image_url ? (isDark ? 'text-shadow: 0 2px 4px rgba(0,0,0,0.6)' : 'text-shadow: 0 1px 2px rgba(255,255,255,0.9)') : ''}>
+                        {title}
+                      </h3>
+                    </div>
+                    {dc.level && (
+                      <span class={`text-xs font-medium px-2.5 py-1 rounded-full shrink-0 ${dc.image_url ? (isDark ? 'bg-white/95 text-primary shadow-lg backdrop-blur-sm' : 'bg-black/90 text-white shadow-lg backdrop-blur-sm') : 'bg-teal/10 text-teal-dark'}`}>
+                        {dc.level}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Content */}
+              <div class="p-5 pt-4">
+                {sessions.length > 0 && (
+                  <p class="text-sm text-text-muted mb-2 flex items-center gap-1.5">
+                    <svg class="w-3.5 h-3.5 text-teal shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <rect x="3" y="4" width="18" height="18" rx="2" strokeWidth="2" />
+                      <path d="M16 2v4M8 2v4M3 10h18" strokeWidth="2" strokeLinecap="round" />
+                    </svg>
+                    {getDateRange(sessions)}
+                    {' '}({sessions.length}x)
+                  </p>
+                )}
+
+                {dc.location && (
+                  <p class="text-sm text-text-muted mb-3 flex items-center gap-1.5">
+                    <svg class="w-3.5 h-3.5 text-coral shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" />
+                    </svg>
+                    {dc.location}
+                  </p>
+                )}
+
+                {description && (
+                  <div class="text-text-muted text-sm leading-relaxed line-clamp-3 [&_strong]:text-text" set:html={simpleMarkdown(description)} />
+                )}
+
+                {dc.teachers && (
+                  <p class="text-xs text-text-muted mt-3 pt-3 border-t border-bg-warm">
+                    <span class="font-medium">{dc.teachers}</span>
+                  </p>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    )}
+
+    <div class="mt-10 text-center">
+      <a
+        href={`${import.meta.env.BASE_URL.replace(/\/$/, '')}/${locale}/workshops/`}
+        class="inline-flex items-center gap-2 text-teal-dark hover:text-primary font-medium transition-colors"
+      >
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+        </svg>
+        Zu den aktuellen Workshops
+      </a>
+    </div>
+  </div>
+</BaseLayout>
