@@ -187,8 +187,8 @@ export default function ClassList({ locale }: { locale: Locale }) {
               <div className="min-w-0">
                 <div className={`flex items-center gap-2 mb-1.5 ${dc.image_url ? 'drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]' : ''}`}>
                   {dc.dance && <span className={`text-[10px] font-bold uppercase tracking-[0.18em] ${dc.image_url ? (isDark ? 'text-white' : 'text-black') : 'text-accent-dark'}`} style={{ textShadow: dc.image_url ? (isDark ? '0 1px 2px rgba(0,0,0,0.8)' : '0 1px 2px rgba(255,255,255,0.8)') : undefined }}>{dc.dance}</span>}
-                  {dc.dance && dc.teachers && !isPreview && <span className={`${dc.image_url ? (isDark ? 'text-white/70' : 'text-black/60') : 'text-text-muted/30'}`}>·</span>}
-                  {dc.teachers && !isPreview && <span className={`text-[11px] font-medium tracking-wide ${dc.image_url ? (isDark ? 'text-white/95' : 'text-black/85') : 'text-text-muted'}`} style={{ textShadow: dc.image_url ? (isDark ? '0 1px 2px rgba(0,0,0,0.7)' : '0 1px 2px rgba(255,255,255,0.7)') : undefined }}>{dc.teachers}</span>}
+                  {dc.dance && dc.teachers && <span className={`${dc.image_url ? (isDark ? 'text-white/70' : 'text-black/60') : 'text-text-muted/30'}`}>·</span>}
+                  {dc.teachers && <span className={`text-[11px] font-medium tracking-wide ${dc.image_url ? (isDark ? 'text-white/95' : 'text-black/85') : 'text-text-muted'}`} style={{ textShadow: dc.image_url ? (isDark ? '0 1px 2px rgba(0,0,0,0.7)' : '0 1px 2px rgba(255,255,255,0.7)') : undefined }}>{dc.teachers}</span>}
                 </div>
                 <h3 className={`font-display text-2xl font-bold leading-tight tracking-tight ${dc.image_url ? (isDark ? 'text-white' : 'text-black') : 'text-primary'}`} style={{ textShadow: dc.image_url ? (isDark ? '0 2px 4px rgba(0,0,0,0.6)' : '0 1px 2px rgba(255,255,255,0.9)') : undefined }}>{title}</h3>
                 {classState === 'ongoing' && !dc.image_url && (
@@ -196,9 +196,6 @@ export default function ClassList({ locale }: { locale: Locale }) {
                 )}
               </div>
               <div className="flex gap-2 shrink-0 items-center">
-                {isPreview && (
-                  <span className="text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-700 px-2.5 py-1 rounded-full border border-amber-200">{locale === 'de' ? 'Vorschau' : 'Preview'}</span>
-                )}
                 {dc.level && (
                   <span className={`text-[11px] uppercase tracking-wider font-bold px-3 py-1 rounded-full border ${dc.image_url ? (isDark ? 'bg-white/90 text-primary border-white/30 shadow-lg backdrop-blur-sm' : 'bg-black/80 text-white border-black/40 shadow-lg backdrop-blur-sm') : 'bg-gradient-to-br from-teal/15 to-teal/5 text-teal-dark border-teal/15'}`}>{dc.level}</span>
                 )}
