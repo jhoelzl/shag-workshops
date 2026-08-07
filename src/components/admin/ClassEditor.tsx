@@ -196,10 +196,15 @@ export default function ClassEditor({ classes, registrations, history, currentUs
       if (statusFilter === 'preview') {
         return dc.is_preview;
       }
-      // Hide preview classes in normal views
-      if (dc.is_preview) return false;
-      // Status filter from top buttons
-      if (statusFilter !== 'all' && state !== statusFilter) return false;
+      // When "All" is selected, show everything including previews
+      if (statusFilter === 'all') {
+        // Show all classes, only apply level/dance/search filters
+      } else {
+        // Hide preview classes in specific state views
+        if (dc.is_preview) return false;
+        // Status filter from top buttons
+        if (state !== statusFilter) return false;
+      }
       if (filterLevel !== 'all' && dc.level !== filterLevel) return false;
       if (filterDance !== 'all' && dc.dance !== filterDance) return false;
       if (searchQuery) {
@@ -367,7 +372,8 @@ export default function ClassEditor({ classes, registrations, history, currentUs
       {!editing && (
         <>
         {/* Stats Row */}
-        <div className="grid grid-cols-5 gap-2 mb-4">
+        <div className="grid grid-cols-6 gap-2 mb-4">
+          <StatBtn count={classes.length} label="All" active={statusFilter === 'all'} onClick={() => setStatusFilter('all')} color="slate" />
           <StatBtn count={classes.filter(c => !c.is_preview && getClassState(classSessionsMap[c.id] || [], c.registration_opens_at, c.registration_closes_at) === 'open').length} label="Open" active={statusFilter === 'open'} onClick={() => setStatusFilter(s => s === 'open' ? 'all' : 'open')} />
           <StatBtn count={classes.filter(c => c.is_preview).length} label="Preview" active={statusFilter === 'preview'} onClick={() => setStatusFilter(s => s === 'preview' ? 'all' : 'preview')} color="amber" />
           <StatBtn count={classes.filter(c => !c.is_preview && getClassState(classSessionsMap[c.id] || [], c.registration_opens_at, c.registration_closes_at) === 'upcoming').length} label="Upcoming" active={statusFilter === 'upcoming'} onClick={() => setStatusFilter(s => s === 'upcoming' ? 'all' : 'upcoming')} />
@@ -913,10 +919,11 @@ const TAB_CONFIG: { key: TabKey; label: string; icon: string }[] = [
 ];
 
 // Simple stat button (clickable)
-function StatBtn({ count, label, active, onClick, color = 'primary' }: { count: number; label: string; active: boolean; onClick: () => void; color?: 'primary' | 'amber' }) {
+function StatBtn({ count, label, active, onClick, color = 'primary' }: { count: number; label: string; active: boolean; onClick: () => void; color?: 'primary' | 'amber' | 'slate' }) {
   const styles = {
     primary: { active: 'bg-primary text-white', inactive: 'bg-slate-50 hover:bg-bg-warm text-primary' },
     amber: { active: 'bg-amber-500 text-white', inactive: 'bg-amber-50 hover:bg-amber-100 text-amber-700' },
+    slate: { active: 'bg-slate-600 text-white', inactive: 'bg-slate-100 hover:bg-slate-200 text-slate-700' },
   };
   const s = styles[color];
   return (
