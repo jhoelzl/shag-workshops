@@ -85,7 +85,10 @@ const TRANSITIONS: Record<Status, { to: Status; label: string }[]> = {
 export default function RegistrationTable({ registrations, history, classes, currentUser, onUpdate }: Props) {
   const [filterClassId, setFilterClassId] = useState<string>('all');
   const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [filterRole, setFilterRole] = useState<'all' | 'lead' | 'follow'>('all');
+  const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'name'>('newest');
   const [searchQuery, setSearchQuery] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
   const [updating, setUpdating] = useState<Set<string>>(new Set());
   const [showAdd, setShowAdd] = useState(false);
   const [addForm, setAddForm] = useState<AddForm>(emptyForm);
@@ -106,11 +109,17 @@ export default function RegistrationTable({ registrations, history, classes, cur
   const filtered = registrations.filter((r) => {
     if (filterClassId !== 'all' && r.dance_class_id !== filterClassId) return false;
     if (filterStatus !== 'all' && r.status !== filterStatus) return false;
+    if (filterRole !== 'all' && r.role !== filterRole) return false;
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
       if (!r.name.toLowerCase().includes(q) && !r.email.toLowerCase().includes(q)) return false;
     }
     return true;
+  }).sort((a, b) => {
+    if (sortBy === 'newest') return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    if (sortBy === 'oldest') return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+    if (sortBy === 'name') return a.name.localeCompare(b.name);
+    return 0;
   });
 
   const leadsCount = filtered.filter((r) => r.role === 'lead' && ['pending', 'confirmed'].includes(r.status)).length;
@@ -246,7 +255,7 @@ export default function RegistrationTable({ registrations, history, classes, cur
     URL.revokeObjectURL(url);
   }
 
-  const hasFilters = filterClassId !== 'all' || filterStatus !== 'all' || searchQuery;
+  const hasFilters = filterClassId !== 'all' || filterStatus !== 'all' || filterRole !== 'all' || sortBy !== 'newest' || searchQuery;
 
   return (
     <div className="animate-fade-up">
@@ -257,9 +266,45 @@ export default function RegistrationTable({ registrations, history, classes, cur
         <p className="text-sm text-text-muted mt-1">Manage participant statuses and track the registration pipeline.</p>
       </div>
 
+      {/* Quick Stats Row */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+        <RegStatCard
+          count={registrations.filter(r => r.status === 'pending').length}
+          label="Pending"
+          icon="⏳"
+          color="amber"
+          onClick={() => { setFilterStatus('pending'); setFilterClassId('all'); }}
+          isActive={filterStatus === 'pending' && filterClassId === 'all'}
+        />
+        <RegStatCard
+          count={registrations.filter(r => r.status === 'confirmed').length}
+          label="Confirmed"
+          icon="✓"
+          color="teal"
+          onClick={() => { setFilterStatus('confirmed'); setFilterClassId('all'); }}
+          isActive={filterStatus === 'confirmed' && filterClassId === 'all'}
+        />
+        <RegStatCard
+          count={registrations.filter(r => r.status === 'waitlisted').length}
+          label="Waitlisted"
+          icon="⏸"
+          color="slate"
+          onClick={() => { setFilterStatus('waitlisted'); setFilterClassId('all'); }}
+          isActive={filterStatus === 'waitlisted' && filterClassId === 'all'}
+        />
+        <RegStatCard
+          count={registrations.length}
+          label="Total"
+          icon="👥"
+          color="primary"
+          onClick={() => { setFilterStatus('all'); setFilterClassId('all'); }}
+          isActive={filterStatus === 'all' && filterClassId === 'all'}
+        />
+      </div>
+
       {/* Filters card */}
       <div className="bg-surface/80 backdrop-blur rounded-2xl border border-primary/5 shadow-soft p-5 mb-5">
-        <div className="flex flex-wrap gap-3 items-center">
+        <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1 min-w-[200px]">
             <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -272,25 +317,65 @@ export default function RegistrationTable({ registrations, history, classes, cur
               className="w-full pl-10 pr-3 py-2.5 bg-white/60 border border-primary/10 rounded-xl text-sm focus:ring-2 focus:ring-coral/30 focus:border-coral outline-none transition"
             />
           </div>
-          <select
-            value={filterClassId}
-            onChange={(e) => setFilterClassId(e.target.value)}
-            className="border border-primary/10 rounded-xl px-3 py-2.5 text-sm bg-white/60 focus:ring-2 focus:ring-coral/30 outline-none transition cursor-pointer"
-          >
-            <option value="all">All Classes</option>
-            {classes.map((c) => (
-              <option key={c.id} value={c.id}>{c.title_de}</option>
-            ))}
-          </select>
-          {hasFilters && (
-            <button
-              onClick={() => { setFilterClassId('all'); setFilterStatus('all'); setSearchQuery(''); }}
-              className="text-xs font-semibold text-coral hover:text-coral-dark px-2 py-1 transition-colors"
+          <div className="flex gap-2">
+            <select
+              value={filterClassId}
+              onChange={(e) => setFilterClassId(e.target.value)}
+              className="border border-primary/10 rounded-xl px-3 py-2.5 text-sm bg-white/60 focus:ring-2 focus:ring-coral/30 outline-none transition cursor-pointer"
             >
-              Clear filters
+              <option value="all">All Classes</option>
+              {classes.map((c) => (
+                <option key={c.id} value={c.id}>{c.title_de}</option>
+              ))}
+            </select>
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className={`flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${showFilters ? 'bg-coral text-white' : 'bg-white/60 border border-primary/10 text-text-muted hover:text-primary'}`}
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" /></svg>
+              More
+              {(filterRole !== 'all' || sortBy !== 'newest') && <span className="flex h-2 w-2 rounded-full bg-accent" />}
             </button>
-          )}
+            {hasFilters && (
+              <button
+                onClick={() => { setFilterClassId('all'); setFilterStatus('all'); setFilterRole('all'); setSortBy('newest'); setSearchQuery(''); }}
+                className="text-xs font-semibold text-coral hover:text-coral-dark px-3 py-2 rounded-lg hover:bg-coral/5 transition-colors"
+              >
+                Reset
+              </button>
+            )}
+          </div>
         </div>
+
+        {/* Expanded filters */}
+        {showFilters && (
+          <div className="mt-4 pt-4 border-t border-primary/5 flex flex-wrap gap-4 items-center animate-fade-up">
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-text-muted font-medium">Role:</span>
+              <select
+                value={filterRole}
+                onChange={(e) => setFilterRole(e.target.value as 'all' | 'lead' | 'follow')}
+                className="border border-primary/10 rounded-xl px-3 py-2 text-sm bg-white/60 focus:ring-2 focus:ring-coral/30 outline-none transition cursor-pointer"
+              >
+                <option value="all">All Roles</option>
+                <option value="lead">Lead</option>
+                <option value="follow">Follow</option>
+              </select>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-text-muted font-medium">Sort by:</span>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as 'newest' | 'oldest' | 'name')}
+                className="border border-primary/10 rounded-xl px-3 py-2 text-sm bg-white/60 focus:ring-2 focus:ring-coral/30 outline-none transition cursor-pointer"
+              >
+                <option value="newest">Newest first</option>
+                <option value="oldest">Oldest first</option>
+                <option value="name">Name (A-Z)</option>
+              </select>
+            </div>
+          </div>
+        )}
 
         {/* Status filter chips */}
         <div className="flex flex-wrap items-center gap-2 mt-4">
@@ -559,10 +644,29 @@ export default function RegistrationTable({ registrations, history, classes, cur
               })}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="py-16 text-center text-text-muted">
-                    <div className="text-4xl mb-2 opacity-30">✦</div>
-                    <p className="font-semibold">No registrations found</p>
-                    <p className="text-xs mt-1">Try adjusting your filters.</p>
+                  <td colSpan={8} className="py-16 text-center">
+                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/5 mb-4">
+                      <svg className="w-8 h-8 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+                    </div>
+                    <p className="font-semibold text-text-muted mb-1">
+                      {searchQuery ? 'No matching registrations' : filterClassId !== 'all' ? 'No registrations for this class' : 'No registrations yet'}
+                    </p>
+                    <p className="text-xs text-text-muted/70 max-w-sm mx-auto mb-4">
+                      {searchQuery
+                        ? `No registrations match "${searchQuery}". Try a different search term or adjust your filters.`
+                        : filterClassId !== 'all'
+                          ? 'This class has no registrations yet. Share the workshop link to get sign-ups.'
+                          : 'Registrations will appear here when participants sign up for workshops.'
+                      }
+                    </p>
+                    {hasFilters && (
+                      <button
+                        onClick={() => { setFilterClassId('all'); setFilterStatus('all'); setFilterRole('all'); setSortBy('newest'); setSearchQuery(''); }}
+                        className="text-sm font-medium text-coral hover:text-coral-dark px-4 py-2 rounded-lg hover:bg-coral/5 transition-colors"
+                      >
+                        Clear all filters
+                      </button>
+                    )}
                   </td>
                 </tr>
               )}
@@ -592,6 +696,36 @@ export default function RegistrationTable({ registrations, history, classes, cur
         </div>
       </div>
     </div>
+  );
+}
+
+// Quick stat card for registrations
+function RegStatCard({ count, label, icon, color, onClick, isActive }: {
+  count: number;
+  label: string;
+  icon: string;
+  color: 'amber' | 'teal' | 'slate' | 'primary';
+  onClick: () => void;
+  isActive: boolean;
+}) {
+  const colors = {
+    amber: { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200', ring: 'ring-amber-300' },
+    teal: { bg: 'bg-teal/10', text: 'text-teal-dark', border: 'border-teal/20', ring: 'ring-teal/30' },
+    slate: { bg: 'bg-slate-100', text: 'text-slate-600', border: 'border-slate-200', ring: 'ring-slate-300' },
+    primary: { bg: 'bg-primary/5', text: 'text-primary', border: 'border-primary/15', ring: 'ring-primary/25' },
+  };
+  const c = colors[color];
+  return (
+    <button
+      onClick={onClick}
+      className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-all text-left ${c.bg} ${c.border} ${isActive ? `ring-2 ${c.ring} shadow-md` : 'hover:shadow-soft hover:scale-[1.02]'}`}
+    >
+      <span className={`text-lg ${c.text}`}>{icon}</span>
+      <div>
+        <div className={`text-2xl font-display font-bold ${c.text}`}>{count}</div>
+        <div className={`text-xs font-medium ${c.text} opacity-80`}>{label}</div>
+      </div>
+    </button>
   );
 }
 
