@@ -246,7 +246,6 @@ function OverviewTab({
   classes,
   registrations,
   sessionsMap,
-  stats,
   onNavigate,
 }: {
   classes: DanceClass[];
@@ -264,32 +263,13 @@ function OverviewTab({
   };
   onNavigate: (tab: Tab) => void;
 }) {
-  const openClasses = classes
-    .filter((c) => getClassState(sessionsMap[c.id] || [], c.registration_opens_at, c.registration_closes_at) === 'open')
-    .map((c) => {
-      const regs = registrations.filter((r) => r.dance_class_id === c.id && ['pending', 'confirmed'].includes(r.status));
-      const leads = regs.filter((r) => r.role === 'lead').length;
-      const follows = regs.filter((r) => r.role === 'follow').length;
-      return { ...c, leads, follows };
-    });
-
   const now = new Date();
+  const today = now.toISOString().split('T')[0];
   const in14Days = new Date(now);
   in14Days.setDate(in14Days.getDate() + 14);
-  const today = now.toISOString().split('T')[0];
   const cutoff = in14Days.toISOString().split('T')[0];
 
-  const upcomingSessions: { session: ClassSession; danceClass: DanceClass }[] = [];
-  for (const c of classes) {
-    for (const s of sessionsMap[c.id] || []) {
-      if (s.session_date >= today && s.session_date <= cutoff) {
-        upcomingSessions.push({ session: s, danceClass: c });
-      }
-    }
-  }
-  upcomingSessions.sort((a, b) => a.session.session_date.localeCompare(b.session.session_date) || a.session.start_time.localeCompare(b.session.start_time));
-
-  // Identify archived classes (no future sessions)
+  // Archived vs Active classes
   const archivedClassIds = useMemo(() => {
     return new Set(
       classes
@@ -300,12 +280,47 @@ function OverviewTab({
         })
         .map((c) => c.id)
     );
-  }, [classes, sessionsMap]);
+  }, [classes, sessionsMap, today]);
 
-  // Recent registrations from non-archived classes only
-  const recentRegs = registrations
-    .filter((r) => !archivedClassIds.has(r.dance_class_id))
-    .slice(0, 8)
+  // Active classes with registration data (excluding preview mode)
+  const activeClasses = classes.filter(c => !archivedClassIds.has(c.id) && !c.is_preview);
+  const openClasses = activeClasses
+    .filter((c) => getClassState(sessionsMap[c.id] || [], c.registration_opens_at, c.registration_closes_at) === 'open')
+    .map((c) => {
+      const regs = registrations.filter((r) => r.dance_class_id === c.id && ['pending', 'confirmed'].includes(r.status));
+      const leads = regs.filter((r) => r.role === 'lead').length;
+      const follows = regs.filter((r) => r.role === 'follow').length;
+      return { ...c, leads, follows };
+    });
+
+  // Upcoming sessions (exclude archived and preview)
+  const upcomingSessions: { session: ClassSession; danceClass: DanceClass }[] = [];
+  for (const c of classes.filter(cx => !archivedClassIds.has(cx.id) && !cx.is_preview)) {
+    for (const s of sessionsMap[c.id] || []) {
+      if (s.session_date >= today && s.session_date <= cutoff) {
+        upcomingSessions.push({ session: s, danceClass: c });
+      }
+    }
+  }
+  upcomingSessions.sort((a, b) => a.session.session_date.localeCompare(b.session.session_date) || a.session.start_time.localeCompare(b.session.start_time));
+
+  // Stats for active registrations only (exclude preview classes)
+  const classIsPreview = (classId: string) => (classMap.get(classId)?.is_preview ?? false);
+  const classIsArchived = (classId: string) => archivedClassIds.has(classId);
+
+  const activeRegs = registrations.filter(r => !classIsArchived(r.dance_class_id) && !classIsPreview(r.dance_class_id));
+  const activeStats = {
+    total: activeRegs.length,
+    pending: activeRegs.filter(r => r.status === 'pending').length,
+    confirmed: activeRegs.filter(r => r.status === 'confirmed').length,
+    waitlisted: activeRegs.filter(r => r.status === 'waitlisted').length,
+    cancelled: activeRegs.filter(r => r.status === 'cancelled').length,
+  };
+
+  // Recent registrations (active only)
+  const recentRegs = activeRegs
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    .slice(0, 5)
     .map((r) => ({
       ...r,
       className: classes.find((c) => c.id === r.dance_class_id)?.title_de || '-',
@@ -313,201 +328,133 @@ function OverviewTab({
 
   return (
     <div className="space-y-6 animate-fade-up">
-      {/* Hero greeting */}
-      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+      {/* Welcome Message */}
+      <div className="flex items-center justify-between">
         <div>
-          <p className="eyebrow text-coral mb-1">Dashboard</p>
-          <p className="text-sm text-text-muted mt-1">
-            {stats.pending > 0
-              ? `${stats.pending} registration${stats.pending > 1 ? 's are' : ' is'} waiting for your confirmation.`
-              : 'All caught up - no open actions.'}
+          <h2 className="font-display text-xl font-bold text-primary">Welcome back!</h2>
+          <p className="text-sm text-text-muted mt-0.5">
+            {activeStats.pending > 0
+              ? `${activeStats.pending} pending ${activeStats.pending === 1 ? 'registration' : 'registrations'} need attention.`
+              : 'All registrations are up to date.'}
           </p>
         </div>
+        <button
+          onClick={() => onNavigate('classes')}
+          className="text-xs font-semibold bg-gradient-to-br from-coral to-coral-dark hover:brightness-105 text-white px-4 py-2 rounded-full shadow-[0_4px_14px_-4px_rgba(231,111,81,0.5)] transition-all"
+        >
+          Manage Classes
+        </button>
       </div>
 
-      {/* Stat Cards */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Classes" value={stats.totalClasses} icon="📚" tone="primary" onClick={() => onNavigate('classes')} hint="View all" />
-        <StatCard label="Open Registrations" value={stats.openRegistrations} icon="🟢" tone="teal" onClick={() => onNavigate('registrations')} hint="Active in open classes" />
-        <StatCard label="Registrations" value={stats.totalRegistrations} icon="👥" tone="primary" onClick={() => onNavigate('registrations')} hint="View all" />
-        <StatCard
-          label="Pending"
-          value={stats.pending}
-          icon="⏳"
-          tone="amber"
-          onClick={() => onNavigate('registrations')}
-          hint={stats.pending > 0 ? 'Action needed' : 'All clear'}
-          pulse={stats.pending > 0}
-        />
-      </div>
-
-      {/* Registration status distribution */}
-      <div className="bg-surface/80 backdrop-blur rounded-2xl border border-primary/5 shadow-soft p-5">
-        <div className="flex items-center justify-between mb-3">
-          <div>
-            <p className="eyebrow text-teal mb-0.5">Pipeline</p>
-            <h3 className="font-display text-lg font-bold text-primary">Registration Status</h3>
-          </div>
-          <button onClick={() => onNavigate('registrations')} className="text-xs font-semibold text-coral hover:text-coral-dark transition-colors">
-            View all →
-          </button>
-        </div>
-        <div className="flex items-center gap-0.5 h-3 rounded-full overflow-hidden bg-primary/5">
-          {stats.confirmed > 0 && (
-            <div className="h-full transition-all" style={{ width: `${(stats.confirmed / stats.totalRegistrations) * 100}%`, background: 'var(--color-teal)' }} title={`${stats.confirmed} confirmed`} />
-          )}
-          {stats.pending > 0 && (
-            <div className="h-full transition-all" style={{ width: `${(stats.pending / stats.totalRegistrations) * 100}%`, background: 'var(--color-accent)' }} title={`${stats.pending} pending`} />
-          )}
-          {stats.waitlisted > 0 && (
-            <div className="h-full transition-all bg-slate-400" style={{ width: `${(stats.waitlisted / stats.totalRegistrations) * 100}%` }} title={`${stats.waitlisted} waitlisted`} />
-          )}
-          {stats.cancelled > 0 && (
-            <div className="h-full transition-all" style={{ width: `${(stats.cancelled / stats.totalRegistrations) * 100}%`, background: 'var(--color-coral)' }} title={`${stats.cancelled} cancelled`} />
-          )}
-        </div>
-        <div className="flex flex-wrap gap-x-5 gap-y-1.5 mt-3 text-xs">
-          <LegendDot color="var(--color-teal)" label={`${stats.confirmed} Confirmed`} />
-          <LegendDot color="var(--color-accent)" label={`${stats.pending} Pending`} />
-          <LegendDot color="rgb(148 163 184)" label={`${stats.waitlisted} Waitlisted`} />
-          <LegendDot color="var(--color-coral)" label={`${stats.cancelled} Cancelled`} />
-        </div>
-      </div>
-
-      <div className="grid gap-6 lg:grid-cols-2">
-        {/* Open Classes */}
-        <div className="bg-surface/80 backdrop-blur rounded-2xl border border-primary/5 shadow-soft overflow-hidden">
-          <div className="flex items-center justify-between p-5 border-b border-primary/5">
-            <div>
-              <p className="eyebrow text-teal mb-0.5">Capacity</p>
-              <h3 className="font-display text-lg font-bold text-primary">Open Classes</h3>
+      {/* Registration Summary */}
+      <div className="bg-white rounded-xl border border-primary/10 p-4">
+        <div className="flex items-center gap-4">
+          <div className="flex-1">
+            <div className="text-xs text-text-muted uppercase tracking-wider font-medium mb-1">Registrations</div>
+            <div className="flex items-baseline gap-2">
+              <span className="text-3xl font-display font-bold text-primary">{activeStats.total}</span>
+              <span className="text-sm text-text-muted">active total</span>
             </div>
-            <button onClick={() => onNavigate('classes')} className="text-xs font-semibold text-coral hover:text-coral-dark transition-colors">
-              Manage →
+          </div>
+          <div className="flex items-center gap-1">
+            {activeStats.pending > 0 && (
+              <button onClick={() => onNavigate('registrations')} className="text-center px-4 py-2 rounded-xl bg-amber-50 text-amber-700 hover:bg-amber-100 transition-colors">
+                <div className="text-xl font-display font-bold">{activeStats.pending}</div>
+                <div className="text-[10px] font-medium">Pending</div>
+              </button>
+            )}
+            <button onClick={() => onNavigate('registrations')} className="text-center px-4 py-2 rounded-xl bg-teal/10 text-teal-dark hover:bg-teal/20 transition-colors">
+              <div className="text-xl font-display font-bold">{activeStats.confirmed}</div>
+              <div className="text-[10px] font-medium">Confirmed</div>
             </button>
           </div>
-          {openClasses.length === 0 ? (
-            <p className="text-text-muted text-sm text-center py-8">No classes currently open for registration.</p>
-          ) : (
-            <div className="divide-y divide-primary/5">
-              {openClasses.map((c) => {
-                const leadPct = c.max_leads > 0 ? Math.min((c.leads / c.max_leads) * 100, 100) : 0;
-                const followPct = c.max_follows > 0 ? Math.min((c.follows / c.max_follows) * 100, 100) : 0;
-                const leadBg = leadPct >= 100 ? 'bg-coral' : leadPct >= 75 ? 'bg-accent' : 'bg-teal';
-                const followBg = followPct >= 100 ? 'bg-coral' : followPct >= 75 ? 'bg-accent' : 'bg-teal';
-                return (
-                  <div key={c.id} className="p-5 hover:bg-bg-warm/40 transition-colors cursor-pointer" onClick={() => onNavigate('classes')}>
-                    <div className="font-semibold text-sm mb-2.5">{c.title_de}</div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <div className="flex items-center justify-between text-xs text-text-muted mb-1">
-                          <span>Leads</span>
-                          <span className="tabular-nums font-semibold text-text">{c.leads}/{c.max_leads}</span>
-                        </div>
-                        <div className="bg-primary/5 rounded-full h-1.5 overflow-hidden">
-                          <div className={`h-full rounded-full transition-all ${leadBg}`} style={{ width: `${leadPct}%` }} />
-                        </div>
-                      </div>
-                      <div>
-                        <div className="flex items-center justify-between text-xs text-text-muted mb-1">
-                          <span>Follows</span>
-                          <span className="tabular-nums font-semibold text-text">{c.follows}/{c.max_follows}</span>
-                        </div>
-                        <div className="bg-primary/5 rounded-full h-1.5 overflow-hidden">
-                          <div className={`h-full rounded-full transition-all ${followBg}`} style={{ width: `${followPct}%` }} />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-
-        {/* Upcoming Sessions */}
-        <div className="bg-surface/80 backdrop-blur rounded-2xl border border-primary/5 shadow-soft overflow-hidden">
-          <div className="flex items-center justify-between p-5 border-b border-primary/5">
-            <div>
-              <p className="eyebrow text-teal mb-0.5">Calendar</p>
-              <h3 className="font-display text-lg font-bold text-primary">Upcoming Sessions</h3>
-            </div>
-            <span className="text-xs text-text-muted">14 days</span>
-          </div>
-          {upcomingSessions.length === 0 ? (
-            <p className="text-text-muted text-sm text-center py-8">No sessions in the next 14 days.</p>
-          ) : (
-            <div className="divide-y divide-primary/5">
-              {upcomingSessions.map(({ session, danceClass }) => {
-                const date = new Date(session.session_date);
-                const isToday = session.session_date === today;
-                return (
-                  <div key={session.id} className="p-4 hover:bg-bg-warm/40 transition-colors cursor-pointer flex items-center gap-3" onClick={() => onNavigate('classes')}>
-                    <div className={`text-center rounded-xl px-3 py-2 min-w-[58px] ${isToday ? 'bg-gradient-to-br from-coral to-coral-dark text-white shadow-[0_6px_18px_-6px_rgba(231,111,81,0.5)]' : 'bg-bg-warm/60 text-primary'}`}>
-                      <div className="text-[10px] font-bold uppercase tracking-wider opacity-80">{date.toLocaleDateString('en-US', { weekday: 'short' })}</div>
-                      <div className="text-xl font-bold leading-none font-display">{date.getDate()}</div>
-                      <div className="text-[10px] opacity-80">{date.toLocaleDateString('en-US', { month: 'short' })}</div>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="font-semibold text-sm truncate">{danceClass.title_de}</div>
-                      <div className="text-xs text-text-muted flex items-center gap-1.5 mt-0.5">
-                        <span className="tabular-nums">{session.start_time.slice(0, 5)} – {session.end_time.slice(0, 5)}</span>
-                        {danceClass.location && <span>· {danceClass.location}</span>}
-                      </div>
-                    </div>
-                    {isToday && <span className="text-[10px] font-bold uppercase tracking-wider bg-coral/10 text-coral px-2 py-0.5 rounded-full">Today</span>}
-                  </div>
-                );
-              })}
-            </div>
-          )}
         </div>
       </div>
 
-      {/* Recent Registrations */}
-      <div className="bg-surface/80 backdrop-blur rounded-2xl border border-primary/5 shadow-soft overflow-hidden">
-        <div className="flex items-center justify-between p-5 border-b border-primary/5">
-          <div>
-            <p className="eyebrow text-teal mb-0.5">Activity</p>
-            <h3 className="font-display text-lg font-bold text-primary">Recent Registrations</h3>
-            <p className="text-xs text-text-muted mt-0.5">Excluding archived classes</p>
+      {/* Main Content Grid */}
+      <div className="grid gap-5 lg:grid-cols-3">
+        {/* Left Column: Open Classes */}
+        <div className="lg:col-span-2 space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="font-display text-lg font-bold text-primary">Classes Open for Registration</h3>
+            {openClasses.length === 0 && (
+              <span className="text-xs text-text-muted">No open classes</span>
+            )}
           </div>
-          <button onClick={() => onNavigate('registrations')} className="text-xs font-semibold text-coral hover:text-coral-dark transition-colors">
-            View all →
-          </button>
+
+          {openClasses.length === 0 ? (
+            <div className="bg-bg-warm/50 rounded-xl p-8 text-center">
+              <p className="text-sm text-text-muted">No classes are currently open for registration.</p>
+              <button onClick={() => onNavigate('classes')} className="text-xs font-medium text-coral hover:text-coral-dark mt-2">
+                Open a class →
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {openClasses.map((c) => (
+                <ClassCard key={c.id} c={c} onClick={() => onNavigate('classes')} />
+              ))}
+            </div>
+          )}
         </div>
-        {recentRegs.length === 0 ? (
-          <p className="text-text-muted text-sm text-center py-8">No recent registrations from active classes.</p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-left text-[11px] font-semibold uppercase tracking-wider text-text-muted bg-bg-warm/30">
-                  <th className="py-2.5 px-5">Name</th>
-                  <th className="py-2.5 px-5">Class</th>
-                  <th className="py-2.5 px-5">Role</th>
-                  <th className="py-2.5 px-5">Status</th>
-                  <th className="py-2.5 px-5">Date</th>
-                </tr>
-              </thead>
-              <tbody>
+
+        {/* Right Column: Activity */}
+        <div className="space-y-4">
+          {/* Recent Activity */}
+          <div className="bg-white rounded-xl border border-primary/10 shadow-soft p-4">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-display text-base font-bold text-primary">Recent</h3>
+              <button onClick={() => onNavigate('registrations')} className="text-xs text-coral hover:text-coral-dark">View all</button>
+            </div>
+            {recentRegs.length === 0 ? (
+              <p className="text-sm text-text-muted text-center py-4">No recent registrations.</p>
+            ) : (
+              <div className="space-y-2">
                 {recentRegs.map((r) => (
-                  <tr key={r.id} className="border-t border-primary/5 hover:bg-bg-warm/30 transition-colors cursor-pointer" onClick={() => onNavigate('registrations')}>
-                    <td className="py-3 px-5 font-semibold">{r.name}</td>
-                    <td className="py-3 px-5 text-text-muted truncate max-w-[200px]">{r.className}</td>
-                    <td className="py-3 px-5">
-                      <RoleChip role={r.role} />
-                    </td>
-                    <td className="py-3 px-5">
-                      <StatusPill status={r.status} size="sm" />
-                    </td>
-                    <td className="py-3 px-5 text-text-muted text-xs tabular-nums">{new Date(r.created_at).toLocaleDateString('en-US')}</td>
-                  </tr>
+                  <div key={r.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-bg-warm/50 transition-colors cursor-pointer" onClick={() => onNavigate('registrations')}>
+                    <div className={`w-2 h-2 rounded-full ${r.status === 'pending' ? 'bg-amber-400' : r.status === 'confirmed' ? 'bg-teal' : 'bg-slate-300'}`} />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium text-primary truncate">{r.name}</div>
+                      <div className="text-xs text-text-muted truncate">{r.className}</div>
+                    </div>
+                    <div className="text-[10px] text-text-muted/70 tabular-nums">{new Date(r.created_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })}</div>
+                  </div>
                 ))}
-              </tbody>
-            </table>
+              </div>
+            )}
           </div>
-        )}
+
+          {/* Upcoming Sessions */}
+          <div className="bg-white rounded-xl border border-primary/10 shadow-soft p-4">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-display text-base font-bold text-primary">Next Sessions</h3>
+              <span className="text-xs text-text-muted">14 days</span>
+            </div>
+            {upcomingSessions.length === 0 ? (
+              <p className="text-sm text-text-muted text-center py-4">No upcoming sessions.</p>
+            ) : (
+              <div className="space-y-2">
+                {upcomingSessions.slice(0, 5).map(({ session, danceClass }) => {
+                  const date = new Date(session.session_date);
+                  const isToday = session.session_date === today;
+                  return (
+                    <div key={session.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-bg-warm/50 transition-colors">
+                      <div className={`text-center min-w-[44px] py-1.5 rounded-lg ${isToday ? 'bg-coral text-white' : 'bg-bg-warm text-primary'}`}>
+                        <div className="text-[9px] font-bold uppercase">{date.toLocaleDateString('de-DE', { weekday: 'short' })}</div>
+                        <div className="text-lg font-bold leading-none">{date.getDate()}</div>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-medium text-primary truncate">{danceClass.title_de}</div>
+                        <div className="text-[10px] text-text-muted">{session.start_time.slice(0, 5)} – {session.end_time.slice(0, 5)}</div>
+                      </div>
+                      {isToday && <span className="text-[10px] font-medium text-coral bg-coral/10 px-2 py-0.5 rounded-full">Today</span>}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -554,6 +501,49 @@ function LegendDot({ color, label }: { color: string; label: string }) {
       <span className="w-2.5 h-2.5 rounded-full" style={{ background: color }} />
       <span className="tabular-nums">{label}</span>
     </span>
+  );
+}
+
+
+function ClassCard({ c, onClick }: { c: DanceClass & { leads: number; follows: number }; onClick: () => void }) {
+  const leadPct = c.max_leads > 0 ? Math.min((c.leads / c.max_leads) * 100, 100) : 0;
+  const followPct = c.max_follows > 0 ? Math.min((c.follows / c.max_follows) * 100, 100) : 0;
+  const leadFull = leadPct >= 100;
+  const followFull = followPct >= 100;
+
+  return (
+    <div
+      onClick={onClick}
+      className="bg-white rounded-xl border border-primary/10 p-4 hover:shadow-soft hover:border-primary/20 transition-all cursor-pointer"
+    >
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h4 className="font-semibold text-primary">{c.title_de}</h4>
+          <p className="text-xs text-text-muted mt-0.5">{(c as any).max_leads || 0} leads · {(c as any).max_follows || 0} follows capacity</p>
+        </div>
+        <span className="text-xs font-medium text-coral py-1 px-2.5 bg-coral/5 rounded-full">Manage</span>
+      </div>
+      <div className="grid grid-cols-2 gap-3 mt-3">
+        <div>
+          <div className="flex items-center justify-between text-[11px] text-text-muted mb-1">
+            <span>Leads</span>
+            <span className={`tabular-nums font-medium ${leadFull ? 'text-coral' : ''}`}>{c.leads}/{c.max_leads}</span>
+          </div>
+          <div className="bg-bg-warm rounded-full h-1.5 overflow-hidden">
+            <div className={`h-full rounded-full transition-all ${leadFull ? 'bg-coral' : 'bg-primary'}`} style={{ width: `${leadPct}%` }} />
+          </div>
+        </div>
+        <div>
+          <div className="flex items-center justify-between text-[11px] text-text-muted mb-1">
+            <span>Follows</span>
+            <span className={`tabular-nums font-medium ${followFull ? 'text-coral' : ''}`}>{c.follows}/{c.max_follows}</span>
+          </div>
+          <div className="bg-bg-warm rounded-full h-1.5 overflow-hidden">
+            <div className={`h-full rounded-full transition-all ${followFull ? 'bg-coral' : 'bg-coral dark'}`} style={{ width: `${followPct}%` }} />
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
