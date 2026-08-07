@@ -105,7 +105,7 @@ export default function ClassEditor({ classes, registrations, history, currentUs
   const urlInitDone = useRef(false);
   const [filterLevel, setFilterLevel] = useState<string>('all');
   const [filterDance, setFilterDance] = useState<string>('all');
-  const [statusFilter, setStatusFilter] = useState<ClassState | 'preview' | 'all'>('all');
+  const [statusFilter, setStatusFilter] = useState<ClassState | 'preview' | 'all'>('open');
   const [searchQuery, setSearchQuery] = useState('');
   const [addingRegFor, setAddingRegFor] = useState<string | null>(null);
 
@@ -373,12 +373,12 @@ export default function ClassEditor({ classes, registrations, history, currentUs
         <>
         {/* Stats Row */}
         <div className="grid grid-cols-6 gap-2 mb-4">
-          <StatBtn count={classes.length} label="All" active={statusFilter === 'all'} onClick={() => setStatusFilter('all')} color="slate" />
           <StatBtn count={classes.filter(c => !c.is_preview && getClassState(classSessionsMap[c.id] || [], c.registration_opens_at, c.registration_closes_at) === 'open').length} label="Open" active={statusFilter === 'open'} onClick={() => setStatusFilter(s => s === 'open' ? 'all' : 'open')} />
           <StatBtn count={classes.filter(c => c.is_preview).length} label="Preview" active={statusFilter === 'preview'} onClick={() => setStatusFilter(s => s === 'preview' ? 'all' : 'preview')} color="amber" />
           <StatBtn count={classes.filter(c => !c.is_preview && getClassState(classSessionsMap[c.id] || [], c.registration_opens_at, c.registration_closes_at) === 'upcoming').length} label="Upcoming" active={statusFilter === 'upcoming'} onClick={() => setStatusFilter(s => s === 'upcoming' ? 'all' : 'upcoming')} />
           <StatBtn count={classes.filter(c => !c.is_preview && getClassState(classSessionsMap[c.id] || [], c.registration_opens_at, c.registration_closes_at) === 'ongoing').length} label="Ongoing" active={statusFilter === 'ongoing'} onClick={() => setStatusFilter(s => s === 'ongoing' ? 'all' : 'ongoing')} />
           <StatBtn count={classes.filter(c => !c.is_preview && getClassState(classSessionsMap[c.id] || [], c.registration_opens_at, c.registration_closes_at) === 'archived').length} label="Archived" active={statusFilter === 'archived'} onClick={() => setStatusFilter(s => s === 'archived' ? 'all' : 'archived')} />
+          <StatBtn count={classes.length} label="All" active={statusFilter === 'all'} onClick={() => setStatusFilter('all')} color="slate" />
         </div>
 
         {/* Single Filter Bar */}
