@@ -105,8 +105,7 @@ export default function ClassEditor({ classes, registrations, history, currentUs
   const urlInitDone = useRef(false);
   const [filterLevel, setFilterLevel] = useState<string>('all');
   const [filterDance, setFilterDance] = useState<string>('all');
-  const [filterStatus, setFilterStatus] = useState<StatusFilter>('active');
-  const [showFilters, setShowFilters] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<ClassState | 'preview' | 'all'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [addingRegFor, setAddingRegFor] = useState<string | null>(null);
 
@@ -189,11 +188,23 @@ export default function ClassEditor({ classes, registrations, history, currentUs
   const availableLevels = useMemo(() => Array.from(new Set(classes.map((c) => c.level).filter(Boolean))).sort(), [classes]);
   const availableDances = useMemo(() => Array.from(new Set(classes.map((c) => c.dance).filter(Boolean))).sort(), [classes]);
 
+  // Filter classes
   const filteredClasses = useMemo(() => {
     return classes.filter((dc) => {
       const state = getClassState(classSessionsMap[dc.id] || [], dc.registration_opens_at, dc.registration_closes_at);
-      if (filterStatus === 'active' && state === 'archived') return false;
-      else if (filterStatus !== 'all' && filterStatus !== 'active' && state !== filterStatus) return false;
+      // Preview filter - show only preview classes
+      if (statusFilter === 'preview') {
+        return dc.is_preview;
+      }
+      // When "All" is selected, show everything including previews
+      if (statusFilter === 'all') {
+        // Show all classes, only apply level/dance/search filters
+      } else {
+        // Hide preview classes in specific state views
+        if (dc.is_preview) return false;
+        // Status filter from top buttons
+        if (state !== statusFilter) return false;
+      }
       if (filterLevel !== 'all' && dc.level !== filterLevel) return false;
       if (filterDance !== 'all' && dc.dance !== filterDance) return false;
       if (searchQuery) {
@@ -210,18 +221,15 @@ export default function ClassEditor({ classes, registrations, history, currentUs
       const prioDiff = (priority[stateA] ?? 4) - (priority[stateB] ?? 4);
       if (prioDiff !== 0) return prioDiff;
 
-      // Same priority: sort by first session date (newest first for archived, soonest first for others)
+      // Same priority: sort by first session date
       const sessionsA = classSessionsMap[a.id] || [];
       const sessionsB = classSessionsMap[b.id] || [];
       const firstDateA = sessionsA[0]?.session_date || '9999-12-31';
       const firstDateB = sessionsB[0]?.session_date || '9999-12-31';
-
-      if (stateA === 'archived') {
-        return firstDateB.localeCompare(firstDateA); // Newest archived first
-      }
-      return firstDateA.localeCompare(firstDateB); // Soonest first for active
+      if (stateA === 'archived') return firstDateB.localeCompare(firstDateA);
+      return firstDateA.localeCompare(firstDateB);
     });
-  }, [classes, classSessionsMap, filterLevel, filterDance, filterStatus, searchQuery]);
+  }, [classes, classSessionsMap, filterLevel, filterDance, statusFilter, searchQuery]);
 
   function duplicateClass(dc: DanceClass) {
     const existing = classSessionsMap[dc.id] || [];
@@ -363,135 +371,61 @@ export default function ClassEditor({ classes, registrations, history, currentUs
       </div>
       {!editing && (
         <>
-        {/* Quick Stats Bar */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
-          <QuickStat
-            count={classes.filter(c => getClassState(classSessionsMap[c.id] || [], c.registration_opens_at, c.registration_closes_at) === 'open').length}
-            label="Open"
-            icon="●"
-            color="teal"
-            onClick={() => setFilterStatus('open')}
-            isActive={filterStatus === 'open'}
-          />
-          <QuickStat
-            count={classes.filter(c => getClassState(classSessionsMap[c.id] || [], c.registration_opens_at, c.registration_closes_at) === 'upcoming').length}
-            label="Upcoming"
-            icon="○"
-            color="amber"
-            onClick={() => setFilterStatus('upcoming')}
-            isActive={filterStatus === 'upcoming'}
-          />
-          <QuickStat
-            count={classes.filter(c => getClassState(classSessionsMap[c.id] || [], c.registration_opens_at, c.registration_closes_at) === 'ongoing').length}
-            label="Ongoing"
-            icon="◐"
-            color="blue"
-            onClick={() => setFilterStatus('ongoing')}
-            isActive={filterStatus === 'ongoing'}
-          />
-          <QuickStat
-            count={classes.filter(c => getClassState(classSessionsMap[c.id] || [], c.registration_opens_at, c.registration_closes_at) === 'archived').length}
-            label="Archived"
-            icon="◼"
-            color="slate"
-            onClick={() => setFilterStatus('archived')}
-            isActive={filterStatus === 'archived'}
-          />
+        {/* Stats Row */}
+        <div className="grid grid-cols-6 gap-2 mb-4">
+          <StatBtn count={classes.length} label="All" active={statusFilter === 'all'} onClick={() => setStatusFilter('all')} color="slate" />
+          <StatBtn count={classes.filter(c => !c.is_preview && getClassState(classSessionsMap[c.id] || [], c.registration_opens_at, c.registration_closes_at) === 'open').length} label="Open" active={statusFilter === 'open'} onClick={() => setStatusFilter(s => s === 'open' ? 'all' : 'open')} />
+          <StatBtn count={classes.filter(c => c.is_preview).length} label="Preview" active={statusFilter === 'preview'} onClick={() => setStatusFilter(s => s === 'preview' ? 'all' : 'preview')} color="amber" />
+          <StatBtn count={classes.filter(c => !c.is_preview && getClassState(classSessionsMap[c.id] || [], c.registration_opens_at, c.registration_closes_at) === 'upcoming').length} label="Upcoming" active={statusFilter === 'upcoming'} onClick={() => setStatusFilter(s => s === 'upcoming' ? 'all' : 'upcoming')} />
+          <StatBtn count={classes.filter(c => !c.is_preview && getClassState(classSessionsMap[c.id] || [], c.registration_opens_at, c.registration_closes_at) === 'ongoing').length} label="Ongoing" active={statusFilter === 'ongoing'} onClick={() => setStatusFilter(s => s === 'ongoing' ? 'all' : 'ongoing')} />
+          <StatBtn count={classes.filter(c => !c.is_preview && getClassState(classSessionsMap[c.id] || [], c.registration_opens_at, c.registration_closes_at) === 'archived').length} label="Archived" active={statusFilter === 'archived'} onClick={() => setStatusFilter(s => s === 'archived' ? 'all' : 'archived')} />
         </div>
 
-        <div className="bg-surface/80 backdrop-blur rounded-2xl border border-primary/5 shadow-soft p-5 mb-6">
-          {/* Search and Status - Always visible */}
-          <div className="flex flex-col sm:flex-row gap-3">
-            <div className="relative flex-1 min-w-[200px]">
-              <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+        {/* Single Filter Bar */}
+        <div className="bg-white rounded-xl border border-primary/10 shadow-soft p-3 sm:p-4 mb-4">
+          <div className="flex flex-col sm:flex-row gap-2">
+            {/* Search */}
+            <div className="relative flex-1">
+              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
               <input
                 type="text"
                 placeholder="Search classes..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-3 py-2.5 bg-white/60 border border-primary/10 rounded-xl text-sm focus:ring-2 focus:ring-coral/30 focus:border-coral outline-none transition"
+                className="w-full pl-9 pr-3 py-2 bg-bg-warm/30 border border-transparent rounded-lg text-sm focus:ring-2 focus:ring-coral/30 outline-none transition"
               />
             </div>
-            <div className="flex gap-2">
-              <select
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value as StatusFilter)}
-                className="border border-primary/10 rounded-xl px-3 py-2.5 text-sm bg-white/60 focus:ring-2 focus:ring-coral/30 outline-none transition cursor-pointer"
-              >
-                {STATUS_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-              </select>
-              <button
-                onClick={() => setShowFilters(!showFilters)}
-                className={`flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${showFilters ? 'bg-coral text-white' : 'bg-white/60 border border-primary/10 text-text-muted hover:text-primary'}`}
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" /></svg>
-                Filters
-                {(filterLevel !== 'all' || filterDance !== 'all') && (
-                  <span className="flex h-2 w-2 rounded-full bg-accent" />
-                )}
-              </button>
-            </div>
+
+            {/* Level & Style filters - inline */}
+            <select
+              value={filterLevel}
+              onChange={(e) => setFilterLevel(e.target.value)}
+              className="px-3 py-2 bg-bg-warm/30 border border-transparent rounded-lg text-sm focus:ring-2 focus:ring-coral/30 outline-none cursor-pointer"
+            >
+              <option value="all">All Levels</option>
+              {availableLevels.map((l) => <option key={l} value={l!}>{l}</option>)}
+            </select>
+            <select
+              value={filterDance}
+              onChange={(e) => setFilterDance(e.target.value)}
+              className="px-3 py-2 bg-bg-warm/30 border border-transparent rounded-lg text-sm focus:ring-2 focus:ring-coral/30 outline-none cursor-pointer"
+            >
+              <option value="all">All Styles</option>
+              {availableDances.map((d) => <option key={d} value={d!}>{d}</option>)}
+            </select>
           </div>
 
-          {/* Expanded filters */}
-          {showFilters && (
-            <div className="mt-4 pt-4 border-t border-primary/5 flex flex-wrap gap-3 items-center animate-fade-up">
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-text-muted font-medium">Level:</span>
-                <select
-                  value={filterLevel}
-                  onChange={(e) => setFilterLevel(e.target.value)}
-                  className="border border-primary/10 rounded-xl px-3 py-2 text-sm bg-white/60 focus:ring-2 focus:ring-coral/30 outline-none transition cursor-pointer"
-                >
-                  <option value="all">All Levels</option>
-                  {availableLevels.map((l) => <option key={l} value={l!}>{l}</option>)}
-                </select>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-text-muted font-medium">Style:</span>
-                <select
-                  value={filterDance}
-                  onChange={(e) => setFilterDance(e.target.value)}
-                  className="border border-primary/10 rounded-xl px-3 py-2 text-sm bg-white/60 focus:ring-2 focus:ring-coral/30 outline-none transition cursor-pointer"
-                >
-                  <option value="all">All Styles</option>
-                  {availableDances.map((d) => <option key={d} value={d!}>{d}</option>)}
-                </select>
-              </div>
-              {(filterLevel !== 'all' || filterDance !== 'all') && (
-                <button
-                  onClick={() => { setFilterLevel('all'); setFilterDance('all'); }}
-                  className="flex items-center gap-1.5 text-xs font-semibold text-coral hover:text-coral-dark px-3 py-2 rounded-lg hover:bg-coral/5 transition-colors"
-                >
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                  Clear extra filters
-                </button>
-              )}
-            </div>
-          )}
-
-          {/* Results summary with status chips */}
-          <div className="flex items-center justify-between mt-4 pt-4 border-t border-primary/5">
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-primary">{filteredClasses.length}</span>
-              <span className="text-xs text-text-muted">classes</span>
-              {filterStatus !== 'all' && filterStatus !== 'active' && (
-                <span className="text-xs px-2 py-0.5 rounded-full bg-primary/5 text-text-muted">
-                  {STATUS_OPTIONS.find(o => o.value === filterStatus)?.label}
-                </span>
-              )}
-              {filterStatus === 'active' && (
-                <span className="text-xs px-2 py-0.5 rounded-full bg-teal/10 text-teal-dark">
-                  excl. archived
-                </span>
-              )}
-            </div>
-            {(searchQuery || filterStatus !== 'active' || filterLevel !== 'all' || filterDance !== 'all') && (
+          {/* Results count and reset */}
+          <div className="flex items-center justify-between mt-3 pt-3 border-t border-primary/5">
+            <span className="text-xs text-text-muted/70">{filteredClasses.length} results</span>
+            {(searchQuery || filterLevel !== 'all' || filterDance !== 'all' || statusFilter !== 'all') && (
               <button
-                onClick={() => { setFilterLevel('all'); setFilterDance('all'); setFilterStatus('active'); setSearchQuery(''); }}
-                className="text-xs font-semibold text-coral hover:text-coral-dark px-2 py-1 transition-colors"
+                onClick={() => { setFilterLevel('all'); setFilterDance('all'); setStatusFilter('all'); setSearchQuery(''); }}
+                className="text-xs font-medium text-coral hover:text-coral-dark"
               >
-                Reset all
+                Reset
               </button>
             )}
           </div>
@@ -517,15 +451,22 @@ export default function ClassEditor({ classes, registrations, history, currentUs
                 <ClassForm editing={editing!} setEditing={setEditing} sessions={sessions} setSessions={setSessions} addSession={addSession} removeSession={removeSession} updateSession={updateSession} generateWeeklyDates={generateWeeklyDates} handleSave={handleSave} saving={saving} onCancel={() => { setUrlParam('edit', null); setEditing(null); }} title={`Edit: ${dc.title_en || dc.title_de}`} />
               ) : (
                 <div className={`group bg-surface/80 backdrop-blur rounded-2xl border shadow-soft transition-all overflow-hidden ${editing ? 'opacity-40 pointer-events-none' : 'border-primary/5 hover:shadow-lift hover:-translate-y-0.5'} ${state === 'archived' ? 'opacity-75' : ''}`}>
-                  {/* Status stripe */}
-                  <div className={`h-1 w-full ${state === 'open' ? 'bg-teal' : state === 'ongoing' ? 'bg-blue-500' : state === 'upcoming' ? 'bg-accent' : 'bg-slate-300'}`} />
+                  {/* Status stripe - amber for preview classes */}
+                  <div className={`h-1 w-full ${dc.is_preview ? 'bg-amber-400' : state === 'open' ? 'bg-teal' : state === 'ongoing' ? 'bg-blue-500' : state === 'upcoming' ? 'bg-accent' : 'bg-slate-300'}`} />
                   <div className="p-4 cursor-pointer" onClick={() => { const next = isViewing ? null : dc.id; setUrlParam('view', next); setViewClassId(next); }}>
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1 min-w-0">
                         {/* Title row */}
                         <div className="flex items-center gap-2 flex-wrap mb-2">
                           <h3 className={`font-display font-bold text-base truncate ${state === 'archived' ? 'text-text-muted' : 'text-primary'}`}>{dc.title_en || dc.title_de}</h3>
-                          <StatusBadge state={state} />
+                          {dc.is_preview ? (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border bg-amber-50 text-amber-700 border-amber-200">
+                              <span className="text-[8px]">◈</span>
+                              Preview
+                            </span>
+                          ) : (
+                            <StatusBadge state={state} />
+                          )}
                           {!dc.is_public && <span className="text-[10px] font-semibold uppercase tracking-wider bg-primary/8 text-primary/60 px-2 py-0.5 rounded-full">Draft</span>}
                           <svg className={`w-4 h-4 text-text-muted transition-transform ml-auto ${isViewing ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
                         </div>
@@ -663,20 +604,17 @@ export default function ClassEditor({ classes, registrations, history, currentUs
               <svg className="w-8 h-8 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
             </div>
             <p className="text-lg font-medium text-text-muted mb-2">
-              {searchQuery ? 'No matching classes' : filterStatus === 'archived' ? 'No archived classes yet' : 'No active classes'}
+              {searchQuery ? 'No matching classes' : 'No classes found'}
             </p>
             <p className="text-sm text-text-muted/70 max-w-sm mx-auto mb-6">
               {searchQuery
                 ? `No classes match "${searchQuery}". Try a different search term or adjust your filters.`
-                : filterStatus === 'archived'
-                  ? 'Archived classes are workshops that have already ended. They will appear here automatically.'
-                  : 'Get started by creating your first dance class. Classes can be workshops, courses, or events.'
-              }
+                : 'Get started by creating your first dance class. Classes can be workshops, courses, or events.'}
             </p>
             <div className="flex items-center justify-center gap-3">
-              {(searchQuery || filterStatus !== 'active' || filterLevel !== 'all' || filterDance !== 'all') && (
+              {(searchQuery || filterLevel !== 'all' || filterDance !== 'all' || statusFilter !== 'all') && (
                 <button
-                  onClick={() => { setFilterLevel('all'); setFilterDance('all'); setFilterStatus('active'); setSearchQuery(''); }}
+                  onClick={() => { setFilterLevel('all'); setFilterDance('all'); setStatusFilter('all'); setSearchQuery(''); }}
                   className="text-sm font-medium text-coral hover:text-coral-dark px-4 py-2 rounded-lg hover:bg-coral/5 transition-colors"
                 >
                   Clear all filters
@@ -980,32 +918,21 @@ const TAB_CONFIG: { key: TabKey; label: string; icon: string }[] = [
   { key: 'schedule', label: 'Schedule', icon: '📅' },
 ];
 
-// Quick stat card for the top stats bar
-function QuickStat({ count, label, icon, color, onClick, isActive }: {
-  count: number;
-  label: string;
-  icon: string;
-  color: 'teal' | 'amber' | 'blue' | 'slate';
-  onClick: () => void;
-  isActive: boolean;
-}) {
-  const colors = {
-    teal: { bg: 'bg-teal/5', text: 'text-teal-dark', border: 'border-teal/20', ring: 'ring-teal/30' },
-    amber: { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200', ring: 'ring-amber-300' },
-    blue: { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200', ring: 'ring-blue-300' },
-    slate: { bg: 'bg-slate-100', text: 'text-slate-600', border: 'border-slate-200', ring: 'ring-slate-300' },
+// Simple stat button (clickable)
+function StatBtn({ count, label, active, onClick, color = 'primary' }: { count: number; label: string; active: boolean; onClick: () => void; color?: 'primary' | 'amber' | 'slate' }) {
+  const styles = {
+    primary: { active: 'bg-primary text-white', inactive: 'bg-slate-50 hover:bg-bg-warm text-primary' },
+    amber: { active: 'bg-amber-500 text-white', inactive: 'bg-amber-50 hover:bg-amber-100 text-amber-700' },
+    slate: { active: 'bg-slate-600 text-white', inactive: 'bg-slate-100 hover:bg-slate-200 text-slate-700' },
   };
-  const c = colors[color];
+  const s = styles[color];
   return (
     <button
       onClick={onClick}
-      className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-all text-left ${c.bg} ${c.border} ${isActive ? `ring-2 ${c.ring} shadow-md` : 'hover:shadow-soft hover:scale-[1.02]'}`}
+      className={`text-center py-2 px-1 rounded-xl transition-all ${active ? `${s.active} shadow-md` : s.inactive}`}
     >
-      <span className={`text-lg ${c.text}`}>{icon}</span>
-      <div>
-        <div className={`text-2xl font-display font-bold ${c.text}`}>{count}</div>
-        <div className={`text-xs font-medium ${c.text} opacity-80`}>{label}</div>
-      </div>
+      <div className={`text-xl font-display font-bold ${active ? 'text-white' : ''}`}>{count}</div>
+      <div className={`text-[10px] font-medium ${active ? 'text-white/80' : ''}`}>{label}</div>
     </button>
   );
 }
