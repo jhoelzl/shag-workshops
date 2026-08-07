@@ -77,12 +77,15 @@ const EMPTY_SESSION: SessionDraft = {
 
 const LEVELS = ['Beginner', 'Beginner/Improver', 'Improver', 'Intermediate', 'Intermediate/Advanced', 'Advanced'];
 const DANCES = ['Collegiate Shag', 'Lindy Hop', 'Balboa'];
-const STATUS_OPTIONS: { value: ClassState | 'all'; label: string }[] = [
-  { value: 'all', label: 'All Statuses' },
+type StatusFilter = ClassState | 'all' | 'active';
+
+const STATUS_OPTIONS: { value: StatusFilter; label: string }[] = [
+  { value: 'active', label: '🟢 Active (excl. Archived)' },
+  { value: 'all', label: '📋 All Classes' },
   { value: 'open', label: '🟢 Open' },
   { value: 'upcoming', label: '🟡 Upcoming' },
   { value: 'ongoing', label: '🔵 Ongoing' },
-  { value: 'archived', label: '⚫ Archived' },
+  { value: 'archived', label: '⚫ Archived Only' },
 ];
 
 function setUrlParam(key: string, value: string | null) {
@@ -102,7 +105,8 @@ export default function ClassEditor({ classes, registrations, history, currentUs
   const urlInitDone = useRef(false);
   const [filterLevel, setFilterLevel] = useState<string>('all');
   const [filterDance, setFilterDance] = useState<string>('all');
-  const [filterStatus, setFilterStatus] = useState<ClassState | 'all'>('all');
+  const [filterStatus, setFilterStatus] = useState<StatusFilter>('active');
+  const [showFilters, setShowFilters] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [addingRegFor, setAddingRegFor] = useState<string | null>(null);
 
@@ -188,7 +192,8 @@ export default function ClassEditor({ classes, registrations, history, currentUs
   const filteredClasses = useMemo(() => {
     return classes.filter((dc) => {
       const state = getClassState(classSessionsMap[dc.id] || [], dc.registration_opens_at, dc.registration_closes_at);
-      if (filterStatus !== 'all' && state !== filterStatus) return false;
+      if (filterStatus === 'active' && state === 'archived') return false;
+      else if (filterStatus !== 'all' && filterStatus !== 'active' && state !== filterStatus) return false;
       if (filterLevel !== 'all' && dc.level !== filterLevel) return false;
       if (filterDance !== 'all' && dc.dance !== filterDance) return false;
       if (searchQuery) {
@@ -196,6 +201,25 @@ export default function ClassEditor({ classes, registrations, history, currentUs
         if (!dc.title_de.toLowerCase().includes(q) && !dc.title_en.toLowerCase().includes(q)) return false;
       }
       return true;
+    }).sort((a, b) => {
+      // Sort by status priority, then by date
+      const stateA = getClassState(classSessionsMap[a.id] || [], a.registration_opens_at, a.registration_closes_at);
+      const stateB = getClassState(classSessionsMap[b.id] || [], b.registration_opens_at, b.registration_closes_at);
+
+      const priority: Record<string, number> = { open: 0, ongoing: 1, upcoming: 2, archived: 3 };
+      const prioDiff = (priority[stateA] ?? 4) - (priority[stateB] ?? 4);
+      if (prioDiff !== 0) return prioDiff;
+
+      // Same priority: sort by first session date (newest first for archived, soonest first for others)
+      const sessionsA = classSessionsMap[a.id] || [];
+      const sessionsB = classSessionsMap[b.id] || [];
+      const firstDateA = sessionsA[0]?.session_date || '9999-12-31';
+      const firstDateB = sessionsB[0]?.session_date || '9999-12-31';
+
+      if (stateA === 'archived') {
+        return firstDateB.localeCompare(firstDateA); // Newest archived first
+      }
+      return firstDateA.localeCompare(firstDateB); // Soonest first for active
     });
   }, [classes, classSessionsMap, filterLevel, filterDance, filterStatus, searchQuery]);
 
@@ -338,29 +362,141 @@ export default function ClassEditor({ classes, registrations, history, currentUs
         )}
       </div>
       {!editing && (
+        <>
+        {/* Quick Stats Bar */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+          <QuickStat
+            count={classes.filter(c => getClassState(classSessionsMap[c.id] || [], c.registration_opens_at, c.registration_closes_at) === 'open').length}
+            label="Open"
+            icon="●"
+            color="teal"
+            onClick={() => setFilterStatus('open')}
+            isActive={filterStatus === 'open'}
+          />
+          <QuickStat
+            count={classes.filter(c => getClassState(classSessionsMap[c.id] || [], c.registration_opens_at, c.registration_closes_at) === 'upcoming').length}
+            label="Upcoming"
+            icon="○"
+            color="amber"
+            onClick={() => setFilterStatus('upcoming')}
+            isActive={filterStatus === 'upcoming'}
+          />
+          <QuickStat
+            count={classes.filter(c => getClassState(classSessionsMap[c.id] || [], c.registration_opens_at, c.registration_closes_at) === 'ongoing').length}
+            label="Ongoing"
+            icon="◐"
+            color="blue"
+            onClick={() => setFilterStatus('ongoing')}
+            isActive={filterStatus === 'ongoing'}
+          />
+          <QuickStat
+            count={classes.filter(c => getClassState(classSessionsMap[c.id] || [], c.registration_opens_at, c.registration_closes_at) === 'archived').length}
+            label="Archived"
+            icon="◼"
+            color="slate"
+            onClick={() => setFilterStatus('archived')}
+            isActive={filterStatus === 'archived'}
+          />
+        </div>
+
         <div className="bg-surface/80 backdrop-blur rounded-2xl border border-primary/5 shadow-soft p-5 mb-6">
-          <div className="flex flex-wrap gap-3 items-center">
+          {/* Search and Status - Always visible */}
+          <div className="flex flex-col sm:flex-row gap-3">
             <div className="relative flex-1 min-w-[200px]">
               <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-              <input type="text" placeholder="Search classes..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-10 pr-3 py-2.5 bg-white/60 border border-primary/10 rounded-xl text-sm focus:ring-2 focus:ring-coral/30 focus:border-coral outline-none transition" />
+              <input
+                type="text"
+                placeholder="Search classes..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-3 py-2.5 bg-white/60 border border-primary/10 rounded-xl text-sm focus:ring-2 focus:ring-coral/30 focus:border-coral outline-none transition"
+              />
             </div>
-            <select value={filterLevel} onChange={(e) => setFilterLevel(e.target.value)} className="border border-primary/10 rounded-xl px-3 py-2.5 text-sm bg-white/60 focus:ring-2 focus:ring-coral/30 outline-none transition cursor-pointer">
-              <option value="all">All Levels</option>
-              {availableLevels.map((l) => <option key={l} value={l!}>{l}</option>)}
-            </select>
-            <select value={filterDance} onChange={(e) => setFilterDance(e.target.value)} className="border border-primary/10 rounded-xl px-3 py-2.5 text-sm bg-white/60 focus:ring-2 focus:ring-coral/30 outline-none transition cursor-pointer">
-              <option value="all">All Dances</option>
-              {availableDances.map((d) => <option key={d} value={d!}>{d}</option>)}
-            </select>
-            <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value as ClassState | 'all')} className="border border-primary/10 rounded-xl px-3 py-2.5 text-sm bg-white/60 focus:ring-2 focus:ring-coral/30 outline-none transition cursor-pointer">
-              {STATUS_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-            </select>
-            {(filterLevel !== 'all' || filterDance !== 'all' || filterStatus !== 'all' || searchQuery) && (
-              <button onClick={() => { setFilterLevel('all'); setFilterDance('all'); setFilterStatus('all'); setSearchQuery(''); }} className="text-xs font-semibold text-coral hover:text-coral-dark px-2 py-1 transition-colors">Clear filters</button>
+            <div className="flex gap-2">
+              <select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value as StatusFilter)}
+                className="border border-primary/10 rounded-xl px-3 py-2.5 text-sm bg-white/60 focus:ring-2 focus:ring-coral/30 outline-none transition cursor-pointer"
+              >
+                {STATUS_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
+              <button
+                onClick={() => setShowFilters(!showFilters)}
+                className={`flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${showFilters ? 'bg-coral text-white' : 'bg-white/60 border border-primary/10 text-text-muted hover:text-primary'}`}
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" /></svg>
+                Filters
+                {(filterLevel !== 'all' || filterDance !== 'all') && (
+                  <span className="flex h-2 w-2 rounded-full bg-accent" />
+                )}
+              </button>
+            </div>
+          </div>
+
+          {/* Expanded filters */}
+          {showFilters && (
+            <div className="mt-4 pt-4 border-t border-primary/5 flex flex-wrap gap-3 items-center animate-fade-up">
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-text-muted font-medium">Level:</span>
+                <select
+                  value={filterLevel}
+                  onChange={(e) => setFilterLevel(e.target.value)}
+                  className="border border-primary/10 rounded-xl px-3 py-2 text-sm bg-white/60 focus:ring-2 focus:ring-coral/30 outline-none transition cursor-pointer"
+                >
+                  <option value="all">All Levels</option>
+                  {availableLevels.map((l) => <option key={l} value={l!}>{l}</option>)}
+                </select>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-text-muted font-medium">Style:</span>
+                <select
+                  value={filterDance}
+                  onChange={(e) => setFilterDance(e.target.value)}
+                  className="border border-primary/10 rounded-xl px-3 py-2 text-sm bg-white/60 focus:ring-2 focus:ring-coral/30 outline-none transition cursor-pointer"
+                >
+                  <option value="all">All Styles</option>
+                  {availableDances.map((d) => <option key={d} value={d!}>{d}</option>)}
+                </select>
+              </div>
+              {(filterLevel !== 'all' || filterDance !== 'all') && (
+                <button
+                  onClick={() => { setFilterLevel('all'); setFilterDance('all'); }}
+                  className="flex items-center gap-1.5 text-xs font-semibold text-coral hover:text-coral-dark px-3 py-2 rounded-lg hover:bg-coral/5 transition-colors"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                  Clear extra filters
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Results summary with status chips */}
+          <div className="flex items-center justify-between mt-4 pt-4 border-t border-primary/5">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-primary">{filteredClasses.length}</span>
+              <span className="text-xs text-text-muted">classes</span>
+              {filterStatus !== 'all' && filterStatus !== 'active' && (
+                <span className="text-xs px-2 py-0.5 rounded-full bg-primary/5 text-text-muted">
+                  {STATUS_OPTIONS.find(o => o.value === filterStatus)?.label}
+                </span>
+              )}
+              {filterStatus === 'active' && (
+                <span className="text-xs px-2 py-0.5 rounded-full bg-teal/10 text-teal-dark">
+                  excl. archived
+                </span>
+              )}
+            </div>
+            {(searchQuery || filterStatus !== 'active' || filterLevel !== 'all' || filterDance !== 'all') && (
+              <button
+                onClick={() => { setFilterLevel('all'); setFilterDance('all'); setFilterStatus('active'); setSearchQuery(''); }}
+                className="text-xs font-semibold text-coral hover:text-coral-dark px-2 py-1 transition-colors"
+              >
+                Reset all
+              </button>
             )}
           </div>
-          <div className="text-xs text-text-muted mt-2">{filteredClasses.length} of {classes.length} classes</div>
         </div>
+        </>
       )}
       {isCreatingNew && (
         <div className="mb-6">
@@ -380,39 +516,137 @@ export default function ClassEditor({ classes, registrations, history, currentUs
               {isEditingThis(dc.id) ? (
                 <ClassForm editing={editing!} setEditing={setEditing} sessions={sessions} setSessions={setSessions} addSession={addSession} removeSession={removeSession} updateSession={updateSession} generateWeeklyDates={generateWeeklyDates} handleSave={handleSave} saving={saving} onCancel={() => { setUrlParam('edit', null); setEditing(null); }} title={`Edit: ${dc.title_en || dc.title_de}`} />
               ) : (
-                <div className={`bg-surface/80 backdrop-blur rounded-2xl border shadow-soft transition-all ${editing ? 'opacity-40 pointer-events-none' : 'border-primary/5 hover:shadow-lift hover:-translate-y-0.5'}`}>
+                <div className={`group bg-surface/80 backdrop-blur rounded-2xl border shadow-soft transition-all overflow-hidden ${editing ? 'opacity-40 pointer-events-none' : 'border-primary/5 hover:shadow-lift hover:-translate-y-0.5'} ${state === 'archived' ? 'opacity-75' : ''}`}>
+                  {/* Status stripe */}
+                  <div className={`h-1 w-full ${state === 'open' ? 'bg-teal' : state === 'ongoing' ? 'bg-blue-500' : state === 'upcoming' ? 'bg-accent' : 'bg-slate-300'}`} />
                   <div className="p-4 cursor-pointer" onClick={() => { const next = isViewing ? null : dc.id; setUrlParam('view', next); setViewClassId(next); }}>
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap mb-1">
-                          <h3 className="font-display font-bold text-base truncate text-primary">{dc.title_en || dc.title_de}</h3>
+                        {/* Title row */}
+                        <div className="flex items-center gap-2 flex-wrap mb-2">
+                          <h3 className={`font-display font-bold text-base truncate ${state === 'archived' ? 'text-text-muted' : 'text-primary'}`}>{dc.title_en || dc.title_de}</h3>
                           <StatusBadge state={state} />
                           {!dc.is_public && <span className="text-[10px] font-semibold uppercase tracking-wider bg-primary/8 text-primary/60 px-2 py-0.5 rounded-full">Draft</span>}
-                          <svg className={`w-4 h-4 text-text-muted transition-transform ${isViewing ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                          <svg className={`w-4 h-4 text-text-muted transition-transform ml-auto ${isViewing ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
                         </div>
-                        <div className="text-sm text-text-muted flex flex-wrap items-center gap-x-3 gap-y-1">
-                          {dc.level && <span className="inline-flex items-center gap-1"><LevelDot level={dc.level} />{dc.level}</span>}
-                          {dc.dance && <span>💃 {dc.dance}</span>}
-                          {dc.teachers && <span>🎓 {dc.teachers}</span>}
-                          <span>{getClassDateSummary(dc.id)}</span>
-                          {dc.location && <span>📍 {dc.location}</span>}
+                        {/* Meta row */}
+                        <div className="flex flex-wrap items-center gap-2 text-sm text-text-muted">
+                          {dc.level && (
+                            <span className="inline-flex items-center gap-1.5 bg-primary/[0.03] px-2 py-0.5 rounded-lg">
+                              <LevelDot level={dc.level} />
+                              <span className="text-xs font-medium">{dc.level}</span>
+                            </span>
+                          )}
+                          {dc.dance && (
+                            <span className="inline-flex items-center gap-1.5 bg-coral/[0.06] text-coral-dark px-2 py-0.5 rounded-lg text-xs font-medium">
+                              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" /></svg>
+                              {dc.dance}
+                            </span>
+                          )}
+                          {dc.teachers && (
+                            <span className="inline-flex items-center gap-1.5 text-xs">
+                              <svg className="w-3.5 h-3.5 text-accent-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+                              {dc.teachers}
+                            </span>
+                          )}
+                          <span className="inline-flex items-center gap-1.5 text-xs">
+                            <svg className="w-3.5 h-3.5 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                            {getClassDateSummary(dc.id)}
+                          </span>
+                          {dc.location && (
+                            <span className="inline-flex items-center gap-1.5 text-xs">
+                              <svg className="w-3.5 h-3.5 text-coral" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" /></svg>
+                              {dc.location}
+                            </span>
+                          )}
                         </div>
-                        <div className="flex items-center gap-4 mt-3">
-                          <CapacityBar label="Leads" current={counts.leads} max={dc.max_leads} />
-                          <CapacityBar label="Follows" current={counts.follows} max={dc.max_follows} />
-                          <div className="text-[11px] ml-auto flex gap-1.5 items-center flex-wrap">
-                            {counts.pending > 0 && <span className="bg-accent/15 text-accent-dark px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">⏳ {counts.pending} pending</span>}
-                            {counts.confirmed > 0 && <span className="bg-teal/15 text-teal-dark px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">✓ {counts.confirmed} confirmed</span>}
-                            {counts.waitlisted > 0 && <span className="bg-slate-200/70 text-slate-600 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">⏸ {counts.waitlisted} waitlist</span>}
+                        {/* Capacity & Registrations row */}
+                        <div className="flex items-center gap-6 mt-4">
+                          <div className="flex-1 flex items-center gap-6">
+                            <CapacityBar label="Leads" current={counts.leads} max={dc.max_leads} />
+                            <CapacityBar label="Follows" current={counts.follows} max={dc.max_follows} />
+                          </div>
+                          <div className="flex gap-2 items-center flex-wrap shrink-0">
+                            {counts.pending > 0 && (
+                              <span className="inline-flex items-center gap-1 bg-amber-50 border border-amber-200 text-amber-700 px-2 py-0.5 rounded-full text-[11px] font-semibold">
+                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                {counts.pending}
+                              </span>
+                            )}
+                            {counts.confirmed > 0 && (
+                              <span className="inline-flex items-center gap-1 bg-teal-50 border border-teal-200 text-teal-700 px-2 py-0.5 rounded-full text-[11px] font-semibold">
+                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                                {counts.confirmed}
+                              </span>
+                            )}
+                            {counts.waitlisted > 0 && (
+                              <span className="inline-flex items-center gap-1 bg-slate-50 border border-slate-200 text-slate-600 px-2 py-0.5 rounded-full text-[11px] font-semibold">
+                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" /></svg>
+                                {counts.waitlisted}
+                              </span>
+                            )}
+                            {classRegs.length > 0 && counts.pending === 0 && counts.confirmed === 0 && counts.waitlisted === 0 && (
+                              <span className="text-[11px] text-text-muted">{classRegs.length} total</span>
+                            )}
                           </div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-1.5 shrink-0" onClick={(e) => e.stopPropagation()}>
-                        <button onClick={() => setExpandedClassId(isExpanded ? null : dc.id)} className={`text-xs font-semibold px-3 py-1.5 rounded-full transition-colors ${isExpanded ? 'bg-primary text-white' : 'bg-primary/5 hover:bg-primary/10 text-primary'}`}>{classRegs.length} Reg.</button>
-                        <button onClick={() => exportWorkshopRegistrationsAsCsv(dc, classRegs)} disabled={classRegs.length === 0} className="text-xs font-semibold bg-primary/5 hover:bg-primary/10 text-primary px-3 py-1.5 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed">CSV</button>
-                        <button onClick={() => startEditing(dc)} className="text-xs font-semibold bg-primary/5 hover:bg-primary/10 text-primary px-3 py-1.5 rounded-full transition-colors">Edit</button>
-                        <button onClick={() => duplicateClass(dc)} className="text-xs font-semibold bg-teal/10 hover:bg-teal/20 text-teal-dark px-3 py-1.5 rounded-full transition-colors">Duplicate</button>
-                        <button onClick={() => handleDelete(dc.id)} className="text-xs font-semibold bg-coral/10 hover:bg-coral/20 text-coral-dark px-3 py-1.5 rounded-full transition-colors">Delete</button>
+                      {/* Actions */}
+                      <div className="flex items-center gap-1.5 shrink-0 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
+                        {/* Preview Link - opens class on public site */}
+                        {dc.is_public && (
+                          <a
+                            href={`${import.meta.env.BASE_URL?.replace(/\/$/, '') || ''}/de/workshops/?class=${dc.id}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            title="Preview on website"
+                            className="flex items-center gap-1 text-xs font-semibold bg-purple-50 hover:bg-purple-100 text-purple-700 px-3 py-1.5 rounded-full transition-colors"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+                            View
+                          </a>
+                        )}
+                        <button
+                          onClick={() => setExpandedClassId(isExpanded ? null : dc.id)}
+                          title="View Registrations"
+                          className={`flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-full transition-colors ${isExpanded ? 'bg-primary text-white' : 'bg-primary/5 hover:bg-primary/10 text-primary'}`}
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+                          {classRegs.length}
+                        </button>
+                        <button
+                          onClick={() => exportWorkshopRegistrationsAsCsv(dc, classRegs)}
+                          disabled={classRegs.length === 0}
+                          title="Export CSV"
+                          className="flex items-center gap-1 text-xs font-semibold bg-teal/10 hover:bg-teal/20 disabled:opacity-40 disabled:cursor-not-allowed text-teal-dark px-3 py-1.5 rounded-full transition-colors"
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                          CSV
+                        </button>
+                        <button
+                          onClick={() => duplicateClass(dc)}
+                          title="Duplicate Class"
+                          className="flex items-center gap-1 text-xs font-semibold bg-accent/10 hover:bg-accent/20 text-accent-dark px-3 py-1.5 rounded-full transition-colors"
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" /></svg>
+                          Copy
+                        </button>
+                        <button
+                          onClick={() => startEditing(dc)}
+                          title="Edit Class"
+                          className="flex items-center gap-1 text-xs font-semibold bg-primary/5 hover:bg-primary/10 text-primary px-3 py-1.5 rounded-full transition-colors"
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDelete(dc.id)}
+                          title="Delete Class"
+                          className="flex items-center gap-1 text-xs font-semibold bg-coral/10 hover:bg-coral hover:text-white text-coral-dark px-3 py-1.5 rounded-full transition-colors"
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -423,7 +657,41 @@ export default function ClassEditor({ classes, registrations, history, currentUs
             </div>
           );
         })}
-        {filteredClasses.length === 0 && !isCreatingNew && <div className="text-center py-12 text-text-muted"><p className="text-lg mb-1">No classes found</p><p className="text-sm">Try adjusting your filters or create a new class.</p></div>}
+        {filteredClasses.length === 0 && !isCreatingNew && (
+          <div className="text-center py-16">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/5 mb-4">
+              <svg className="w-8 h-8 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
+            </div>
+            <p className="text-lg font-medium text-text-muted mb-2">
+              {searchQuery ? 'No matching classes' : filterStatus === 'archived' ? 'No archived classes yet' : 'No active classes'}
+            </p>
+            <p className="text-sm text-text-muted/70 max-w-sm mx-auto mb-6">
+              {searchQuery
+                ? `No classes match "${searchQuery}". Try a different search term or adjust your filters.`
+                : filterStatus === 'archived'
+                  ? 'Archived classes are workshops that have already ended. They will appear here automatically.'
+                  : 'Get started by creating your first dance class. Classes can be workshops, courses, or events.'
+              }
+            </p>
+            <div className="flex items-center justify-center gap-3">
+              {(searchQuery || filterStatus !== 'active' || filterLevel !== 'all' || filterDance !== 'all') && (
+                <button
+                  onClick={() => { setFilterLevel('all'); setFilterDance('all'); setFilterStatus('active'); setSearchQuery(''); }}
+                  className="text-sm font-medium text-coral hover:text-coral-dark px-4 py-2 rounded-lg hover:bg-coral/5 transition-colors"
+                >
+                  Clear all filters
+                </button>
+              )}
+              <button
+                onClick={() => startEditing()}
+                className="flex items-center gap-2 bg-gradient-to-r from-coral to-coral-dark text-white font-medium px-5 py-2.5 rounded-lg transition-all text-sm shadow-[0_4px_14px_-4px_rgba(231,111,81,0.5)] hover:brightness-105"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                Create New Class
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -660,15 +928,17 @@ function ImageInput({ value, onChange }: { value: string; onChange: (v: string |
 
 // ===== CLASS LIST HELPER COMPONENTS =====
 function StatusBadge({ state }: { state: ClassState }) {
-  const styles: Record<ClassState, string> = {
-    open: 'bg-teal/15 text-teal-dark ring-teal/30',
-    upcoming: 'bg-accent/15 text-accent-dark ring-accent/30',
-    ongoing: 'bg-primary/8 text-primary ring-primary/20',
-    archived: 'bg-slate-200/70 text-slate-600 ring-slate-400/30',
+  const styles: Record<ClassState, { bg: string; text: string; border: string; icon: string }> = {
+    open: { bg: 'bg-teal/10', text: 'text-teal-dark', border: 'border-teal/30', icon: '●' },
+    upcoming: { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200', icon: '○' },
+    ongoing: { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200', icon: '◐' },
+    archived: { bg: 'bg-slate-100', text: 'text-slate-500', border: 'border-slate-200', icon: '◼' },
   };
-  const labels: Record<ClassState, string> = { open: '🟢 Open', upcoming: 'Upcoming', ongoing: 'Ongoing', archived: 'Archived' };
+  const labels: Record<ClassState, string> = { open: 'Open', upcoming: 'Upcoming', ongoing: 'Ongoing', archived: 'Archived' };
+  const s = styles[state];
   return (
-    <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ring-1 ${styles[state]}`}>
+    <span className={`inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border ${s.bg} ${s.text} ${s.border}`}>
+      <span className="text-[8px]">{s.icon}</span>
       {labels[state]}
     </span>
   );
@@ -687,12 +957,13 @@ function LevelDot({ level }: { level: string }) {
 function CapacityBar({ label, current, max }: { label: string; current: number; max?: number }) {
   const pct = max && max > 0 ? Math.round((current / max) * 100) : 0;
   const color = pct >= 90 ? 'bg-rose-500' : pct >= 70 ? 'bg-amber-500' : 'bg-emerald-500';
-  const textColor = pct >= 90 ? 'text-rose-600' : pct >= 70 ? 'text-amber-600' : 'text-emerald-600';
+  const bgColor = pct >= 90 ? 'bg-rose-100' : pct >= 70 ? 'bg-amber-100' : 'bg-emerald-100';
+  const textColor = pct >= 90 ? 'text-rose-700' : pct >= 70 ? 'text-amber-700' : 'text-emerald-700';
   return (
     <div className="flex items-center gap-2">
       <span className="text-[11px] font-medium text-text-muted w-10">{label}</span>
-      <div className="w-16 h-1.5 bg-slate-200 rounded-full overflow-hidden">
-        <div className={`h-full ${color}`} style={{ width: `${Math.min(pct, 100)}%` }} />
+      <div className={`w-20 h-2 ${bgColor} rounded-full overflow-hidden`}>
+        <div className={`h-full ${color} transition-all duration-500`} style={{ width: `${Math.min(pct, 100)}%` }} />
       </div>
       <span className={`text-[11px] font-bold ${textColor}`}>{current}{max ? `/${max}` : ''}</span>
     </div>
@@ -708,6 +979,36 @@ const TAB_CONFIG: { key: TabKey; label: string; icon: string }[] = [
   { key: 'options', label: 'Options', icon: '🔧' },
   { key: 'schedule', label: 'Schedule', icon: '📅' },
 ];
+
+// Quick stat card for the top stats bar
+function QuickStat({ count, label, icon, color, onClick, isActive }: {
+  count: number;
+  label: string;
+  icon: string;
+  color: 'teal' | 'amber' | 'blue' | 'slate';
+  onClick: () => void;
+  isActive: boolean;
+}) {
+  const colors = {
+    teal: { bg: 'bg-teal/5', text: 'text-teal-dark', border: 'border-teal/20', ring: 'ring-teal/30' },
+    amber: { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200', ring: 'ring-amber-300' },
+    blue: { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200', ring: 'ring-blue-300' },
+    slate: { bg: 'bg-slate-100', text: 'text-slate-600', border: 'border-slate-200', ring: 'ring-slate-300' },
+  };
+  const c = colors[color];
+  return (
+    <button
+      onClick={onClick}
+      className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-all text-left ${c.bg} ${c.border} ${isActive ? `ring-2 ${c.ring} shadow-md` : 'hover:shadow-soft hover:scale-[1.02]'}`}
+    >
+      <span className={`text-lg ${c.text}`}>{icon}</span>
+      <div>
+        <div className={`text-2xl font-display font-bold ${c.text}`}>{count}</div>
+        <div className={`text-xs font-medium ${c.text} opacity-80`}>{label}</div>
+      </div>
+    </button>
+  );
+}
 
 function ClassForm({
   editing,
@@ -738,14 +1039,52 @@ function ClassForm({
 }) {
   const [activeTab, setActiveTab] = useState<TabKey>('info');
 
+  // Track if there are unsaved changes (basic check)
+  const hasSessions = sessions.length > 0;
+
+  // Keyboard shortcut for Escape key
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape' && !saving) {
+        onCancel();
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onCancel, saving]);
+
+  // Warn about unsaved changes when leaving the page
+  useEffect(() => {
+    function handleBeforeUnload(e: BeforeUnloadEvent) {
+      // Always warn when in edit mode - simple approach
+      e.preventDefault();
+      e.returnValue = '';
+    }
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, []);
+
   return (
-    <form onSubmit={handleSave} className="bg-white rounded-2xl shadow-soft border border-primary/10 overflow-hidden">
-      {/* Header */}
-      <div className="px-6 py-4 bg-gradient-to-r from-primary/5 to-transparent border-b border-primary/10 flex items-center justify-between">
-        <h3 className="font-display text-xl font-bold text-primary">{title}</h3>
+    <form onSubmit={handleSave} className="bg-white rounded-2xl shadow-soft border border-primary/10 overflow-hidden relative">
+      {/* Sticky Header */}
+      <div className="sticky top-0 z-20 px-6 py-4 bg-white/95 backdrop-blur-md border-b border-primary/10 flex items-center justify-between shadow-sm">
+        <div className="flex items-center gap-4">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-text-muted hover:text-primary hover:bg-primary/5 rounded-lg transition-colors group"
+            title="Go back without saving (Esc)"
+          >
+            <svg className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+            Back
+          </button>
+          <div className="h-6 w-px bg-primary/10" />
+          <h3 className="font-display text-xl font-bold text-primary">{title}</h3>
+        </div>
         <div className="flex items-center gap-3">
           {editing.is_preview && <Badge variant="amber">Preview Mode</Badge>}
           {editing.is_public ? <Badge variant="success">Published</Badge> : <Badge variant="neutral">Draft</Badge>}
+          {!editing.id && <span className="text-xs text-accent-dark bg-accent/10 px-2 py-0.5 rounded-full font-medium">New Class</span>}
         </div>
       </div>
 
@@ -924,12 +1263,51 @@ function ClassForm({
         )}
       </div>
 
-      {/* Footer */}
-      <div className="flex justify-between items-center px-6 py-4 bg-primary/[0.02] border-t border-primary/10">
-        <button type="button" onClick={onCancel} className="px-5 py-2 text-sm font-medium text-text-muted hover:text-primary transition-colors hover:bg-primary/5 rounded-lg">Cancel</button>
-        <button type="submit" disabled={saving} className="flex items-center gap-2 bg-gradient-to-r from-coral to-coral-dark hover:brightness-105 disabled:opacity-50 disabled:hover:brightness-100 text-white font-semibold px-6 py-2.5 rounded-lg transition-all text-sm shadow-[0_4px_14px_-4px_rgba(231,111,81,0.5)]">
-          {saving ? <><Spinner /> Saving...</> : <><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg> Save Changes</>}
-        </button>
+      {/* Sticky Footer */}
+      <div className="sticky bottom-0 z-20 px-6 py-4 bg-bg-warm/80 backdrop-blur-md border-t border-primary/10">
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+          {/* Left side - Cancel info */}
+          <div className="flex items-center gap-3 text-sm text-text-muted">
+            <button
+              type="button"
+              onClick={onCancel}
+              className="flex items-center gap-2 px-4 py-2 font-medium text-text-muted hover:text-primary hover:bg-white rounded-lg transition-colors border border-transparent hover:border-primary/10 shadow-sm hover:shadow-soft"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+              Cancel & Go Back
+            </button>
+            <span className="hidden sm:inline text-xs">or press <kbd className="px-1.5 py-0.5 bg-white rounded text-[10px] font-mono border border-primary/10">Esc</kbd></span>
+          </div>
+
+          {/* Center - validation hint */}
+          {!hasSessions && editing.id && (
+            <div className="flex items-center gap-2 text-xs text-amber-600 bg-amber-50 px-3 py-1.5 rounded-lg border border-amber-200">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+              Add at least one session in the Schedule tab
+            </div>
+          )}
+
+          {/* Right side - Save */}
+          <div className="flex items-center gap-3">
+            <span className="hidden sm:block text-xs text-text-muted">
+              {editing.id ? 'Edit mode' : 'Creating new class'}
+            </span>
+            <button
+              type="submit"
+              disabled={saving}
+              className="flex items-center gap-2 bg-gradient-to-r from-coral to-coral-dark hover:brightness-105 disabled:opacity-50 disabled:hover:brightness-100 disabled:cursor-not-allowed text-white font-semibold px-6 py-2.5 rounded-lg transition-all text-sm shadow-[0_4px_14px_-4px_rgba(231,111,81,0.5)] hover:shadow-[0_6px_20px_-4px_rgba(231,111,81,0.6)]"
+            >
+              {saving ? (
+                <><Spinner /> Saving...</>
+              ) : (
+                <>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                  {editing.id ? 'Save Changes' : 'Create Class'}
+                </>
+              )}
+            </button>
+          </div>
+        </div>
       </div>
     </form>
   );
