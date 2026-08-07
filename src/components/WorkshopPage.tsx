@@ -152,6 +152,56 @@ export default function WorkshopPage({ locale, initialClasses }: Props) {
     if (dataFetched) setLoading(false);
   }, [dataFetched]);
 
+  // Update meta tags dynamically when a specific class is selected
+  useEffect(() => {
+    if (selectedIds.size === 0) return;
+    const selectedId = Array.from(selectedIds)[0];
+    const selectedClass = classesData.find((c) => c.id === selectedId);
+    if (!selectedClass) return;
+
+    const title = locale === 'de' ? selectedClass.title_de : selectedClass.title_en;
+    const description = (locale === 'de' ? selectedClass.description_de : selectedClass.description_en)?.slice(0, 200).replace(/\*/g, '').replace(/\n/g, ' ') || `${selectedClass.dance} Workshop ${selectedClass.teachers ? `mit ${selectedClass.teachers}` : ''} in Salzburg`;
+    const image = selectedClass.image_url;
+    const url = `${window.location.origin}/${locale}/workshops/?class=${selectedClass.id}`;
+
+    // Update document title
+    document.title = `${title} | Amadeus Shagadeus`;
+
+    // Update meta tags
+    const updateMetaTag = (property: string, content: string) => {
+      let tag = document.querySelector(`meta[property="${property}"]`) as HTMLMetaElement | null;
+      if (!tag) {
+        tag = document.createElement('meta');
+        tag.setAttribute('property', property);
+        document.head.appendChild(tag);
+      }
+      tag.setAttribute('content', content);
+    };
+
+    const updateNameMeta = (name: string, content: string) => {
+      let tag = document.querySelector(`meta[name="${name}"]`) as HTMLMetaElement | null;
+      if (!tag) {
+        tag = document.createElement('meta');
+        tag.setAttribute('name', name);
+        document.head.appendChild(tag);
+      }
+      tag.setAttribute('content', content);
+    };
+
+    updateMetaTag('og:title', title);
+    updateMetaTag('og:description', description);
+    if (image) updateMetaTag('og:image', image);
+    updateMetaTag('og:url', url);
+    updateMetaTag('og:type', 'website');
+    updateNameMeta('twitter:title', title);
+    updateNameMeta('twitter:description', description);
+    if (image) updateNameMeta('twitter:image', image);
+
+    return () => {
+      // Reset to default when unselecting (optional - could keep last selected)
+    };
+  }, [selectedIds, classesData, locale]);
+
   const allClasses = classesData;
   const classes = useMemo(
     () => allClasses.filter((dc) => {
