@@ -305,10 +305,11 @@ function OverviewTab({
   upcomingSessions.sort((a, b) => a.session.session_date.localeCompare(b.session.session_date) || a.session.start_time.localeCompare(b.session.start_time));
 
   // Stats for active registrations only (exclude preview classes)
-  const classIsPreview = (classId: string) => (classMap.get(classId)?.is_preview ?? false);
-  const classIsArchived = (classId: string) => archivedClassIds.has(classId);
-
-  const activeRegs = registrations.filter(r => !classIsArchived(r.dance_class_id) && !classIsPreview(r.dance_class_id));
+  const activeRegs = registrations.filter(r => {
+    const cls = classes.find(c => c.id === r.dance_class_id);
+    if (!cls) return false;
+    return !archivedClassIds.has(cls.id) && !cls.is_preview;
+  });
   const activeStats = {
     total: activeRegs.length,
     pending: activeRegs.filter(r => r.status === 'pending').length,
