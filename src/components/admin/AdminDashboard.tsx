@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { supabase } from '../../lib/supabase';
 import type { DanceClass, ClassSession, Registration, RegistrationHistory } from '../../lib/database.types';
 import { getClassState } from '../../lib/classState';
@@ -232,6 +232,7 @@ export default function AdminDashboard() {
             registrations={registrations}
             history={registrationHistory}
             classes={classes}
+            sessionsMap={sessionsMap}
             currentUser={user}
             onUpdate={loadData}
           />
@@ -288,10 +289,27 @@ function OverviewTab({
   }
   upcomingSessions.sort((a, b) => a.session.session_date.localeCompare(b.session.session_date) || a.session.start_time.localeCompare(b.session.start_time));
 
-  const recentRegs = registrations.slice(0, 8).map((r) => ({
-    ...r,
-    className: classes.find((c) => c.id === r.dance_class_id)?.title_de || '-',
-  }));
+  // Identify archived classes (no future sessions)
+  const archivedClassIds = useMemo(() => {
+    return new Set(
+      classes
+        .filter((c) => {
+          const sessions = sessionsMap[c.id] || [];
+          const hasFutureSessions = sessions.some((s) => s.session_date >= today);
+          return !hasFutureSessions && sessions.length > 0;
+        })
+        .map((c) => c.id)
+    );
+  }, [classes, sessionsMap]);
+
+  // Recent registrations from non-archived classes only
+  const recentRegs = registrations
+    .filter((r) => !archivedClassIds.has(r.dance_class_id))
+    .slice(0, 8)
+    .map((r) => ({
+      ...r,
+      className: classes.find((c) => c.id === r.dance_class_id)?.title_de || '-',
+    }));
 
   return (
     <div className="space-y-6 animate-fade-up">
@@ -452,13 +470,14 @@ function OverviewTab({
           <div>
             <p className="eyebrow text-teal mb-0.5">Activity</p>
             <h3 className="font-display text-lg font-bold text-primary">Recent Registrations</h3>
+            <p className="text-xs text-text-muted mt-0.5">Excluding archived classes</p>
           </div>
           <button onClick={() => onNavigate('registrations')} className="text-xs font-semibold text-coral hover:text-coral-dark transition-colors">
             View all →
           </button>
         </div>
         {recentRegs.length === 0 ? (
-          <p className="text-text-muted text-sm text-center py-8">No registrations yet.</p>
+          <p className="text-text-muted text-sm text-center py-8">No recent registrations from active classes.</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
