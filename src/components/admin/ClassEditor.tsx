@@ -454,11 +454,11 @@ export default function ClassEditor({ classes, registrations, history, currentUs
                   {/* Status stripe - amber for preview classes */}
                   <div className={`h-1 w-full ${dc.is_preview ? 'bg-amber-400' : state === 'open' ? 'bg-teal' : state === 'ongoing' ? 'bg-blue-500' : state === 'upcoming' ? 'bg-accent' : 'bg-slate-300'}`} />
                   <div className="p-4 cursor-pointer" onClick={() => { const next = isViewing ? null : dc.id; setUrlParam('view', next); setViewClassId(next); }}>
-                    <div className="flex items-start justify-between gap-4">
+                    <div className="flex items-start gap-4">
+                      {/* Content column */}
                       <div className="flex-1 min-w-0">
-                        {/* Title row */}
-                        <div className="flex items-center gap-2 flex-wrap mb-2">
-                          <h3 className={`font-display font-bold text-base truncate ${state === 'archived' ? 'text-text-muted' : 'text-primary'}`}>{dc.title_en || dc.title_de}</h3>
+                        {/* Status row - above title */}
+                        <div className="flex items-center gap-2 mb-1.5">
                           {dc.is_preview ? (
                             <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border bg-amber-50 text-amber-700 border-amber-200">
                               <span className="text-[8px]">◈</span>
@@ -468,8 +468,9 @@ export default function ClassEditor({ classes, registrations, history, currentUs
                             <StatusBadge state={state} />
                           )}
                           {!dc.is_public && <span className="text-[10px] font-semibold uppercase tracking-wider bg-primary/8 text-primary/60 px-2 py-0.5 rounded-full">Draft</span>}
-                          <svg className={`w-4 h-4 text-text-muted transition-transform ml-auto ${isViewing ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
                         </div>
+                        {/* Title row */}
+                        <h3 className={`font-display font-bold text-base truncate ${state === 'archived' ? 'text-text-muted' : 'text-primary'} mb-2`}>{dc.title_en || dc.title_de}</h3>
                         {/* Meta row */}
                         <div className="flex flex-wrap items-center gap-2 text-sm text-text-muted">
                           {dc.level && (
@@ -498,6 +499,12 @@ export default function ClassEditor({ classes, registrations, history, currentUs
                             <span className="inline-flex items-center gap-1.5 text-xs">
                               <svg className="w-3.5 h-3.5 text-coral" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" /></svg>
                               {dc.location}
+                            </span>
+                          )}
+                          {dc.auto_confirm && (
+                            <span className="inline-flex items-center gap-1.5 text-xs font-medium text-teal-dark" title="Auto-confirmation enabled">
+                              <svg className="w-3.5 h-3.5 text-teal" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                              Auto-confirm
                             </span>
                           )}
                         </div>
@@ -534,13 +541,13 @@ export default function ClassEditor({ classes, registrations, history, currentUs
                       </div>
                       {/* Actions */}
                       <div className="flex items-center gap-1.5 shrink-0 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
-                        {/* Preview Link - opens class on public site */}
+                        {/* Preview Link - opens class on public site (archive page for archived classes) */}
                         {dc.is_public && (
                           <a
-                            href={`${import.meta.env.BASE_URL?.replace(/\/$/, '') || ''}/de/workshops/?class=${dc.id}`}
+                            href={`${import.meta.env.BASE_URL?.replace(/\/$/, '') || ''}${state === 'archived' ? '/de/archiv/' : '/de/workshops/'}?class=${dc.id}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            title="Preview on website"
+                            title={state === 'archived' ? 'View in archive' : 'Preview on website'}
                             className="flex items-center gap-1 text-xs font-semibold bg-purple-50 hover:bg-purple-100 text-purple-700 px-3 py-1.5 rounded-full transition-colors"
                             onClick={(e) => e.stopPropagation()}
                           >
@@ -588,6 +595,10 @@ export default function ClassEditor({ classes, registrations, history, currentUs
                         >
                           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                         </button>
+                      </div>
+                      {/* Expand chevron - fixed at right edge */}
+                      <div className={`flex items-center justify-center w-8 h-8 rounded-full bg-primary/5 text-text-muted transition-all duration-200 ${isViewing ? 'rotate-180 bg-primary/10' : ''}`}>
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
                       </div>
                     </div>
                   </div>
