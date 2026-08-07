@@ -206,3 +206,54 @@ h1, h2, h3, h4 {
   height: 1px;
   background: linear-gradient(90deg, transparent, rgba(42, 157, 143, 0.4), transparent);
 }
+
+/* Prose styles for archive descriptions */
+.prose {
+  line-height: 1.7;
+}
+.prose p {
+  margin-bottom: 0.75rem;
+}
+.prose p:last-child {
+  margin-bottom: 0;
+}
+.prose strong {
+  color: var(--color-primary);
+  font-weight: 600;
+}
+.prose ul {
+  list-style-type: disc;
+  margin-left: 1.25rem;
+  margin-bottom: 0.75rem;
+}
+.prose li {
+  margin-bottom: 0.25rem;
+}
+.prose li::marker {
+  color: var(--color-accent);
+}
+.prose a {
+  color: var(--color-teal-dark);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.prose a:hover {
+  color: var(--color-primary);
+}
+
+/* Archive card specific animations */
+@keyframes archive-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Staggered animation delays for archive items */
+.archive-item {
+  animation: archive-fade-up 0.6s ease-out both;
+}
