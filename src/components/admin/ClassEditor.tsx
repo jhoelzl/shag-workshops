@@ -105,7 +105,6 @@ export default function ClassEditor({ classes, registrations, history, currentUs
   const urlInitDone = useRef(false);
   const [filterLevel, setFilterLevel] = useState<string>('all');
   const [filterDance, setFilterDance] = useState<string>('all');
-  const [showArchived, setShowArchived] = useState(false);
   const [statusFilter, setStatusFilter] = useState<ClassState | 'preview' | 'all'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [addingRegFor, setAddingRegFor] = useState<string | null>(null);
@@ -193,8 +192,6 @@ export default function ClassEditor({ classes, registrations, history, currentUs
   const filteredClasses = useMemo(() => {
     return classes.filter((dc) => {
       const state = getClassState(classSessionsMap[dc.id] || [], dc.registration_opens_at, dc.registration_closes_at);
-      // Hide archived by default
-      if (!showArchived && state === 'archived') return false;
       // Preview filter - show only preview classes
       if (statusFilter === 'preview') {
         return dc.is_preview;
@@ -227,7 +224,7 @@ export default function ClassEditor({ classes, registrations, history, currentUs
       if (stateA === 'archived') return firstDateB.localeCompare(firstDateA);
       return firstDateA.localeCompare(firstDateB);
     });
-  }, [classes, classSessionsMap, filterLevel, filterDance, showArchived, statusFilter, searchQuery]);
+  }, [classes, classSessionsMap, filterLevel, filterDance, statusFilter, searchQuery]);
 
   function duplicateClass(dc: DanceClass) {
     const existing = classSessionsMap[dc.id] || [];
@@ -414,27 +411,17 @@ export default function ClassEditor({ classes, registrations, history, currentUs
             </select>
           </div>
 
-          {/* Archived toggle row */}
+          {/* Results count and reset */}
           <div className="flex items-center justify-between mt-3 pt-3 border-t border-primary/5">
-            <label className="flex items-center gap-2 cursor-pointer group">
-              <div className={`w-9 h-5 rounded-full transition-colors ${showArchived ? 'bg-coral' : 'bg-slate-300'} relative`}>
-                <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-transform ${showArchived ? 'translate-x-5' : 'translate-x-1'}`} />
-              </div>
-              <input type="checkbox" checked={showArchived} onChange={(e) => setShowArchived(e.target.checked)} className="sr-only" />
-              <span className="text-xs text-text-muted group-hover:text-text transition-colors">Show archived classes</span>
-            </label>
-
-            <div className="flex items-center gap-3">
-              <span className="text-xs text-text-muted/70">{filteredClasses.length} results</span>
-              {(searchQuery || filterLevel !== 'all' || filterDance !== 'all' || showArchived || statusFilter !== 'all') && (
-                <button
-                  onClick={() => { setFilterLevel('all'); setFilterDance('all'); setShowArchived(false); setStatusFilter('all'); setSearchQuery(''); }}
-                  className="text-xs font-medium text-coral hover:text-coral-dark"
-                >
-                  Reset
-                </button>
-              )}
-            </div>
+            <span className="text-xs text-text-muted/70">{filteredClasses.length} results</span>
+            {(searchQuery || filterLevel !== 'all' || filterDance !== 'all' || statusFilter !== 'all') && (
+              <button
+                onClick={() => { setFilterLevel('all'); setFilterDance('all'); setStatusFilter('all'); setSearchQuery(''); }}
+                className="text-xs font-medium text-coral hover:text-coral-dark"
+              >
+                Reset
+              </button>
+            )}
           </div>
         </div>
         </>
@@ -611,20 +598,17 @@ export default function ClassEditor({ classes, registrations, history, currentUs
               <svg className="w-8 h-8 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
             </div>
             <p className="text-lg font-medium text-text-muted mb-2">
-              {searchQuery ? 'No matching classes' : showArchived ? 'No archived classes yet' : 'No active classes'}
+              {searchQuery ? 'No matching classes' : 'No classes found'}
             </p>
             <p className="text-sm text-text-muted/70 max-w-sm mx-auto mb-6">
               {searchQuery
                 ? `No classes match "${searchQuery}". Try a different search term or adjust your filters.`
-                : showArchived
-                  ? 'Archived classes are workshops that have already ended. They will appear here automatically.'
-                  : 'Get started by creating your first dance class. Classes can be workshops, courses, or events.'
-              }
+                : 'Get started by creating your first dance class. Classes can be workshops, courses, or events.'}
             </p>
             <div className="flex items-center justify-center gap-3">
-              {(searchQuery || showArchived || filterLevel !== 'all' || filterDance !== 'all' || statusFilter !== 'all') && (
+              {(searchQuery || filterLevel !== 'all' || filterDance !== 'all' || statusFilter !== 'all') && (
                 <button
-                  onClick={() => { setFilterLevel('all'); setFilterDance('all'); setShowArchived(false); setStatusFilter('all'); setSearchQuery(''); }}
+                  onClick={() => { setFilterLevel('all'); setFilterDance('all'); setStatusFilter('all'); setSearchQuery(''); }}
                   className="text-sm font-medium text-coral hover:text-coral-dark px-4 py-2 rounded-lg hover:bg-coral/5 transition-colors"
                 >
                   Clear all filters
