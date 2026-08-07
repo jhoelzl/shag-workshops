@@ -9,6 +9,23 @@ const locale = 'en';
 const i18n = t(locale);
 
 const siteOrigin = 'https://shagadeus.at';
+
+// Check for specific class query parameter for OG meta tags
+const url = Astro.url;
+const classId = url.searchParams.get('class');
+
+// Fetch specific class data if class ID is provided
+let selectedClass: DanceClass | null = null;
+if (classId) {
+  const { data } = await supabase
+    .from('dance_classes')
+    .select('*')
+    .eq('id', classId)
+    .eq('is_public', true)
+    .single();
+  if (data) selectedClass = data;
+}
+
 const { data: publicClassesData } = await supabase
   .from('dance_classes')
   .select('*')
@@ -104,10 +121,30 @@ const eventJsonLd = publicClasses.flatMap((danceClass: DanceClass) => {
 });
 ---
 
-<BaseLayout title="Collegiate Shag Swing Dance Workshops in Salzburg" locale={locale} currentPath="/workshops/">
+<BaseLayout
+  title={selectedClass ? selectedClass.title_en : "Collegiate Shag Swing Dance Workshops in Salzburg"}
+  locale={locale}
+  currentPath="/workshops/"
+  ogImage={selectedClass?.image_url || undefined}
+  ogDescription={selectedClass?.description_en?.slice(0, 200).replace(/\*/g, '').replace(/\n/g, ' ') || undefined}
+>
   {eventJsonLd.map((event) => (
     <script slot="head" type="application/ld+json" set:html={JSON.stringify(event)} />
   ))}
+  {selectedClass && (
+    <Fragment slot="head">
+      <meta property="og:type" content="website" />
+      <meta property="og:title" content={selectedClass.title_en} />
+      <meta property="og:description" content={selectedClass.description_en?.slice(0, 200).replace(/\*/g, '').replace(/\n/g, ' ') || `Join ${selectedClass.dance || 'Collegiate Shag'} workshop with ${selectedClass.teachers || 'our instructors'} in Salzburg`} />
+      <meta property="og:image" content={selectedClass.image_url} />
+      <meta property="og:url" content={`${siteOrigin}/en/workshops/?class=${selectedClass.id}`} />
+      <meta property="og:site_name" content="Amadeus Shagadeus" />
+      <meta name="twitter:card" content="summary_large_image" />
+      <meta name="twitter:title" content={selectedClass.title_en} />
+      <meta name="twitter:description" content={selectedClass.description_en?.slice(0, 200).replace(/\*/g, '').replace(/\n/g, ' ') || `Join ${selectedClass.dance || 'Collegiate Shag'} workshop with ${selectedClass.teachers || 'our instructors'} in Salzburg`} />
+      <meta name="twitter:image" content={selectedClass.image_url} />
+    </Fragment>
+  )}
 
   <section class="relative overflow-hidden">
     <div class="blob bg-teal/25 w-96 h-96 -top-32 -right-20 animate-float-slow"></div>

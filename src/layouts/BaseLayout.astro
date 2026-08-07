@@ -7,9 +7,11 @@ interface Props {
   title?: string;
   locale: Locale;
   currentPath?: string;
+  ogImage?: string;
+  ogDescription?: string;
 }
 
-const { title, locale, currentPath = '' } = Astro.props;
+const { title, locale, currentPath = '', ogImage, ogDescription } = Astro.props;
 const i18n = t(locale);
 const altLocale = getAlternateLocale(locale);
 const altPath = translatePath(currentPath, locale);
@@ -36,7 +38,11 @@ const hreflangDefaultUrl = hreflangDeUrl;
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Collegiate Shag Workshops in Salzburg - Swing Dance Classes" />
+    <meta name="description" content={ogDescription || "Collegiate Shag Workshops in Salzburg - Swing Dance Classes"} />
+    <meta property="og:image" content={ogImage || `${siteOrigin}/shagadeus_logo.png`} />
+    <meta property="og:description" content={ogDescription || "Collegiate Shag Workshops in Salzburg - Swing Dance Classes"} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content={ogImage || `${siteOrigin}/shagadeus_logo.png`} />
     <link rel="icon" type="image/png" href={`${base}/shagadeus_logo.png`} />
     <link rel="apple-touch-icon" href={`${base}/shagadeus_logo.png`} />
     <link rel="canonical" href={canonicalUrl} />
