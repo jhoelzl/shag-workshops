@@ -223,7 +223,11 @@ Deno.serve(async (req) => {
     // Organizers always get their notification regardless of auto-confirm setting.
     const skipReceivedEmail = isAutoConfirm && status === 'confirmed';
 
-    if (resendKey) {
+    // Fire-and-forget: Send emails asynchronously without blocking the response
+    // This ensures fast response times even when generating workshop boxes and ICS attachments
+    (async () => {
+      if (!resendKey) return;
+      try {
       const resend = new Resend(resendKey);
       const isDE = locale === 'de';
       const classTitle = isDE ? danceClass.title_de : danceClass.title_en;
@@ -523,8 +527,12 @@ Deno.serve(async (req) => {
           });
         }
       }
+    } catch (emailErr) {
+      console.error('Email sending error:', emailErr);
     }
+    })(); // End of fire-and-forget async IIFE
 
+    // Return response immediately - don't wait for emails
     return jsonResponse({ success: true, status, id: registration.id }, 201);
   } catch (err) {
     console.error('Unexpected error:', err);
