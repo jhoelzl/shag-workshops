@@ -525,7 +525,7 @@ export default function RegistrationTable({ registrations, history, classes, ses
                             <div className="space-y-2">
                               {entries.slice(0, 8).map((entry) => (
                                 <div key={entry.id} className="flex items-center gap-3 text-xs">
-                                  <span className="text-[10px] text-text-muted tabular-nums">{new Date(entry.created_at).toLocaleDateString('de-DE')}</span>
+                                  <span className="text-[10px] text-text-muted tabular-nums">{new Date(entry.created_at).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
                                   <span className={HISTORY_TONE[entry.event_type]}>{formatHistoryEventLabel(entry)}</span>
                                   <span className="flex-1 text-primary/70">{formatHistoryDetails(entry)}</span>
                                 </div>
