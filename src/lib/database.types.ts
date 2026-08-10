@@ -250,6 +250,9 @@ export interface Database {
           dance_class_id: string;
           created_by: string | null;
           created_at: string;
+          can_read: boolean;
+          can_write: boolean;
+          can_delete: boolean;
         };
         Relationships: [];
         Insert: {
@@ -258,6 +261,9 @@ export interface Database {
           dance_class_id: string;
           created_by?: string | null;
           created_at?: string;
+          can_read?: boolean;
+          can_write?: boolean;
+          can_delete?: boolean;
         };
         Update: {
           id?: string;
@@ -265,6 +271,9 @@ export interface Database {
           dance_class_id?: string;
           created_by?: string | null;
           created_at?: string;
+          can_read?: boolean;
+          can_write?: boolean;
+          can_delete?: boolean;
         };
       };
     };
@@ -299,6 +308,14 @@ export interface Database {
       };
       set_super_admin: {
         Args: { target_user_id: string; is_super: boolean };
+        Returns: void;
+      };
+      has_class_permission: {
+        Args: { uid: string; class_id: string; permission: string };
+        Returns: boolean;
+      };
+      update_class_permissions: {
+        Args: { target_user_id: string; class_id: string; read_perm: boolean; write_perm: boolean; delete_perm: boolean };
         Returns: void;
       };
     };

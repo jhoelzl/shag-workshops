@@ -5,14 +5,22 @@ import type { AdminUser } from './database.types';
 export type AdminPermission = {
   isSuperAdmin: boolean;
   allowedClassIds: Set<string>;
+  classPermissions: Record<string, { read: boolean; write: boolean; delete: boolean }>;
   loading: boolean;
   error: string | null;
+};
+
+export type ClassPermission = {
+  read: boolean;
+  write: boolean;
+  delete: boolean;
 };
 
 export function useAdminPermissions() {
   const [permissions, setPermissions] = useState<AdminPermission>({
     isSuperAdmin: false,
     allowedClassIds: new Set(),
+    classPermissions: {},
     loading: true,
     error: null,
   });
@@ -27,6 +35,7 @@ export function useAdminPermissions() {
         setPermissions({
           isSuperAdmin: false,
           allowedClassIds: new Set(),
+          classPermissions: {},
           loading: false,
           error: 'Not authenticated',
         });
@@ -40,31 +49,47 @@ export function useAdminPermissions() {
       if (superAdminError) throw superAdminError;
 
       if (isSuperAdmin) {
-        // Super admin - fetch all class IDs
+        // Super admin - fetch all class IDs with full permissions
         const { data: allClasses, error: classesError } = await supabase
           .from('dance_classes')
           .select('id');
 
         if (classesError) throw classesError;
 
+        const classMap: Record<string, ClassPermission> = {};
+        allClasses?.forEach(c => {
+          classMap[c.id] = { read: true, write: true, delete: true };
+        });
+
         setPermissions({
           isSuperAdmin: true,
           allowedClassIds: new Set(allClasses?.map(c => c.id) || []),
+          classPermissions: classMap,
           loading: false,
           error: null,
         });
       } else {
-        // Regular admin - fetch only assigned class IDs
+        // Regular admin - fetch assigned classes with their granular permissions
         const { data: allowedClasses, error: permError } = await supabase
           .from('class_admin_permissions')
-          .select('dance_class_id')
+          .select('dance_class_id, can_read, can_write, can_delete')
           .eq('user_id', user.id);
 
         if (permError) throw permError;
 
+        const classMap: Record<string, ClassPermission> = {};
+        allowedClasses?.forEach(p => {
+          classMap[p.dance_class_id] = {
+            read: p.can_read,
+            write: p.can_write,
+            delete: p.can_delete,
+          };
+        });
+
         setPermissions({
           isSuperAdmin: false,
           allowedClassIds: new Set(allowedClasses?.map(p => p.dance_class_id) || []),
+          classPermissions: classMap,
           loading: false,
           error: null,
         });
@@ -86,9 +111,32 @@ export function useAdminPermissions() {
     return permissions.isSuperAdmin || permissions.allowedClassIds.has(classId);
   }, [permissions.isSuperAdmin, permissions.allowedClassIds]);
 
+  const getClassPermission = useCallback((classId: string): ClassPermission => {
+    if (permissions.isSuperAdmin) {
+      return { read: true, write: true, delete: true };
+    }
+    return permissions.classPermissions[classId] || { read: false, write: false, delete: false };
+  }, [permissions.isSuperAdmin, permissions.classPermissions]);
+
+  const canReadClass = useCallback((classId: string): boolean => {
+    return permissions.isSuperAdmin || permissions.classPermissions[classId]?.read || false;
+  }, [permissions.isSuperAdmin, permissions.classPermissions]);
+
+  const canWriteClass = useCallback((classId: string): boolean => {
+    return permissions.isSuperAdmin || permissions.classPermissions[classId]?.write || false;
+  }, [permissions.isSuperAdmin, permissions.classPermissions]);
+
+  const canDeleteClass = useCallback((classId: string): boolean => {
+    return permissions.isSuperAdmin || permissions.classPermissions[classId]?.delete || false;
+  }, [permissions.isSuperAdmin, permissions.classPermissions]);
+
   return {
     ...permissions,
     canAccessClass,
+    getClassPermission,
+    canReadClass,
+    canWriteClass,
+    canDeleteClass,
     refreshPermissions,
   };
 }
@@ -134,7 +182,11 @@ export function useAdminUserManagement() {
     }
   }, [checkSuperAdmin]);
 
-  const grantPermission = useCallback(async (userId: string, classId: string) => {
+  const grantPermission = useCallback(async (
+    userId: string,
+    classId: string,
+    permissions: ClassPermission = { read: true, write: true, delete: false }
+  ) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Not authenticated');
 
@@ -144,6 +196,9 @@ export function useAdminUserManagement() {
         user_id: userId,
         dance_class_id: classId,
         created_by: user.id,
+        can_read: permissions.read,
+        can_write: permissions.write,
+        can_delete: permissions.delete,
       });
 
     if (error) throw error;
@@ -159,14 +214,37 @@ export function useAdminUserManagement() {
     if (error) throw error;
   }, []);
 
-  const getUserPermissions = useCallback(async (userId: string): Promise<string[]> => {
+  const updatePermissions = useCallback(async (
+    userId: string,
+    classId: string,
+    permissions: ClassPermission
+  ) => {
+    const { error } = await supabase.rpc('update_class_permissions', {
+      target_user_id: userId,
+      class_id: classId,
+      read_perm: permissions.read,
+      write_perm: permissions.write,
+      delete_perm: permissions.delete,
+    });
+
+    if (error) throw error;
+  }, []);
+
+  const getUserPermissions = useCallback(async (userId: string): Promise<{ classId: string; permissions: ClassPermission }[]> => {
     const { data, error } = await supabase
       .from('class_admin_permissions')
-      .select('dance_class_id')
+      .select('dance_class_id, can_read, can_write, can_delete')
       .eq('user_id', userId);
 
     if (error) throw error;
-    return data?.map(p => p.dance_class_id) || [];
+    return data?.map(p => ({
+      classId: p.dance_class_id,
+      permissions: {
+        read: p.can_read,
+        write: p.can_write,
+        delete: p.can_delete,
+      },
+    })) || [];
   }, []);
 
   const setSuperAdmin = useCallback(async (userId: string, makeSuper: boolean) => {
@@ -186,6 +264,7 @@ export function useAdminUserManagement() {
     loadAdmins,
     grantPermission,
     revokePermission,
+    updatePermissions,
     getUserPermissions,
     setSuperAdmin,
   };
