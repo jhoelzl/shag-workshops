@@ -262,7 +262,7 @@ export default function AdminDashboard() {
         )}
 
         {tab === 'classes' && (
-          <ClassEditor classes={classes} registrations={registrations} history={registrationHistory} currentUser={user} onUpdate={loadData} isSuperAdmin={isSuperAdmin} />
+          <ClassEditor classes={classes} registrations={registrations} history={registrationHistory} currentUser={user} onUpdate={loadData} isSuperAdmin={isSuperAdmin} classPermissions={classPermissions} />
         )}
 
         {tab === 'registrations' && (
@@ -273,6 +273,8 @@ export default function AdminDashboard() {
             sessionsMap={sessionsMap}
             currentUser={user}
             onUpdate={loadData}
+            isSuperAdmin={isSuperAdmin}
+            classPermissions={classPermissions}
           />
         )}
 
