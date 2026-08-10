@@ -169,6 +169,15 @@ export function useAdminUserManagement() {
     return data?.map(p => p.dance_class_id) || [];
   }, []);
 
+  const setSuperAdmin = useCallback(async (userId: string, makeSuper: boolean) => {
+    const { error } = await supabase.rpc('set_super_admin', {
+      target_user_id: userId,
+      is_super: makeSuper,
+    });
+
+    if (error) throw error;
+  }, []);
+
   return {
     admins,
     loading,
@@ -178,5 +187,6 @@ export function useAdminUserManagement() {
     grantPermission,
     revokePermission,
     getUserPermissions,
+    setSuperAdmin,
   };
 }
