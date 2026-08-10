@@ -1,14 +1,14 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import type { DanceClass, AdminUser } from '../../lib/database.types';
-import { useAdminUserManagement } from '../../lib/useAdminPermissions';
+import { useAdminUserManagement, type ClassPermission } from '../../lib/useAdminPermissions';
 
 interface Props {
   classes: DanceClass[];
 }
 
 interface UserWithPermissions extends AdminUser {
-  assignedClasses: string[];
+  assignedClasses: { classId: string; permissions: ClassPermission }[];
 }
 
 export default function AdminPermissionsManager({ classes }: Props) {
@@ -19,7 +19,13 @@ export default function AdminPermissionsManager({ classes }: Props) {
   const [expandedUser, setExpandedUser] = useState<string | null>(null);
   const [promotingUser, setPromotingUser] = useState<string | null>(null);
 
-  const { loadAdmins, grantPermission, revokePermission, setSuperAdmin } = useAdminUserManagement();
+  const {
+    grantPermission,
+    revokePermission,
+    updatePermissions,
+    setSuperAdmin,
+    getUserPermissions,
+  } = useAdminUserManagement();
 
   const loadUsers = async () => {
     try {
@@ -37,14 +43,10 @@ export default function AdminPermissionsManager({ classes }: Props) {
         if (admin.is_super_admin) {
           usersWithPerms.push({ ...admin, assignedClasses: [] });
         } else {
-          const { data: perms } = await supabase
-            .from('class_admin_permissions')
-            .select('dance_class_id')
-            .eq('user_id', admin.id);
-
+          const perms = await getUserPermissions(admin.id);
           usersWithPerms.push({
             ...admin,
-            assignedClasses: perms?.map(p => p.dance_class_id) || [],
+            assignedClasses: perms,
           });
         }
       }
@@ -61,14 +63,15 @@ export default function AdminPermissionsManager({ classes }: Props) {
     loadUsers();
   }, []);
 
-  async function togglePermission(userId: string, classId: string, currentlyHas: boolean) {
-    setSaving(prev => ({ ...prev, [`${userId}-${classId}`]: true }));
+  async function toggleClassAccess(userId: string, classId: string, currentlyHas: boolean) {
+    setSaving(prev => ({ ...prev, [`${userId}-${classId}-access`]: true }));
 
     try {
       if (currentlyHas) {
         await revokePermission(userId, classId);
       } else {
-        await grantPermission(userId, classId);
+        // Default permissions: read=true, write=true, delete=false
+        await grantPermission(userId, classId, { read: true, write: true, delete: false });
       }
 
       // Update local state
@@ -77,20 +80,57 @@ export default function AdminPermissionsManager({ classes }: Props) {
         return {
           ...u,
           assignedClasses: currentlyHas
-            ? u.assignedClasses.filter(id => id !== classId)
-            : [...u.assignedClasses, classId],
+            ? u.assignedClasses.filter(c => c.classId !== classId)
+            : [...u.assignedClasses, { classId, permissions: { read: true, write: true, delete: false } }],
+        };
+      }));
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to update access');
+    } finally {
+      setSaving(prev => ({ ...prev, [`${userId}-${classId}-access`]: false }));
+    }
+  }
+
+  async function updateClassPermission(
+    userId: string,
+    classId: string,
+    permType: keyof ClassPermission,
+    value: boolean
+  ) {
+    setSaving(prev => ({ ...prev, [`${userId}-${classId}-${permType}`]: true }));
+
+    try {
+      const user = users.find(u => u.id === userId);
+      const currentClass = user?.assignedClasses.find(c => c.classId === classId);
+
+      const newPerms: ClassPermission = {
+        read: currentClass?.permissions.read ?? true,
+        write: currentClass?.permissions.write ?? true,
+        delete: currentClass?.permissions.delete ?? false,
+      };
+      newPerms[permType] = value;
+
+      await updatePermissions(userId, classId, newPerms);
+
+      // Update local state
+      setUsers(prev => prev.map(u => {
+        if (u.id !== userId) return u;
+        return {
+          ...u,
+          assignedClasses: u.assignedClasses.map(c =>
+            c.classId === classId ? { ...c, permissions: newPerms } : c
+          ),
         };
       }));
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Failed to update permission');
     } finally {
-      setSaving(prev => ({ ...prev, [`${userId}-${classId}`]: false }));
+      setSaving(prev => ({ ...prev, [`${userId}-${classId}-${permType}`]: false }));
     }
   }
 
   async function toggleSuperAdmin(user: UserWithPermissions) {
     if (user.is_super_admin) {
-      // Confirm before demoting
       if (!confirm(`Remove super admin privileges from ${user.email}? They will lose access to all classes unless you assign specific ones.`)) {
         return;
       }
@@ -101,7 +141,6 @@ export default function AdminPermissionsManager({ classes }: Props) {
     try {
       await setSuperAdmin(user.id, !user.is_super_admin);
 
-      // Update local state
       setUsers(prev => prev.map(u => {
         if (u.id !== user.id) return u;
         return {
@@ -117,7 +156,6 @@ export default function AdminPermissionsManager({ classes }: Props) {
     }
   }
 
-  // Get current user to prevent self-demotion
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -159,19 +197,27 @@ export default function AdminPermissionsManager({ classes }: Props) {
         <p className="eyebrow text-coral mb-1">Access Control</p>
         <h2 className="font-display text-3xl font-bold tracking-tight text-primary">Admin Permissions</h2>
         <p className="text-sm text-text-muted mt-1">
-          Manage admin roles and class assignments. Super admins have full access to all classes.
+          Manage admin roles and class permissions. Super admins have full access. Limited admins can have read, write, and delete permissions configured per class.
         </p>
       </div>
 
       {/* Legend */}
-      <div className="flex items-center gap-6 mb-6 text-sm">
+      <div className="flex flex-wrap items-center gap-4 mb-6 text-sm">
         <div className="flex items-center gap-2">
           <span className="w-3 h-3 rounded-full bg-coral" />
           <span className="text-text-muted">Super Admin (full access)</span>
         </div>
         <div className="flex items-center gap-2">
+          <span className="w-3 h-3 rounded-full bg-primary" />
+          <span className="text-text-muted">Read (view data)</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="w-3 h-3 rounded-full bg-teal" />
+          <span className="text-text-muted">Write (edit data)</span>
+        </div>
+        <div className="flex items-center gap-2">
           <span className="w-3 h-3 rounded-full bg-amber-500" />
-          <span className="text-text-muted">Limited Admin (assigned only)</span>
+          <span className="text-text-muted">Delete (remove data)</span>
         </div>
       </div>
 
@@ -215,7 +261,10 @@ export default function AdminPermissionsManager({ classes }: Props) {
                     <div>
                       <p className="font-medium text-primary">{admin.email}</p>
                       <p className={`text-xs font-medium ${admin.is_super_admin ? 'text-coral' : 'text-amber-600'}`}>
-                        {admin.is_super_admin ? 'Super Admin' : `Limited Admin • ${admin.assignedClasses.length} classes assigned`}
+                        {admin.is_super_admin
+                          ? 'Super Admin'
+                          : `Limited Admin • ${admin.assignedClasses.length} classes assigned`
+                        }
                       </p>
                     </div>
                   </div>
@@ -266,59 +315,109 @@ export default function AdminPermissionsManager({ classes }: Props) {
                   </div>
                 </div>
 
-                {/* Expanded - Class assignment grid (only for limited admins) */}
+                {/* Expanded - Class assignment grid with granular permissions */}
                 {!admin.is_super_admin && isExpanded && (
                   <div className="border-t border-primary/5 px-4 pb-4">
                     <div className="pt-4 mb-3">
-                      <p className="text-sm font-medium text-primary mb-1">Assign Classes</p>
-                      <p className="text-xs text-text-muted">Toggle to grant or revoke access to each class</p>
+                      <p className="text-sm font-medium text-primary mb-1">Assign Classes & Permissions</p>
+                      <p className="text-xs text-text-muted">
+                        Toggle access and set permissions for each class. Users need at least "Read" to view a class.
+                      </p>
                     </div>
 
                     {classes.length === 0 ? (
                       <p className="text-sm text-text-muted py-4">No classes available to assign.</p>
                     ) : (
-                      <div className="grid gap-2 max-h-96 overflow-y-auto pr-2">
+                      <div className="space-y-2 max-h-96 overflow-y-auto pr-2">
                         {classes
                           .slice()
                           .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
                           .map(dc => {
-                            const hasAccess = admin.assignedClasses.includes(dc.id);
-                            const isSaving = saving[`${admin.id}-${dc.id}`];
+                            const classAccess = admin.assignedClasses.find(c => c.classId === dc.id);
+                            const hasAccess = !!classAccess;
+                            const perms = classAccess?.permissions || { read: false, write: false, delete: false };
+                            const isSavingAccess = saving[`${admin.id}-${dc.id}-access`];
 
                             return (
-                              <label
+                              <div
                                 key={dc.id}
-                                className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${
-                                  hasAccess
-                                    ? 'bg-teal/5 border-teal/30 hover:bg-teal/10'
-                                    : 'bg-white border-primary/10 hover:border-primary/30'
-                                } ${isSaving ? 'opacity-50 pointer-events-none' : ''}`}
+                                className={`rounded-lg border transition-all ${
+                                  hasAccess ? 'bg-white border-primary/20' : 'bg-bg-warm/30 border-primary/10'
+                                }`}
                               >
-                                <input
-                                  type="checkbox"
-                                  checked={hasAccess}
-                                  onChange={() => togglePermission(admin.id, dc.id, hasAccess)}
-                                  disabled={isSaving}
-                                  className="w-4 h-4 accent-coral"
-                                />
-                                <div className="flex-1 min-w-0">
-                                  <p className={`font-medium text-sm truncate ${hasAccess ? 'text-teal-dark' : 'text-primary'}`}>
-                                    {dc.title_de}
-                                  </p>
-                                  <p className="text-xs text-text-muted truncate">
-                                    {dc.level} {dc.dance && `• ${dc.dance}`}
-                                  </p>
-                                </div>
-                                {dc.is_public ? (
-                                  <span className="text-[10px] font-medium text-teal-dark bg-teal/10 px-2 py-0.5 rounded-full">
-                                    published
-                                  </span>
-                                ) : (
-                                  <span className="text-[10px] font-medium text-text-muted bg-bg-warm px-2 py-0.5 rounded-full">
-                                    draft
-                                  </span>
+                                {/* Class header with access toggle */}
+                                <label className="flex items-center gap-3 p-3 cursor-pointer">
+                                  <input
+                                    type="checkbox"
+                                    checked={hasAccess}
+                                    onChange={() => toggleClassAccess(admin.id, dc.id, hasAccess)}
+                                    disabled={isSavingAccess}
+                                    className="w-4 h-4 accent-coral"
+                                  />
+                                  <div className="flex-1 min-w-0">
+                                    <p className={`font-medium text-sm truncate ${hasAccess ? 'text-primary' : 'text-text-muted'}`}>
+                                      {dc.title_de}
+                                    </p>
+                                    <p className="text-xs text-text-muted truncate">
+                                      {dc.level} {dc.dance && `• ${dc.dance}`}
+                                    </p>
+                                  </div>
+                                  {dc.is_public ? (
+                                    <span className="text-[10px] font-medium text-teal-dark bg-teal/10 px-2 py-0.5 rounded-full">
+                                      published
+                                    </span>
+                                  ) : (
+                                    <span className="text-[10px] font-medium text-text-muted bg-bg-warm px-2 py-0.5 rounded-full">
+                                      draft
+                                    </span>
+                                  )}
+                                </label>
+
+                                {/* Permission toggles (only when has access) */}
+                                {hasAccess && (
+                                  <div className="px-3 pb-3 pt-1 border-t border-primary/5">
+                                    <div className="flex items-center gap-4 mt-2">
+                                      <span className="text-xs text-text-muted w-16">Permissions:</span>
+                                      <label className={`flex items-center gap-1.5 px-2 py-1 rounded text-xs cursor-pointer transition-colors ${
+                                        perms.read ? 'bg-primary/10 text-primary' : 'bg-bg-warm text-text-muted'
+                                      }`}>
+                                        <input
+                                          type="checkbox"
+                                          checked={perms.read}
+                                          onChange={(e) => updateClassPermission(admin.id, dc.id, 'read', e.target.checked)}
+                                          disabled={saving[`${admin.id}-${dc.id}-read`]}
+                                          className="w-3 h-3 accent-primary"
+                                        />
+                                        Read
+                                      </label>
+                                      <label className={`flex items-center gap-1.5 px-2 py-1 rounded text-xs cursor-pointer transition-colors ${
+                                        perms.write ? 'bg-teal/10 text-teal-dark' : 'bg-bg-warm text-text-muted'
+                                      }`}>
+                                        <input
+                                          type="checkbox"
+                                          checked={perms.write}
+                                          onChange={(e) => updateClassPermission(admin.id, dc.id, 'write', e.target.checked)}
+                                          disabled={saving[`${admin.id}-${dc.id}-write`]}
+                                          className="w-3 h-3 accent-teal"
+                                        />
+                                        Write
+                                      </label>
+                                      <label className={`flex items-center gap-1.5 px-2 py-1 rounded text-xs cursor-pointer transition-colors ${
+                                        perms.delete ? 'bg-amber-100 text-amber-700' : 'bg-bg-warm text-text-muted'
+                                      }`}>
+                                        <input
+                                          type="checkbox"
+                                          checked={perms.delete}
+                                          onChange={(e) => updateClassPermission(admin.id, dc.id, 'delete', e.target.checked)}
+                                          disabled={saving[`${admin.id}-${dc.id}-delete`]}
+                                          className="w-3 h-3 accent-amber-500"
+                                        />
+                                        Delete
+                                      </label>
+                                    </div>
+                                  </div>
                                 )}
-                              </label>
+                              </div>
                             );
                           })}
                       </div>
