@@ -297,6 +297,10 @@ export interface Database {
         Args: Record<string, never>;
         Returns: { dance_class_id: string }[];
       };
+      set_super_admin: {
+        Args: { target_user_id: string; is_super: boolean };
+        Returns: void;
+      };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;

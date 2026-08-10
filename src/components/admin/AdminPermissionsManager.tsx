@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import type { DanceClass, AdminUser } from '../../lib/database.types';
+import { useAdminUserManagement } from '../../lib/useAdminPermissions';
 
 interface Props {
   classes: DanceClass[];
@@ -16,8 +17,11 @@ export default function AdminPermissionsManager({ classes }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState<Record<string, boolean>>({});
   const [expandedUser, setExpandedUser] = useState<string | null>(null);
+  const [promotingUser, setPromotingUser] = useState<string | null>(null);
 
-  const loadUsers = useCallback(async () => {
+  const { loadAdmins, grantPermission, revokePermission, setSuperAdmin } = useAdminUserManagement();
+
+  const loadUsers = async () => {
     try {
       setLoading(true);
       setError(null);
@@ -26,7 +30,7 @@ export default function AdminPermissionsManager({ classes }: Props) {
       const { data: adminList, error: listError } = await supabase.rpc('list_admin_users');
       if (listError) throw listError;
 
-      // For each non-super-admin user, fetch their class permissions
+      // For each user, fetch their class permissions (if not super admin)
       const usersWithPerms: UserWithPermissions[] = [];
 
       for (const admin of (adminList as AdminUser[]) || []) {
@@ -51,35 +55,20 @@ export default function AdminPermissionsManager({ classes }: Props) {
     } finally {
       setLoading(false);
     }
-  }, []);
+  };
 
   useEffect(() => {
     loadUsers();
-  }, [loadUsers]);
+  }, []);
 
   async function togglePermission(userId: string, classId: string, currentlyHas: boolean) {
     setSaving(prev => ({ ...prev, [`${userId}-${classId}`]: true }));
 
     try {
       if (currentlyHas) {
-        // Revoke permission
-        const { error } = await supabase
-          .from('class_admin_permissions')
-          .delete()
-          .eq('user_id', userId)
-          .eq('dance_class_id', classId);
-        if (error) throw error;
+        await revokePermission(userId, classId);
       } else {
-        // Grant permission
-        const { data: { user } } = await supabase.auth.getUser();
-        const { error } = await supabase
-          .from('class_admin_permissions')
-          .insert({
-            user_id: userId,
-            dance_class_id: classId,
-            created_by: user?.id,
-          });
-        if (error) throw error;
+        await grantPermission(userId, classId);
       }
 
       // Update local state
@@ -98,6 +87,43 @@ export default function AdminPermissionsManager({ classes }: Props) {
       setSaving(prev => ({ ...prev, [`${userId}-${classId}`]: false }));
     }
   }
+
+  async function toggleSuperAdmin(user: UserWithPermissions) {
+    if (user.is_super_admin) {
+      // Confirm before demoting
+      if (!confirm(`Remove super admin privileges from ${user.email}? They will lose access to all classes unless you assign specific ones.`)) {
+        return;
+      }
+    }
+
+    setPromotingUser(user.id);
+
+    try {
+      await setSuperAdmin(user.id, !user.is_super_admin);
+
+      // Update local state
+      setUsers(prev => prev.map(u => {
+        if (u.id !== user.id) return u;
+        return {
+          ...u,
+          is_super_admin: !u.is_super_admin,
+          assignedClasses: !u.is_super_admin ? [] : u.assignedClasses,
+        };
+      }));
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to update role');
+    } finally {
+      setPromotingUser(null);
+    }
+  }
+
+  // Get current user to prevent self-demotion
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) setCurrentUserId(user.id);
+    });
+  }, []);
 
   if (loading) {
     return (
@@ -127,16 +153,13 @@ export default function AdminPermissionsManager({ classes }: Props) {
     );
   }
 
-  const regularAdmins = users.filter(u => !u.is_super_admin);
-  const superAdmins = users.filter(u => u.is_super_admin);
-
   return (
     <div className="animate-fade-up">
       <div className="mb-6">
         <p className="eyebrow text-coral mb-1">Access Control</p>
         <h2 className="font-display text-3xl font-bold tracking-tight text-primary">Admin Permissions</h2>
         <p className="text-sm text-text-muted mt-1">
-          Manage which classes each admin user can access. Super admins have access to all classes.
+          Manage admin roles and class assignments. Super admins have full access to all classes.
         </p>
       </div>
 
@@ -152,100 +175,99 @@ export default function AdminPermissionsManager({ classes }: Props) {
         </div>
       </div>
 
-      {/* Super Admins Section */}
-      {superAdmins.length > 0 && (
-        <div className="mb-8">
-          <h3 className="font-semibold text-primary mb-3 flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-coral" />
-            Super Admins
-            <span className="text-xs font-normal text-text-muted">(automatic full access to all classes)</span>
-          </h3>
-          <div className="grid gap-2">
-            {superAdmins.map(admin => (
-              <div
-                key={admin.id}
-                className="flex items-center justify-between bg-white rounded-xl p-4 border border-primary/10 shadow-soft"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-coral/10 flex items-center justify-center">
-                    <svg className="w-5 h-5 text-coral" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="font-medium text-primary">{admin.email}</p>
-                    <p className="text-xs text-coral font-medium">Super Admin</p>
-                  </div>
-                </div>
-                <span className="text-xs text-text-muted">{classes.length} classes</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Limited Admins Section */}
-      <div>
-        <h3 className="font-semibold text-primary mb-3 flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-amber-500" />
-          Limited Admins
-          <span className="text-xs font-normal text-text-muted">(assign classes individually)</span>
-        </h3>
-
-        {regularAdmins.length === 0 ? (
+      {/* All Admins List */}
+      <div className="space-y-3">
+        {users.length === 0 ? (
           <div className="bg-primary/[0.02] rounded-xl border border-primary/10 border-dashed p-8 text-center">
-            <div className="text-4xl mb-3 relative inline-block">
-              👤
-              <span className="absolute -bottom-1 -right-1 w-4 h-4 bg-amber-500 rounded-full border-2 border-white" />
-            </div>
+            <div className="text-4xl mb-3">👤</div>
             <p className="text-sm text-text-muted">
-              No limited admins yet. Create admin users in Supabase Authentication to assign them specific classes.
+              No admin users found. Create admin users in Supabase Authentication first.
             </p>
           </div>
         ) : (
-          <div className="space-y-3">
-            {regularAdmins.map(admin => (
+          users.map(admin => {
+            const isCurrentUser = admin.id === currentUserId;
+            const isExpanded = expandedUser === admin.id;
+
+            return (
               <div
                 key={admin.id}
-                className="bg-white rounded-xl border border-primary/10 shadow-soft overflow-hidden"
+                className={`bg-white rounded-xl border shadow-soft overflow-hidden ${
+                  admin.is_super_admin ? 'border-coral/30' : 'border-primary/10'
+                }`}
               >
                 {/* Header - User info */}
-                <button
-                  onClick={() => setExpandedUser(expandedUser === admin.id ? null : admin.id)}
-                  className="w-full flex items-center justify-between p-4 hover:bg-bg-warm/30 transition-colors"
-                >
+                <div className="flex items-center justify-between p-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
-                      <svg className="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                      </svg>
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                      admin.is_super_admin ? 'bg-coral/10' : 'bg-amber-100'
+                    }`}>
+                      {admin.is_super_admin ? (
+                        <svg className="w-5 h-5 text-coral" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                        </svg>
+                      ) : (
+                        <svg className="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
+                      )}
                     </div>
-                    <div className="text-left">
+                    <div>
                       <p className="font-medium text-primary">{admin.email}</p>
-                      <p className="text-xs text-amber-600 font-medium">
-                        {admin.assignedClasses.length === 0
-                          ? 'No classes assigned'
-                          : `${admin.assignedClasses.length} class${admin.assignedClasses.length === 1 ? '' : 'es'} assigned`}
+                      <p className={`text-xs font-medium ${admin.is_super_admin ? 'text-coral' : 'text-amber-600'}`}>
+                        {admin.is_super_admin ? 'Super Admin' : `Limited Admin • ${admin.assignedClasses.length} classes assigned`}
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-xs text-text-muted hidden sm:inline">
-                      Click to {expandedUser === admin.id ? 'collapse' : 'expand'}
-                    </span>
-                    <svg
-                      className={`w-5 h-5 text-text-muted transition-transform ${expandedUser === admin.id ? 'rotate-180' : ''}`}
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </div>
-                </button>
 
-                {/* Expanded - Class assignment grid */}
-                {expandedUser === admin.id && (
+                  <div className="flex items-center gap-3">
+                    {/* Super Admin Toggle */}
+                    <label className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border cursor-pointer transition-colors ${
+                      admin.is_super_admin
+                        ? 'bg-coral/10 border-coral/30'
+                        : 'bg-bg-warm/50 border-primary/10 hover:border-primary/30'
+                    } ${isCurrentUser ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                      <input
+                        type="checkbox"
+                        checked={admin.is_super_admin}
+                        onChange={() => toggleSuperAdmin(admin)}
+                        disabled={isCurrentUser || promotingUser === admin.id}
+                        className="w-4 h-4 accent-coral"
+                      />
+                      <span className={`text-xs font-medium ${admin.is_super_admin ? 'text-coral' : 'text-text-muted'}`}>
+                        Super Admin
+                      </span>
+                      {promotingUser === admin.id && (
+                        <span className="animate-pulse">...</span>
+                      )}
+                    </label>
+
+                    {/* Expand button (only for limited admins) */}
+                    {!admin.is_super_admin && (
+                      <button
+                        onClick={() => setExpandedUser(isExpanded ? null : admin.id)}
+                        className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-primary bg-primary/5 hover:bg-primary/10 rounded-lg transition-colors"
+                      >
+                        {isExpanded ? 'Collapse' : 'Assign Classes'}
+                        <svg
+                          className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </button>
+                    )}
+
+                    {isCurrentUser && (
+                      <span className="text-xs text-text-muted bg-primary/5 px-2 py-1 rounded">You</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Expanded - Class assignment grid (only for limited admins) */}
+                {!admin.is_super_admin && isExpanded && (
                   <div className="border-t border-primary/5 px-4 pb-4">
                     <div className="pt-4 mb-3">
                       <p className="text-sm font-medium text-primary mb-1">Assign Classes</p>
@@ -304,8 +326,8 @@ export default function AdminPermissionsManager({ classes }: Props) {
                   </div>
                 )}
               </div>
-            ))}
-          </div>
+            );
+          })
         )}
       </div>
 
@@ -321,7 +343,7 @@ export default function AdminPermissionsManager({ classes }: Props) {
           <li>Go to your Supabase Dashboard → Authentication → Users</li>
           <li>Click "Add user" and enter the email and password</li>
           <li>The new user can then log in at <code className="bg-white px-1 py-0.5 rounded text-xs">/admin/login</code></li>
-          <li>Return here to assign them specific classes (super admins need role set in user metadata)</li>
+          <li>Return here to assign them specific classes or make them Super Admin</li>
         </ol>
       </div>
     </div>
