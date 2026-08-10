@@ -66,6 +66,7 @@ export default function RegistrationTable({ registrations, history, classes, ses
   const [addError, setAddError] = useState<string | null>(null);
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [openHistory, setOpenHistory] = useState<string | null>(null);
+  const [openRoleMenu, setOpenRoleMenu] = useState<string | null>(null);
 
   const classMap = new Map(classes.map((c) => [c.id, c]));
   const historyByRegistration = history.reduce((acc, entry) => {
@@ -138,6 +139,15 @@ export default function RegistrationTable({ registrations, history, classes, ses
       },
       body: JSON.stringify({ registration_id: registrationId, new_status: newStatus }),
     });
+    setUpdating((prev) => { const next = new Set(prev); next.delete(registrationId); return next; });
+    onUpdate();
+  }
+
+  async function updateRole(registrationId: string, newRole: 'lead' | 'follow') {
+    setUpdating((prev) => new Set(prev).add(registrationId));
+    setOpenRoleMenu(null);
+    const { error } = await supabase.from('registrations').update({ role: newRole }).eq('id', registrationId);
+    if (error) alert(`Failed to update role: ${error.message}`);
     setUpdating((prev) => { const next = new Set(prev); next.delete(registrationId); return next; });
     onUpdate();
   }
@@ -434,10 +444,34 @@ export default function RegistrationTable({ registrations, history, classes, ses
                         <span className={isArchived ? 'text-slate-400' : ''}>{dc?.title_de ?? '-'}</span>
                         {isArchived && <span className="ml-1.5 text-[10px] bg-slate-200 text-slate-500 px-1.5 py-0.5 rounded-full">archived</span>}
                       </td>
-                      <td className="py-3 px-4">
-                        <span className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full ${reg.role === 'lead' ? 'bg-primary/8 text-primary' : 'bg-coral/10 text-coral-dark'}`}>
+                      <td className="py-3 px-4 relative">
+                        <button
+                          onClick={() => setOpenRoleMenu(openRoleMenu === reg.id ? null : reg.id)}
+                          disabled={isUpdating}
+                          className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full transition-colors cursor-pointer hover:brightness-95 disabled:opacity-50 disabled:cursor-not-allowed ${reg.role === 'lead' ? 'bg-primary/8 text-primary hover:bg-primary/15' : 'bg-coral/10 text-coral-dark hover:bg-coral/20'}`}
+                        >
                           {reg.role === 'lead' ? 'Lead' : 'Follow'}
-                        </span>
+                          <svg className="w-3 h-3 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                        </button>
+                        {openRoleMenu === reg.id && (
+                          <>
+                            <button type="button" className="fixed inset-0 z-10 cursor-default" onClick={() => setOpenRoleMenu(null)} />
+                            <div className={`absolute z-20 bg-white rounded-xl shadow-lift border border-primary/10 py-1 min-w-[100px] ${openUpward ? 'bottom-full mb-1' : 'top-full mt-1'}`}>
+                              <button
+                                onClick={() => updateRole(reg.id, 'lead')}
+                                className={`w-full text-left text-xs font-medium px-4 py-2 transition-colors ${reg.role === 'lead' ? 'bg-primary/8 text-primary' : 'text-text-muted hover:text-primary hover:bg-bg-warm/50'}`}
+                              >
+                                Lead
+                              </button>
+                              <button
+                                onClick={() => updateRole(reg.id, 'follow')}
+                                className={`w-full text-left text-xs font-medium px-4 py-2 transition-colors ${reg.role === 'follow' ? 'bg-coral/10 text-coral-dark' : 'text-text-muted hover:text-primary hover:bg-bg-warm/50'}`}
+                              >
+                                Follow
+                              </button>
+                            </div>
+                          </>
+                        )}
                       </td>
                       <td className="py-3 px-4 text-text-muted text-xs">
                         {reg.partner_name || <span className="text-text-muted/40">—</span>}
@@ -453,7 +487,7 @@ export default function RegistrationTable({ registrations, history, classes, ses
                       <td className="py-3 px-4 text-text-muted text-xs tabular-nums">
                         {new Date(reg.created_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit' })}
                       </td>
-                      <td className="py-3 px-4">
+                      <td className="py-3 px-4 relative">
                         <div className="flex items-center justify-end gap-1">
                           {transitions.map((t) => (
                             <TransitionBtn key={t.to} to={t.to} label={t.label} onClick={() => updateStatus(reg.id, t.to)} disabled={isUpdating} />
@@ -469,7 +503,7 @@ export default function RegistrationTable({ registrations, history, classes, ses
                         {isMenuOpen && (
                           <>
                             <button type="button" className="fixed inset-0 z-10 cursor-default" onClick={() => setOpenMenu(null)} />
-                            <div className={`absolute right-3 z-20 bg-white rounded-xl shadow-lift border border-primary/10 py-1 min-w-[160px] ${openUpward ? 'bottom-full mb-1' : 'top-full mt-1'}`}>
+                            <div className={`absolute right-0 z-20 bg-white rounded-xl shadow-lift border border-primary/10 py-1 min-w-[160px] ${openUpward ? 'bottom-full mb-1' : 'top-full mt-1'}`}>
                               <button onClick={() => setOpenHistory(isHistoryOpen ? null : reg.id)} className="w-full text-left text-xs font-medium text-text-muted hover:text-primary hover:bg-bg-warm/50 px-4 py-2 transition-colors">
                                 History ({entries.length})
                               </button>

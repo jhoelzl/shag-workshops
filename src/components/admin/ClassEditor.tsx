@@ -539,22 +539,9 @@ export default function ClassEditor({ classes, registrations, history, currentUs
                           </div>
                         </div>
                       </div>
-                      {/* Actions */}
-                      <div className="flex items-center gap-1.5 shrink-0 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
-                        {/* Preview Link - opens class on public site (archive page for archived classes) */}
-                        {dc.is_public && (
-                          <a
-                            href={`${import.meta.env.BASE_URL?.replace(/\/$/, '') || ''}${state === 'archived' ? '/de/archiv/' : '/de/workshops/'}?class=${dc.id}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            title={state === 'archived' ? 'View in archive' : 'Preview on website'}
-                            className="flex items-center gap-1 text-xs font-semibold bg-purple-50 hover:bg-purple-100 text-purple-700 px-3 py-1.5 rounded-full transition-colors"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
-                            View
-                          </a>
-                        )}
+                      {/* Actions - Desktop: show on hover, Mobile: show burger menu */}
+                      <div className="flex items-center gap-1.5 shrink-0" onClick={(e) => e.stopPropagation()}>
+                        {/* Always visible registration count */}
                         <button
                           onClick={() => setExpandedClassId(isExpanded ? null : dc.id)}
                           title="View Registrations"
@@ -563,38 +550,67 @@ export default function ClassEditor({ classes, registrations, history, currentUs
                           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
                           {classRegs.length}
                         </button>
-                        <button
-                          onClick={() => exportWorkshopRegistrationsAsCsv(dc, classRegs)}
-                          disabled={classRegs.length === 0}
-                          title="Export CSV"
-                          className="flex items-center gap-1 text-xs font-semibold bg-teal/10 hover:bg-teal/20 disabled:opacity-40 disabled:cursor-not-allowed text-teal-dark px-3 py-1.5 rounded-full transition-colors"
-                        >
-                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-                          CSV
-                        </button>
-                        <button
-                          onClick={() => duplicateClass(dc)}
-                          title="Duplicate Class"
-                          className="flex items-center gap-1 text-xs font-semibold bg-accent/10 hover:bg-accent/20 text-accent-dark px-3 py-1.5 rounded-full transition-colors"
-                        >
-                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" /></svg>
-                          Copy
-                        </button>
-                        <button
-                          onClick={() => startEditing(dc)}
-                          title="Edit Class"
-                          className="flex items-center gap-1 text-xs font-semibold bg-primary/5 hover:bg-primary/10 text-primary px-3 py-1.5 rounded-full transition-colors"
-                        >
-                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => handleDelete(dc.id)}
-                          title="Delete Class"
-                          className="flex items-center gap-1 text-xs font-semibold bg-coral/10 hover:bg-coral hover:text-white text-coral-dark px-3 py-1.5 rounded-full transition-colors"
-                        >
-                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                        </button>
+
+                        {/* Desktop actions - appear on hover */}
+                        <div className="hidden sm:flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                          {dc.is_public && (
+                            <a
+                              href={`${import.meta.env.BASE_URL?.replace(/\/$/, '') || ''}${state === 'archived' ? '/de/archiv/' : '/de/workshops/'}?class=${dc.id}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              title={state === 'archived' ? 'View in archive' : 'Preview on website'}
+                              className="flex items-center gap-1 text-xs font-semibold bg-purple-50 hover:bg-purple-100 text-purple-700 px-3 py-1.5 rounded-full transition-colors"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+                              View
+                            </a>
+                          )}
+                          <button
+                            onClick={() => exportWorkshopRegistrationsAsCsv(dc, classRegs)}
+                            disabled={classRegs.length === 0}
+                            title="Export CSV"
+                            className="flex items-center gap-1 text-xs font-semibold bg-teal/10 hover:bg-teal/20 disabled:opacity-40 disabled:cursor-not-allowed text-teal-dark px-3 py-1.5 rounded-full transition-colors"
+                          >
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                            CSV
+                          </button>
+                          <button
+                            onClick={() => duplicateClass(dc)}
+                            title="Duplicate Class"
+                            className="flex items-center gap-1 text-xs font-semibold bg-accent/10 hover:bg-accent/20 text-accent-dark px-3 py-1.5 rounded-full transition-colors"
+                          >
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" /></svg>
+                            Copy
+                          </button>
+                          <button
+                            onClick={() => startEditing(dc)}
+                            title="Edit Class"
+                            className="flex items-center gap-1 text-xs font-semibold bg-primary/5 hover:bg-primary/10 text-primary px-3 py-1.5 rounded-full transition-colors"
+                          >
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => handleDelete(dc.id)}
+                            title="Delete Class"
+                            className="flex items-center gap-1 text-xs font-semibold bg-coral/10 hover:bg-coral hover:text-white text-coral-dark px-3 py-1.5 rounded-full transition-colors"
+                          >
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                          </button>
+                        </div>
+
+                        {/* Mobile burger menu - always visible with inline dropdown */}
+                        <ClassActionsMenu
+                          dc={dc}
+                          state={state}
+                          classRegs={classRegs}
+                          onView={() => { window.open(`${import.meta.env.BASE_URL?.replace(/\/$/, '') || ''}${state === 'archived' ? '/de/archiv/' : '/de/workshops/'}?class=${dc.id}`, '_blank'); }}
+                          onExport={() => exportWorkshopRegistrationsAsCsv(dc, classRegs)}
+                          onDuplicate={() => duplicateClass(dc)}
+                          onEdit={() => startEditing(dc)}
+                          onDelete={() => handleDelete(dc.id)}
+                        />
                       </div>
                       {/* Expand chevron - fixed at right edge */}
                       <div className={`flex items-center justify-center w-8 h-8 rounded-full bg-primary/5 text-text-muted transition-all duration-200 ${isViewing ? 'rotate-180 bg-primary/10' : ''}`}>
@@ -1251,6 +1267,83 @@ function ClassForm({
   );
 }
 
+function ClassActionsMenu({ dc, state, classRegs, onView, onExport, onDuplicate, onEdit, onDelete }: { dc: DanceClass; state: ClassState; classRegs: Registration[]; onView: () => void; onExport: () => void; onDuplicate: () => void; onEdit: () => void; onDelete: () => void; }) {
+  const [open, setOpen] = useState(false);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+
+  // Close on click outside
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (buttonRef.current && !buttonRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    if (open) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [open]);
+
+  return (
+    <div className="sm:hidden relative">
+      <button
+        ref={buttonRef}
+        onClick={(e) => { e.stopPropagation(); setOpen(!open); }}
+        className={`flex items-center gap-1 text-xs font-semibold px-2.5 py-1.5 rounded-full transition-colors ${open ? 'bg-primary text-white' : 'bg-primary/5 hover:bg-primary/10 text-primary'}`}
+      >
+        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M10 6a2 2 0 110-4 2 2 0 010 4zm0 6a2 2 0 110-4 2 2 0 010 4zm0 6a2 2 0 110-4 2 2 0 010 4z" /></svg>
+      </button>
+
+      {open && (
+        <div className="absolute right-0 top-full mt-1 bg-white rounded-xl shadow-lift border border-primary/10 py-1.5 min-w-[160px] z-30">
+          {dc.is_public && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onView(); setOpen(false); }}
+              className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-medium text-text-muted hover:text-primary hover:bg-bg-warm/50 transition-colors"
+            >
+              <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+              View on site
+            </button>
+          )}
+          <button
+            onClick={(e) => { e.stopPropagation(); onEdit(); setOpen(false); }}
+            className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-medium text-text-muted hover:text-primary hover:bg-bg-warm/50 transition-colors"
+          >
+            <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+            Edit class
+          </button>
+          {classRegs.length > 0 && (
+            <>
+              <button
+                onClick={(e) => { e.stopPropagation(); onExport(); setOpen(false); }}
+                className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-medium text-text-muted hover:text-primary hover:bg-bg-warm/50 transition-colors"
+              >
+                <svg className="w-4 h-4 text-teal-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                Export CSV
+              </button>
+            </>
+          )}
+          <button
+            onClick={(e) => { e.stopPropagation(); onDuplicate(); setOpen(false); }}
+            className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-medium text-text-muted hover:text-primary hover:bg-bg-warm/50 transition-colors"
+          >
+            <svg className="w-4 h-4 text-accent-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" /></svg>
+            Duplicate
+          </button>
+          <div className="border-t border-bg-warm my-1" />
+          <button
+            onClick={(e) => { e.stopPropagation(); if (confirm('Delete this class and all its registrations?')) onDelete(); setOpen(false); }}
+            className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-medium text-coral-dark hover:bg-coral/10 transition-colors"
+          >
+            <svg className="w-4 h-4 text-coral" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+            Delete
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function GenerateButton({ onGenerate }: { onGenerate: (start: string, weeks: number, startTime: string, endTime: string) => void }) {
   const [open, setOpen] = useState(false);
   const [startDate, setStartDate] = useState('');
@@ -1282,6 +1375,7 @@ function InlineRegistrations({ classRegs, history = [], danceClass, currentUser,
   const [updating, setUpdating] = useState<Set<string>>(new Set());
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [openHistory, setOpenHistory] = useState<string | null>(null);
+  const [openRoleMenu, setOpenRoleMenu] = useState<string | null>(null);
   const [manualReg, setManualReg] = useState({ name: '', email: '', role: 'lead' as 'lead' | 'follow', partner_name: '', comment: '' });
   const [manualSaving, setManualSaving] = useState(false);
   const [manualError, setManualError] = useState('');
@@ -1298,6 +1392,15 @@ function InlineRegistrations({ classRegs, history = [], danceClass, currentUser,
     const { data: { session } } = await supabase.auth.getSession();
     const functionsUrl = `${import.meta.env.PUBLIC_SUPABASE_URL}/functions/v1`;
     await fetch(`${functionsUrl}/confirm-registration`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token}` }, body: JSON.stringify({ registration_id: registrationId, new_status: newStatus }) });
+    setUpdating((prev) => { const next = new Set(prev); next.delete(registrationId); return next; });
+    onUpdate();
+  }
+
+  async function updateRole(registrationId: string, newRole: 'lead' | 'follow') {
+    setUpdating((prev) => new Set(prev).add(registrationId));
+    setOpenRoleMenu(null);
+    const { error } = await supabase.from('registrations').update({ role: newRole }).eq('id', registrationId);
+    if (error) alert(`Failed to update role: ${error.message}`);
     setUpdating((prev) => { const next = new Set(prev); next.delete(registrationId); return next; });
     onUpdate();
   }
@@ -1351,7 +1454,35 @@ function InlineRegistrations({ classRegs, history = [], danceClass, currentUser,
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-medium text-sm">{reg.name}</span>
                       {statusBadge(reg.status)}
-                      <span className="text-[10px] uppercase tracking-wider bg-primary/5 text-primary px-2 py-0.5 rounded">{reg.role}</span>
+                      <div className="relative">
+                        <button
+                          onClick={() => setOpenRoleMenu(openRoleMenu === reg.id ? null : reg.id)}
+                          disabled={isUpdating}
+                          className={`inline-flex items-center gap-1 text-[10px] uppercase tracking-wider px-2 py-0.5 rounded transition-colors cursor-pointer hover:brightness-95 disabled:opacity-50 disabled:cursor-not-allowed ${reg.role === 'lead' ? 'bg-primary/5 text-primary hover:bg-primary/10' : 'bg-coral/10 text-coral-dark hover:bg-coral/20'}`}
+                        >
+                          {reg.role}
+                          <svg className="w-3 h-3 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                        </button>
+                        {openRoleMenu === reg.id && (
+                          <>
+                            <button type="button" className="fixed inset-0 z-10 cursor-default" onClick={() => setOpenRoleMenu(null)} />
+                            <div className="absolute z-20 bg-white rounded-xl shadow-lift border border-primary/10 py-1 min-w-[90px] mt-1">
+                              <button
+                                onClick={() => updateRole(reg.id, 'lead')}
+                                className={`w-full text-left text-xs font-medium px-3 py-2 transition-colors ${reg.role === 'lead' ? 'bg-primary/8 text-primary' : 'text-text-muted hover:text-primary hover:bg-bg-warm/50'}`}
+                              >
+                                Lead
+                              </button>
+                              <button
+                                onClick={() => updateRole(reg.id, 'follow')}
+                                className={`w-full text-left text-xs font-medium px-3 py-2 transition-colors ${reg.role === 'follow' ? 'bg-coral/10 text-coral-dark' : 'text-text-muted hover:text-primary hover:bg-bg-warm/50'}`}
+                              >
+                                Follow
+                              </button>
+                            </div>
+                          </>
+                        )}
+                      </div>
                     </div>
                     <div className="text-xs text-text-muted mt-0.5">{reg.email}{reg.partner_name ? ` · Partner: ${reg.partner_name}` : ''}{reg.comment ? ` · "${reg.comment}"` : ''}</div>
                     {regHistory.length > 0 && <button onClick={() => setOpenHistory(historyOpen ? null : reg.id)} className="text-[10px] text-text-muted underline mt-1 hover:text-primary">{historyOpen ? 'Hide History' : 'Show History'}</button>}
