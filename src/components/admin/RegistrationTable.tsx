@@ -403,6 +403,8 @@ export default function RegistrationTable({ registrations, history, classes, ses
                 <th className="py-3 px-4">Participant</th>
                 <th className="py-3 px-4">Class</th>
                 <th className="py-3 px-4">Role</th>
+                <th className="py-3 px-4">Partner</th>
+                <th className="py-3 px-4">Comment</th>
                 <th className="py-3 px-4">Status</th>
                 <th className="py-3 px-4">Date</th>
                 <th className="py-3 px-4 text-right">Actions</th>
@@ -436,6 +438,12 @@ export default function RegistrationTable({ registrations, history, classes, ses
                         <span className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full ${reg.role === 'lead' ? 'bg-primary/8 text-primary' : 'bg-coral/10 text-coral-dark'}`}>
                           {reg.role === 'lead' ? 'Lead' : 'Follow'}
                         </span>
+                      </td>
+                      <td className="py-3 px-4 text-text-muted text-xs">
+                        {reg.partner_name || <span className="text-text-muted/40">—</span>}
+                      </td>
+                      <td className="py-3 px-4 text-text-muted text-xs max-w-[150px] truncate" title={reg.comment || undefined}>
+                        {reg.comment || <span className="text-text-muted/40">—</span>}
                       </td>
                       <td className="py-3 px-4">
                         <span className={`inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider px-2 py-1 rounded-full ${meta.bg} ${meta.color}`}>
@@ -476,7 +484,7 @@ export default function RegistrationTable({ registrations, history, classes, ses
                     </tr>
                     {isHistoryOpen && (
                       <tr className="bg-bg-warm/30 border-t border-bg-warm">
-                        <td colSpan={6} className="px-4 py-3">
+                        <td colSpan={8} className="px-4 py-3">
                           {entries.length === 0 ? (
                             <p className="text-xs text-text-muted">No history entries.</p>
                           ) : (
@@ -499,7 +507,7 @@ export default function RegistrationTable({ registrations, history, classes, ses
               })}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="py-12 text-center">
+                  <td colSpan={8} className="py-12 text-center">
                     <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-bg-warm mb-3">
                       <svg className="w-7 h-7 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
                     </div>
