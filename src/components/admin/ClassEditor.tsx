@@ -1173,7 +1173,7 @@ function ClassForm({
             <SectionCard title="Visibility & Behavior" icon="👁️">
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 <Toggle label="Published" description="Visible on the public website" checked={editing.is_public ?? false} onChange={(v) => setEditing({ ...editing, is_public: v })} />
-                <Toggle label="Auto-confirm" description="Instantly confirm registrations without manual review" checked={editing.auto_confirm ?? false} onChange={(v) => setEditing({ ...editing, auto_confirm: v })} />
+                <Toggle label="Auto-confirm" description="Instantly confirm registrations without manual review. Participants receive only the confirmation email (no separate 'registration received' email)." checked={editing.auto_confirm ?? false} onChange={(v) => setEditing({ ...editing, auto_confirm: v })} />
                 <Toggle label="Preview Mode" description="Show preview text instead of session dates" checked={editing.is_preview ?? false} onChange={(v) => setEditing({ ...editing, is_preview: v })} />
               </div>
             </SectionCard>
