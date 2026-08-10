@@ -52,9 +52,15 @@ export default function AdminDashboard() {
       }
       setUser(user);
       setLoading(false);
-      loadData();
     });
   }, []);
+
+  // Load data once we have the user and permissions are ready
+  useEffect(() => {
+    if (user && !permissionsLoading) {
+      loadData();
+    }
+  }, [user, permissionsLoading, isSuperAdmin]);
 
   async function loadData() {
     const [classRes, regRes, sessRes, historyRes] = await Promise.all([
