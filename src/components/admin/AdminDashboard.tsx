@@ -2,16 +2,18 @@ import { useEffect, useState, useMemo } from 'react';
 import { supabase } from '../../lib/supabase';
 import type { DanceClass, ClassSession, Registration, RegistrationHistory } from '../../lib/database.types';
 import { getClassState } from '../../lib/classState';
+import { useAdminPermissions } from '../../lib/useAdminPermissions';
 import ClassEditor from './ClassEditor';
 import RegistrationTable from './RegistrationTable';
+import AdminPermissionsManager from './AdminPermissionsManager';
 
-type Tab = 'overview' | 'classes' | 'registrations';
+type Tab = 'overview' | 'classes' | 'registrations' | 'permissions';
 
 function getTabFromUrl(): Tab {
   if (typeof window === 'undefined') return 'overview';
   const params = new URLSearchParams(window.location.search);
   const t = params.get('tab');
-  if (t === 'classes' || t === 'registrations' || t === 'overview') return t;
+  if (t === 'classes' || t === 'registrations' || t === 'overview' || t === 'permissions') return t;
   return 'overview';
 }
 
@@ -24,6 +26,8 @@ export default function AdminDashboard() {
   const [registrationHistory, setRegistrationHistory] = useState<RegistrationHistory[]>([]);
   const [sessionsMap, setSessionsMap] = useState<Record<string, ClassSession[]>>({});
   const base = import.meta.env.BASE_URL?.replace(/\/$/, '') ?? '';
+
+  const { isSuperAdmin, allowedClassIds, canAccessClass, loading: permissionsLoading } = useAdminPermissions();
 
   function setTab(newTab: Tab) {
     const url = new URL(window.location.href);
@@ -59,14 +63,34 @@ export default function AdminDashboard() {
       supabase.from('class_sessions').select('*').order('session_date', { ascending: true }),
       supabase.from('registration_history').select('*').order('created_at', { ascending: false }),
     ]);
-    if (classRes.data) setClasses(classRes.data);
-    if (regRes.data) setRegistrations(regRes.data);
-    if (historyRes.data) setRegistrationHistory(historyRes.data);
+    // Filter data based on permissions - RLS already restricts server-side,
+    // but we filter client-side as well for defense in depth
+    if (classRes.data) {
+      const visibleClasses = isSuperAdmin
+        ? classRes.data
+        : classRes.data.filter(c => allowedClassIds.has(c.id));
+      setClasses(visibleClasses);
+    }
+    if (regRes.data) {
+      const visibleRegs = isSuperAdmin
+        ? regRes.data
+        : regRes.data.filter(r => allowedClassIds.has(r.dance_class_id));
+      setRegistrations(visibleRegs);
+    }
+    if (historyRes.data) {
+      const visibleHistory = isSuperAdmin
+        ? historyRes.data
+        : historyRes.data.filter(h => allowedClassIds.has(h.dance_class_id));
+      setRegistrationHistory(visibleHistory);
+    }
     if (sessRes.data) {
       const map: Record<string, ClassSession[]> = {};
       for (const s of sessRes.data) {
-        if (!map[s.dance_class_id]) map[s.dance_class_id] = [];
-        map[s.dance_class_id].push(s);
+        // Only include sessions for classes user can access
+        if (isSuperAdmin || allowedClassIds.has(s.dance_class_id)) {
+          if (!map[s.dance_class_id]) map[s.dance_class_id] = [];
+          map[s.dance_class_id].push(s);
+        }
       }
       setSessionsMap(map);
     }
@@ -77,7 +101,7 @@ export default function AdminDashboard() {
     window.location.href = `${base}/admin/login/`;
   }
 
-  if (loading) {
+  if (loading || permissionsLoading) {
     return (
       <div className="min-h-screen animate-pulse">
         {/* Header skeleton */}
@@ -158,6 +182,7 @@ export default function AdminDashboard() {
     { key: 'overview', label: 'Overview', icon: '✦' },
     { key: 'classes', label: 'Classes', icon: '✦' },
     { key: 'registrations', label: 'Registrations', icon: '✦' },
+    ...(isSuperAdmin ? [{ key: 'permissions' as Tab, label: 'Admin Permissions', icon: '✦' }] : []),
   ];
 
   return (
@@ -175,7 +200,14 @@ export default function AdminDashboard() {
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <span className="hidden sm:inline text-xs text-text-muted tabular-nums">{user?.email}</span>
+            <div className="hidden sm:flex flex-col items-end">
+              <span className="text-xs text-text-muted tabular-nums">{user?.email}</span>
+              {!permissionsLoading && (
+                <span className={`text-[10px] font-semibold uppercase tracking-wider ${isSuperAdmin ? 'text-coral' : 'text-amber-600'}`}>
+                  {isSuperAdmin ? 'Super Admin' : 'Limited Admin'}
+                </span>
+              )}
+            </div>
             <button
               onClick={handleLogout}
               className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary/80 hover:text-primary border border-primary/15 hover:border-primary/30 px-3 py-1.5 rounded-full transition-colors"
@@ -224,7 +256,7 @@ export default function AdminDashboard() {
         )}
 
         {tab === 'classes' && (
-          <ClassEditor classes={classes} registrations={registrations} history={registrationHistory} currentUser={user} onUpdate={loadData} />
+          <ClassEditor classes={classes} registrations={registrations} history={registrationHistory} currentUser={user} onUpdate={loadData} isSuperAdmin={isSuperAdmin} />
         )}
 
         {tab === 'registrations' && (
@@ -236,6 +268,10 @@ export default function AdminDashboard() {
             currentUser={user}
             onUpdate={loadData}
           />
+        )}
+
+        {tab === 'permissions' && isSuperAdmin && (
+          <AdminPermissionsManager classes={classes} />
         )}
       </div>
     </div>

@@ -243,6 +243,30 @@ export interface Database {
           created_at?: string;
         };
       };
+      class_admin_permissions: {
+        Row: {
+          id: string;
+          user_id: string;
+          dance_class_id: string;
+          created_by: string | null;
+          created_at: string;
+        };
+        Relationships: [];
+        Insert: {
+          id?: string;
+          user_id: string;
+          dance_class_id: string;
+          created_by?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          dance_class_id?: string;
+          created_by?: string | null;
+          created_at?: string;
+        };
+      };
     };
     Views: {
       class_registration_counts: {
@@ -266,3 +290,11 @@ export type DanceClass = Database['public']['Tables']['dance_classes']['Row'];
 export type ClassSession = Database['public']['Tables']['class_sessions']['Row'];
 export type Registration = Database['public']['Tables']['registrations']['Row'];
 export type RegistrationHistory = Database['public']['Tables']['registration_history']['Row'];
+export type ClassAdminPermission = Database['public']['Tables']['class_admin_permissions']['Row'];
+
+// Admin user type for permission management
+export type AdminUser = {
+  id: string;
+  email: string;
+  is_super_admin: boolean;
+};
