@@ -217,6 +217,12 @@ Deno.serve(async (req) => {
         note: 'RESEND_API_KEY is not configured',
       });
     }
+
+    // When auto-confirm is enabled, skip the "registration received" email
+    // and only send the confirmation email.
+    // Organizers always get their notification regardless of auto-confirm setting.
+    const skipReceivedEmail = isAutoConfirm && status === 'confirmed';
+
     if (resendKey) {
       const resend = new Resend(resendKey);
       const isDE = locale === 'de';
@@ -227,149 +233,17 @@ Deno.serve(async (req) => {
       const toAddress = overrideTo || realTo;
       const organizerRealTo = Deno.env.get('ORGANIZER_NOTIFICATION_EMAIL') || 'info@shagadeus.at';
       const organizerToAddress = overrideTo || organizerRealTo;
-      const participantSubject = isDE
-        ? `Anmeldung eingegangen: ${classTitle}`
-        : `Registration received: ${classTitle}`;
       const organizerSubject = `Neue Anmeldung: ${classTitle}`;
       if (overrideTo) {
         console.log(`EMAIL_TO_OVERRIDE active - redirecting mail for ${realTo} to ${overrideTo}`);
         console.log(`EMAIL_TO_OVERRIDE active - redirecting organizer mail for ${organizerRealTo} to ${overrideTo}`);
       }
 
-      const teacherName = danceClass.teachers || 'Vera & Josef';
-      const participantBody = isDE
-      ? `<h2 style="margin:0 0 16px;font-size:20px;">Hallo ${normalizedName}!</h2>
-           <p>Deine Anmeldung für <strong>${classTitle}</strong> als <strong>${role === 'lead' ? 'Lead' : 'Follow'}</strong> ist eingegangen.</p>
-           ${status === 'waitlisted' ? '<p>Aktuell sind alle Plätze belegt. Du stehst auf der Warteliste.</p>' : ''}
-           <p>Wir werden deine Anmeldung prüfen und bestätigen. Du erhältst dann eine weitere E-Mail.</p>
-           <p>${teacherName}</p>`
-      : `<h2 style="margin:0 0 16px;font-size:20px;">Hello ${normalizedName}!</h2>
-           <p>Your registration for <strong>${classTitle}</strong> as <strong>${role === 'lead' ? 'Lead' : 'Follow'}</strong> has been received.</p>
-           ${status === 'waitlisted' ? '<p>All spots are currently taken. You have been placed on the waitlist.</p>' : ''}
-           <p>We will review and confirm your registration. You will then receive another email.</p>
-           <p>${teacherName}</p>`;
-
-      try {
-        const { data: sendData, error: sendError } = await resend.emails.send({
-          from: fromAddress,
-          to: [toAddress],
-          replyTo: REPLY_TO,
-          subject: participantSubject,
-          html: wrapHtml(participantBody, { title: participantSubject, preheader: isDE ? `Anmeldung für ${classTitle} eingegangen.` : `Registration for ${classTitle} received.` }),
-          text: htmlToText(participantBody),
-        });
-        if (sendError) {
-          console.error('Resend send error:', JSON.stringify(sendError), 'from:', fromAddress, 'to:', toAddress);
-          await insertHistory({
-            registration_id: registration.id,
-            dance_class_id,
-            event_type: 'email_failed',
-            triggered_by: 'public_registration',
-            email_type: 'participant_confirmation',
-            email_recipient: toAddress,
-            email_subject: participantSubject,
-            note: sendError.message || 'Participant email failed',
-            metadata: sendError,
-          });
-        } else {
-          console.log('Resend send ok:', JSON.stringify(sendData), 'to:', toAddress);
-          await insertHistory({
-            registration_id: registration.id,
-            dance_class_id,
-            event_type: 'email_sent',
-            triggered_by: 'public_registration',
-            email_type: 'participant_confirmation',
-            email_recipient: toAddress,
-            email_subject: participantSubject,
-            metadata: sendData,
-          });
-        }
-      } catch (e) {
-        console.error('Resend send threw:', e instanceof Error ? e.message : String(e), 'from:', fromAddress, 'to:', toAddress);
-        await insertHistory({
-          registration_id: registration.id,
-          dance_class_id,
-          event_type: 'email_failed',
-          triggered_by: 'public_registration',
-          email_type: 'participant_confirmation',
-          email_recipient: toAddress,
-          email_subject: participantSubject,
-          note: e instanceof Error ? e.message : String(e),
-        });
-      }
-
-    const organizerBody = `<h2 style="margin:0 0 16px;font-size:20px;">Neue Workshop-Anmeldung</h2>
-         <p><strong>Workshop:</strong> ${danceClass.title_de} / ${danceClass.title_en}</p>
-      <p><strong>Name:</strong> ${normalizedName}</p>
-         <p><strong>E-Mail:</strong> ${realTo}</p>
-         <p><strong>Rolle:</strong> ${role === 'lead' ? 'Lead' : 'Follow'}</p>
-         <p><strong>Status:</strong> ${status}</p>
-      ${normalizedPartnerName ? `<p><strong>Partner:</strong> ${normalizedPartnerName}</p>` : ''}
-      ${normalizedComment ? `<p><strong>Kommentar:</strong> ${normalizedComment}</p>` : ''}`;
-
-      // Build list of organizer recipients: always the default, plus class-specific if set
-      const organizerRecipients: string[] = [organizerToAddress];
-      if (danceClass.notification_email && danceClass.notification_email.trim()) {
-        const classEmail = overrideTo || danceClass.notification_email.trim();
-        if (!organizerRecipients.includes(classEmail)) {
-          organizerRecipients.push(classEmail);
-        }
-      }
-
-      // Send to all organizer recipients
-      for (const recipient of organizerRecipients) {
-        try {
-          const { data: organizerSendData, error: organizerSendError } = await resend.emails.send({
-            from: fromAddress,
-            to: [recipient],
-            replyTo: realTo,
-            subject: organizerSubject,
-            html: wrapHtml(organizerBody, { title: organizerSubject }),
-            text: htmlToText(organizerBody),
-          });
-          if (organizerSendError) {
-            console.error('Resend organizer send error:', JSON.stringify(organizerSendError), 'from:', fromAddress, 'to:', recipient);
-            await insertHistory({
-              registration_id: registration.id,
-              dance_class_id,
-              event_type: 'email_failed',
-              triggered_by: 'public_registration',
-              email_type: 'organizer_notification',
-              email_recipient: recipient,
-              email_subject: organizerSubject,
-              note: organizerSendError.message || 'Organizer email failed',
-              metadata: organizerSendError,
-            });
-          } else {
-            console.log('Resend organizer send ok:', JSON.stringify(organizerSendData), 'to:', recipient);
-            await insertHistory({
-              registration_id: registration.id,
-              dance_class_id,
-              event_type: 'email_sent',
-              triggered_by: 'public_registration',
-              email_type: 'organizer_notification',
-              email_recipient: recipient,
-              email_subject: organizerSubject,
-              metadata: organizerSendData,
-            });
-          }
-        } catch (e) {
-          console.error('Resend organizer send threw:', e instanceof Error ? e.message : String(e), 'from:', fromAddress, 'to:', recipient);
-          await insertHistory({
-            registration_id: registration.id,
-            dance_class_id,
-            event_type: 'email_failed',
-            triggered_by: 'public_registration',
-            email_type: 'organizer_notification',
-            email_recipient: recipient,
-            email_subject: organizerSubject,
-            note: e instanceof Error ? e.message : String(e),
-          });
-        }
-      }
-
-      // If auto-confirm is enabled and registration is confirmed, send confirmation email with workshop box
-      if (isAutoConfirm && status === 'confirmed') {
+      // -------------------------------------------------
+      // Send PARTICIPANT email (different based on auto-confirm)
+      // -------------------------------------------------
+      if (skipReceivedEmail) {
+        // AUTO-CONFIRM: Send only the confirmation email with workshop box
         const confirmSubject = isDE
           ? `Bestätigt: ${classTitle}`
           : `Confirmed: ${classTitle}`;
@@ -505,6 +379,146 @@ Deno.serve(async (req) => {
             email_type: 'participant_auto_confirm',
             email_recipient: toAddress,
             email_subject: confirmSubject,
+            note: e instanceof Error ? e.message : String(e),
+          });
+        }
+      } else {
+        // NORMAL FLOW: Send "registration received" email (awaiting confirmation)
+        const participantSubject = isDE
+          ? `Anmeldung eingegangen: ${classTitle}`
+          : `Registration received: ${classTitle}`;
+
+        const teacherName = danceClass.teachers || 'Vera & Josef';
+        const participantBody = isDE
+        ? `<h2 style="margin:0 0 16px;font-size:20px;">Hallo ${normalizedName}!</h2>
+             <p>Deine Anmeldung für <strong>${classTitle}</strong> als <strong>${role === 'lead' ? 'Lead' : 'Follow'}</strong> ist eingegangen.</p>
+             ${status === 'waitlisted' ? '<p>Aktuell sind alle Plätze belegt. Du stehst auf der Warteliste.</p>' : ''}
+             <p>Wir werden deine Anmeldung prüfen und bestätigen. Du erhältst dann eine weitere E-Mail.</p>
+             <p>${teacherName}</p>`
+        : `<h2 style="margin:0 0 16px;font-size:20px;">Hello ${normalizedName}!</h2>
+             <p>Your registration for <strong>${classTitle}</strong> as <strong>${role === 'lead' ? 'Lead' : 'Follow'}</strong> has been received.</p>
+             ${status === 'waitlisted' ? '<p>All spots are currently taken. You have been placed on the waitlist.</p>' : ''}
+             <p>We will review and confirm your registration. You will then receive another email.</p>
+             <p>${teacherName}</p>`;
+
+        try {
+          const { data: sendData, error: sendError } = await resend.emails.send({
+            from: fromAddress,
+            to: [toAddress],
+            replyTo: REPLY_TO,
+            subject: participantSubject,
+            html: wrapHtml(participantBody, { title: participantSubject, preheader: isDE ? `Anmeldung für ${classTitle} eingegangen.` : `Registration for ${classTitle} received.` }),
+            text: htmlToText(participantBody),
+          });
+          if (sendError) {
+            console.error('Resend send error:', JSON.stringify(sendError), 'from:', fromAddress, 'to:', toAddress);
+            await insertHistory({
+              registration_id: registration.id,
+              dance_class_id,
+              event_type: 'email_failed',
+              triggered_by: 'public_registration',
+              email_type: 'participant_confirmation',
+              email_recipient: toAddress,
+              email_subject: participantSubject,
+              note: sendError.message || 'Participant email failed',
+              metadata: sendError,
+            });
+          } else {
+            console.log('Resend send ok:', JSON.stringify(sendData), 'to:', toAddress);
+            await insertHistory({
+              registration_id: registration.id,
+              dance_class_id,
+              event_type: 'email_sent',
+              triggered_by: 'public_registration',
+              email_type: 'participant_confirmation',
+              email_recipient: toAddress,
+              email_subject: participantSubject,
+              metadata: sendData,
+            });
+          }
+        } catch (e) {
+          console.error('Resend send threw:', e instanceof Error ? e.message : String(e), 'from:', fromAddress, 'to:', toAddress);
+          await insertHistory({
+            registration_id: registration.id,
+            dance_class_id,
+            event_type: 'email_failed',
+            triggered_by: 'public_registration',
+            email_type: 'participant_confirmation',
+            email_recipient: toAddress,
+            email_subject: participantSubject,
+            note: e instanceof Error ? e.message : String(e),
+          });
+        }
+      }
+
+      // -------------------------------------------------
+      // Send ORGANIZER notification (ALWAYS sent)
+      // -------------------------------------------------
+      const organizerBody = `<h2 style="margin:0 0 16px;font-size:20px;">Neue Workshop-Anmeldung</h2>
+           <p><strong>Workshop:</strong> ${danceClass.title_de} / ${danceClass.title_en}</p>
+           <p><strong>Name:</strong> ${normalizedName}</p>
+           <p><strong>E-Mail:</strong> ${realTo}</p>
+           <p><strong>Rolle:</strong> ${role === 'lead' ? 'Lead' : 'Follow'}</p>
+           <p><strong>Status:</strong> ${status}${isAutoConfirm && status === 'confirmed' ? ' (auto-confirmed)' : ''}</p>
+           ${normalizedPartnerName ? `<p><strong>Partner:</strong> ${normalizedPartnerName}</p>` : ''}
+           ${normalizedComment ? `<p><strong>Kommentar:</strong> ${normalizedComment}</p>` : ''}`;
+
+      // Build list of organizer recipients: always the default, plus class-specific if set
+      const organizerRecipients: string[] = [organizerToAddress];
+      if (danceClass.notification_email && danceClass.notification_email.trim()) {
+        const classEmail = overrideTo || danceClass.notification_email.trim();
+        if (!organizerRecipients.includes(classEmail)) {
+          organizerRecipients.push(classEmail);
+        }
+      }
+
+      // Send to all organizer recipients
+      for (const recipient of organizerRecipients) {
+        try {
+          const { data: organizerSendData, error: organizerSendError } = await resend.emails.send({
+            from: fromAddress,
+            to: [recipient],
+            replyTo: realTo,
+            subject: organizerSubject,
+            html: wrapHtml(organizerBody, { title: organizerSubject }),
+            text: htmlToText(organizerBody),
+          });
+          if (organizerSendError) {
+            console.error('Resend organizer send error:', JSON.stringify(organizerSendError), 'from:', fromAddress, 'to:', recipient);
+            await insertHistory({
+              registration_id: registration.id,
+              dance_class_id,
+              event_type: 'email_failed',
+              triggered_by: 'public_registration',
+              email_type: 'organizer_notification',
+              email_recipient: recipient,
+              email_subject: organizerSubject,
+              note: organizerSendError.message || 'Organizer email failed',
+              metadata: organizerSendError,
+            });
+          } else {
+            console.log('Resend organizer send ok:', JSON.stringify(organizerSendData), 'to:', recipient);
+            await insertHistory({
+              registration_id: registration.id,
+              dance_class_id,
+              event_type: 'email_sent',
+              triggered_by: 'public_registration',
+              email_type: 'organizer_notification',
+              email_recipient: recipient,
+              email_subject: organizerSubject,
+              metadata: organizerSendData,
+            });
+          }
+        } catch (e) {
+          console.error('Resend organizer send threw:', e instanceof Error ? e.message : String(e), 'from:', fromAddress, 'to:', recipient);
+          await insertHistory({
+            registration_id: registration.id,
+            dance_class_id,
+            event_type: 'email_failed',
+            triggered_by: 'public_registration',
+            email_type: 'organizer_notification',
+            email_recipient: recipient,
+            email_subject: organizerSubject,
             note: e instanceof Error ? e.message : String(e),
           });
         }
