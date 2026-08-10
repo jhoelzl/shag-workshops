@@ -1,6 +1,7 @@
 import { Fragment, useState, useMemo } from 'react';
 import { supabase } from '../../lib/supabase';
 import type { DanceClass, Registration, RegistrationHistory, ClassSession } from '../../lib/database.types';
+import type { ClassPermission } from '../../lib/useAdminPermissions';
 
 interface Props {
   registrations: Registration[];
@@ -9,6 +10,8 @@ interface Props {
   sessionsMap: Record<string, ClassSession[]>;
   currentUser: any;
   onUpdate: () => void;
+  isSuperAdmin: boolean;
+  classPermissions: Record<string, ClassPermission>;
 }
 
 interface AddForm {
@@ -50,7 +53,11 @@ const TRANSITIONS: Record<Status, { to: Status; label: string }[]> = {
   ],
 };
 
-export default function RegistrationTable({ registrations, history, classes, sessionsMap, currentUser, onUpdate }: Props) {
+export default function RegistrationTable({ registrations, history, classes, sessionsMap, currentUser, onUpdate, isSuperAdmin, classPermissions }: Props) {
+  // Permission helpers
+  const canWrite = (classId: string) => isSuperAdmin || (classPermissions[classId]?.write ?? false);
+  const canDelete = (classId: string) => isSuperAdmin || (classPermissions[classId]?.delete ?? false);
+
   // Filters
   const [statusFilter, setStatusFilter] = useState<Status | 'all'>('all');
   const [classFilter, setClassFilter] = useState<string>('all');
@@ -445,32 +452,41 @@ export default function RegistrationTable({ registrations, history, classes, ses
                         {isArchived && <span className="ml-1.5 text-[10px] bg-slate-200 text-slate-500 px-1.5 py-0.5 rounded-full">archived</span>}
                       </td>
                       <td className="py-3 px-4 relative">
-                        <button
-                          onClick={() => setOpenRoleMenu(openRoleMenu === reg.id ? null : reg.id)}
-                          disabled={isUpdating}
-                          className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full transition-colors cursor-pointer hover:brightness-95 disabled:opacity-50 disabled:cursor-not-allowed ${reg.role === 'lead' ? 'bg-primary/8 text-primary hover:bg-primary/15' : 'bg-coral/10 text-coral-dark hover:bg-coral/20'}`}
-                        >
-                          {reg.role === 'lead' ? 'Lead' : 'Follow'}
-                          <svg className="w-3 h-3 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
-                        </button>
-                        {openRoleMenu === reg.id && (
+                        {/* Role change requires write permission */}
+                        {canWrite(reg.dance_class_id) ? (
                           <>
-                            <button type="button" className="fixed inset-0 z-10 cursor-default" onClick={() => setOpenRoleMenu(null)} />
-                            <div className={`absolute z-20 bg-white rounded-xl shadow-lift border border-primary/10 py-1 min-w-[100px] ${openUpward ? 'bottom-full mb-1' : 'top-full mt-1'}`}>
-                              <button
-                                onClick={() => updateRole(reg.id, 'lead')}
-                                className={`w-full text-left text-xs font-medium px-4 py-2 transition-colors ${reg.role === 'lead' ? 'bg-primary/8 text-primary' : 'text-text-muted hover:text-primary hover:bg-bg-warm/50'}`}
-                              >
-                                Lead
-                              </button>
-                              <button
-                                onClick={() => updateRole(reg.id, 'follow')}
-                                className={`w-full text-left text-xs font-medium px-4 py-2 transition-colors ${reg.role === 'follow' ? 'bg-coral/10 text-coral-dark' : 'text-text-muted hover:text-primary hover:bg-bg-warm/50'}`}
-                              >
-                                Follow
-                              </button>
-                            </div>
+                            <button
+                              onClick={() => setOpenRoleMenu(openRoleMenu === reg.id ? null : reg.id)}
+                              disabled={isUpdating}
+                              className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full transition-colors cursor-pointer hover:brightness-95 disabled:opacity-50 disabled:cursor-not-allowed ${reg.role === 'lead' ? 'bg-primary/8 text-primary hover:bg-primary/15' : 'bg-coral/10 text-coral-dark hover:bg-coral/20'}`}
+                            >
+                              {reg.role === 'lead' ? 'Lead' : 'Follow'}
+                              <svg className="w-3 h-3 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                            </button>
+                            {openRoleMenu === reg.id && (
+                              <>
+                                <button type="button" className="fixed inset-0 z-10 cursor-default" onClick={() => setOpenRoleMenu(null)} />
+                                <div className={`absolute z-20 bg-white rounded-xl shadow-lift border border-primary/10 py-1 min-w-[100px] ${openUpward ? 'bottom-full mb-1' : 'top-full mt-1'}`}>
+                                  <button
+                                    onClick={() => updateRole(reg.id, 'lead')}
+                                    className={`w-full text-left text-xs font-medium px-4 py-2 transition-colors ${reg.role === 'lead' ? 'bg-primary/8 text-primary' : 'text-text-muted hover:text-primary hover:bg-bg-warm/50'}`}
+                                  >
+                                    Lead
+                                  </button>
+                                  <button
+                                    onClick={() => updateRole(reg.id, 'follow')}
+                                    className={`w-full text-left text-xs font-medium px-4 py-2 transition-colors ${reg.role === 'follow' ? 'bg-coral/10 text-coral-dark' : 'text-text-muted hover:text-primary hover:bg-bg-warm/50'}`}
+                                  >
+                                    Follow
+                                  </button>
+                                </div>
+                              </>
+                            )}
                           </>
+                        ) : (
+                          <span className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full ${reg.role === 'lead' ? 'bg-primary/8 text-primary' : 'bg-coral/10 text-coral-dark'}`}>
+                            {reg.role === 'lead' ? 'Lead' : 'Follow'}
+                          </span>
                         )}
                       </td>
                       <td className="py-3 px-4 text-text-muted text-xs">
@@ -489,7 +505,8 @@ export default function RegistrationTable({ registrations, history, classes, ses
                       </td>
                       <td className="py-3 px-4 relative">
                         <div className="flex items-center justify-end gap-1">
-                          {transitions.map((t) => (
+                          {/* Status transitions require write permission */}
+                          {canWrite(reg.dance_class_id) && transitions.map((t) => (
                             <TransitionBtn key={t.to} to={t.to} label={t.label} onClick={() => updateStatus(reg.id, t.to)} disabled={isUpdating} />
                           ))}
                           <button
@@ -507,10 +524,15 @@ export default function RegistrationTable({ registrations, history, classes, ses
                               <button onClick={() => setOpenHistory(isHistoryOpen ? null : reg.id)} className="w-full text-left text-xs font-medium text-text-muted hover:text-primary hover:bg-bg-warm/50 px-4 py-2 transition-colors">
                                 History ({entries.length})
                               </button>
-                              <div className="border-t border-bg-warm my-1" />
-                              <button onClick={() => deleteRegistration(reg)} className="w-full text-left text-xs font-medium text-coral-dark hover:bg-coral/10 px-4 py-2 transition-colors">
-                                Delete
-                              </button>
+                              {/* Delete requires delete permission */}
+                              {canDelete(reg.dance_class_id) && (
+                                <>
+                                  <div className="border-t border-bg-warm my-1" />
+                                  <button onClick={() => deleteRegistration(reg)} className="w-full text-left text-xs font-medium text-coral-dark hover:bg-coral/10 px-4 py-2 transition-colors">
+                                    Delete
+                                  </button>
+                                </>
+                              )}
                             </div>
                           </>
                         )}

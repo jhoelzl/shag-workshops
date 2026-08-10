@@ -2,6 +2,7 @@ import { Fragment, useState, useEffect, useMemo, useRef } from 'react';
 import { supabase } from '../../lib/supabase';
 import type { DanceClass, ClassSession, Registration, RegistrationHistory, Database } from '../../lib/database.types';
 import { getClassState, type ClassState } from '../../lib/classState';
+import type { ClassPermission } from '../../lib/useAdminPermissions';
 
 interface Props {
   classes: DanceClass[];
@@ -10,6 +11,7 @@ interface Props {
   currentUser: any;
   onUpdate: () => void;
   isSuperAdmin: boolean;
+  classPermissions: Record<string, ClassPermission>;
 }
 
 interface SessionDraft {
@@ -96,8 +98,14 @@ function setUrlParam(key: string, value: string | null) {
   window.history.pushState(null, '', url.toString());
 }
 
-export default function ClassEditor({ classes, registrations, history, currentUser, onUpdate, isSuperAdmin }: Props) {
+export default function ClassEditor({ classes, registrations, history, currentUser, onUpdate, isSuperAdmin, classPermissions }: Props) {
   const [editing, setEditing] = useState<Partial<DanceClass> | null>(null);
+
+  // Helper to check permissions for a specific class
+  const canRead = (classId: string) => isSuperAdmin || (classPermissions[classId]?.read ?? false);
+  const canWrite = (classId: string) => isSuperAdmin || (classPermissions[classId]?.write ?? false);
+  const canDelete = (classId: string) => isSuperAdmin || (classPermissions[classId]?.delete ?? false);
+
   const [sessions, setSessions] = useState<SessionDraft[]>([]);
   const [saving, setSaving] = useState(false);
   const [classSessionsMap, setClassSessionsMap] = useState<Record<string, ClassSession[]>>({});
@@ -580,7 +588,8 @@ export default function ClassEditor({ classes, registrations, history, currentUs
                             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
                             CSV
                           </button>
-                          {isSuperAdmin && (
+                          {/* Edit requires write permission, Delete requires delete permission */}
+                          {canWrite(dc.id) && (
                             <>
                               <button
                                 onClick={() => duplicateClass(dc)}
@@ -598,14 +607,16 @@ export default function ClassEditor({ classes, registrations, history, currentUs
                                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                                 Edit
                               </button>
-                              <button
-                                onClick={() => handleDelete(dc.id)}
-                                title="Delete Class"
-                                className="flex items-center gap-1 text-xs font-semibold bg-coral/10 hover:bg-coral hover:text-white text-coral-dark px-3 py-1.5 rounded-full transition-colors"
-                              >
-                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                              </button>
                             </>
+                          )}
+                          {canDelete(dc.id) && (
+                            <button
+                              onClick={() => handleDelete(dc.id)}
+                              title="Delete Class"
+                              className="flex items-center gap-1 text-xs font-semibold bg-coral/10 hover:bg-coral hover:text-white text-coral-dark px-3 py-1.5 rounded-full transition-colors"
+                            >
+                              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                            </button>
                           )}
                         </div>
 
@@ -615,6 +626,8 @@ export default function ClassEditor({ classes, registrations, history, currentUs
                           state={state}
                           classRegs={classRegs}
                           isSuperAdmin={isSuperAdmin}
+                          canWrite={canWrite(dc.id)}
+                          canDelete={canDelete(dc.id)}
                           onView={() => { window.open(`${import.meta.env.BASE_URL?.replace(/\/$/, '') || ''}${state === 'archived' ? '/de/archiv/' : '/de/workshops/'}?class=${dc.id}`, '_blank'); }}
                           onExport={() => exportWorkshopRegistrationsAsCsv(dc, classRegs)}
                           onDuplicate={() => duplicateClass(dc)}
@@ -628,8 +641,8 @@ export default function ClassEditor({ classes, registrations, history, currentUs
                       </div>
                     </div>
                   </div>
-                  {isViewing && <div className="border-t border-primary/5 bg-bg-warm/20 px-5 py-5"><ClassDetailView dc={dc} sessions={classSessions} classRegs={classRegs} regCounts={counts} history={history} currentUser={currentUser} onUpdate={onUpdate} addingRegFor={addingRegFor} setAddingRegFor={setAddingRegFor} /></div>}
-                  {!isViewing && isExpanded && <div className="border-t border-primary/5 bg-bg-warm/20 rounded-b-2xl"><InlineRegistrations classRegs={classRegs} history={history} danceClass={dc} currentUser={currentUser} onUpdate={onUpdate} addingRegFor={addingRegFor} setAddingRegFor={setAddingRegFor} /></div>}
+                  {isViewing && <div className="border-t border-primary/5 bg-bg-warm/20 px-5 py-5"><ClassDetailView dc={dc} sessions={classSessions} classRegs={classRegs} regCounts={counts} history={history} currentUser={currentUser} onUpdate={onUpdate} addingRegFor={addingRegFor} setAddingRegFor={setAddingRegFor} canWrite={canWrite(dc.id)} canDelete={canDelete(dc.id)} /></div>}
+                  {!isViewing && isExpanded && <div className="border-t border-primary/5 bg-bg-warm/20 rounded-b-2xl"><InlineRegistrations classRegs={classRegs} history={history} danceClass={dc} currentUser={currentUser} onUpdate={onUpdate} addingRegFor={addingRegFor} setAddingRegFor={setAddingRegFor} canWrite={canWrite(dc.id)} canDelete={canDelete(dc.id)} /></div>}
                 </div>
               )}
             </div>
@@ -1279,7 +1292,7 @@ function ClassForm({
   );
 }
 
-function ClassActionsMenu({ dc, state, classRegs, isSuperAdmin, onView, onExport, onDuplicate, onEdit, onDelete }: { dc: DanceClass; state: ClassState; classRegs: Registration[]; isSuperAdmin: boolean; onView: () => void; onExport: () => void; onDuplicate: () => void; onEdit: () => void; onDelete: () => void; }) {
+function ClassActionsMenu({ dc, state, classRegs, isSuperAdmin, canWrite, canDelete, onView, onExport, onDuplicate, onEdit, onDelete }: { dc: DanceClass; state: ClassState; classRegs: Registration[]; isSuperAdmin: boolean; canWrite: boolean; canDelete: boolean; onView: () => void; onExport: () => void; onDuplicate: () => void; onEdit: () => void; onDelete: () => void; }) {
   const [open, setOpen] = useState(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
 
@@ -1326,7 +1339,7 @@ function ClassActionsMenu({ dc, state, classRegs, isSuperAdmin, onView, onExport
               Export CSV
             </button>
           )}
-          {isSuperAdmin && (
+          {canWrite && (
             <>
               <button
                 onClick={(e) => { e.stopPropagation(); onEdit(); setOpen(false); }}
@@ -1342,6 +1355,10 @@ function ClassActionsMenu({ dc, state, classRegs, isSuperAdmin, onView, onExport
                 <svg className="w-4 h-4 text-accent-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" /></svg>
                 Duplicate
               </button>
+            </>
+          )}
+          {canDelete && (
+            <>
               <div className="border-t border-bg-warm my-1" />
               <button
                 onClick={(e) => { e.stopPropagation(); if (confirm('Delete this class and all its registrations?')) onDelete(); setOpen(false); }}
@@ -1385,7 +1402,7 @@ function GenerateButton({ onGenerate }: { onGenerate: (start: string, weeks: num
   );
 }
 
-function InlineRegistrations({ classRegs, history = [], danceClass, currentUser, onUpdate, addingRegFor, setAddingRegFor }: { classRegs: Registration[]; history: RegistrationHistory[]; danceClass: DanceClass; currentUser: any; onUpdate: () => void; addingRegFor: string | null; setAddingRegFor: (v: string | null) => void; }) {
+function InlineRegistrations({ classRegs, history = [], danceClass, currentUser, onUpdate, addingRegFor, setAddingRegFor, canWrite, canDelete }: { classRegs: Registration[]; history: RegistrationHistory[]; danceClass: DanceClass; currentUser: any; onUpdate: () => void; addingRegFor: string | null; setAddingRegFor: (v: string | null) => void; canWrite: boolean; canDelete: boolean; }) {
   const [updating, setUpdating] = useState<Set<string>>(new Set());
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [openHistory, setOpenHistory] = useState<string | null>(null);
@@ -1468,33 +1485,42 @@ function InlineRegistrations({ classRegs, history = [], danceClass, currentUser,
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-medium text-sm">{reg.name}</span>
                       {statusBadge(reg.status)}
+                      {/* Role change requires write permission */}
                       <div className="relative">
-                        <button
-                          onClick={() => setOpenRoleMenu(openRoleMenu === reg.id ? null : reg.id)}
-                          disabled={isUpdating}
-                          className={`inline-flex items-center gap-1 text-[10px] uppercase tracking-wider px-2 py-0.5 rounded transition-colors cursor-pointer hover:brightness-95 disabled:opacity-50 disabled:cursor-not-allowed ${reg.role === 'lead' ? 'bg-primary/5 text-primary hover:bg-primary/10' : 'bg-coral/10 text-coral-dark hover:bg-coral/20'}`}
-                        >
-                          {reg.role}
-                          <svg className="w-3 h-3 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
-                        </button>
-                        {openRoleMenu === reg.id && (
+                        {canWrite ? (
                           <>
-                            <button type="button" className="fixed inset-0 z-10 cursor-default" onClick={() => setOpenRoleMenu(null)} />
-                            <div className="absolute z-20 bg-white rounded-xl shadow-lift border border-primary/10 py-1 min-w-[90px] mt-1">
-                              <button
-                                onClick={() => updateRole(reg.id, 'lead')}
-                                className={`w-full text-left text-xs font-medium px-3 py-2 transition-colors ${reg.role === 'lead' ? 'bg-primary/8 text-primary' : 'text-text-muted hover:text-primary hover:bg-bg-warm/50'}`}
-                              >
-                                Lead
-                              </button>
-                              <button
-                                onClick={() => updateRole(reg.id, 'follow')}
-                                className={`w-full text-left text-xs font-medium px-3 py-2 transition-colors ${reg.role === 'follow' ? 'bg-coral/10 text-coral-dark' : 'text-text-muted hover:text-primary hover:bg-bg-warm/50'}`}
-                              >
-                                Follow
-                              </button>
-                            </div>
+                            <button
+                              onClick={() => setOpenRoleMenu(openRoleMenu === reg.id ? null : reg.id)}
+                              disabled={isUpdating}
+                              className={`inline-flex items-center gap-1 text-[10px] uppercase tracking-wider px-2 py-0.5 rounded transition-colors cursor-pointer hover:brightness-95 disabled:opacity-50 disabled:cursor-not-allowed ${reg.role === 'lead' ? 'bg-primary/5 text-primary hover:bg-primary/10' : 'bg-coral/10 text-coral-dark hover:bg-coral/20'}`}
+                            >
+                              {reg.role}
+                              <svg className="w-3 h-3 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                            </button>
+                            {openRoleMenu === reg.id && (
+                              <>
+                                <button type="button" className="fixed inset-0 z-10 cursor-default" onClick={() => setOpenRoleMenu(null)} />
+                                <div className="absolute z-20 bg-white rounded-xl shadow-lift border border-primary/10 py-1 min-w-[90px] mt-1">
+                                  <button
+                                    onClick={() => updateRole(reg.id, 'lead')}
+                                    className={`w-full text-left text-xs font-medium px-3 py-2 transition-colors ${reg.role === 'lead' ? 'bg-primary/8 text-primary' : 'text-text-muted hover:text-primary hover:bg-bg-warm/50'}`}
+                                  >
+                                    Lead
+                                  </button>
+                                  <button
+                                    onClick={() => updateRole(reg.id, 'follow')}
+                                    className={`w-full text-left text-xs font-medium px-3 py-2 transition-colors ${reg.role === 'follow' ? 'bg-coral/10 text-coral-dark' : 'text-text-muted hover:text-primary hover:bg-bg-warm/50'}`}
+                                  >
+                                    Follow
+                                  </button>
+                                </div>
+                              </>
+                            )}
                           </>
+                        ) : (
+                          <span className={`inline-flex items-center gap-1 text-[10px] uppercase tracking-wider px-2 py-0.5 rounded ${reg.role === 'lead' ? 'bg-primary/5 text-primary' : 'bg-coral/10 text-coral-dark'}`}>
+                            {reg.role}
+                          </span>
                         )}
                       </div>
                     </div>
@@ -1502,18 +1528,30 @@ function InlineRegistrations({ classRegs, history = [], danceClass, currentUser,
                     {regHistory.length > 0 && <button onClick={() => setOpenHistory(historyOpen ? null : reg.id)} className="text-[10px] text-text-muted underline mt-1 hover:text-primary">{historyOpen ? 'Hide History' : 'Show History'}</button>}
                   </div>
                   <div className="flex items-center gap-2">
-                    {(reg.status === 'pending' || reg.status === 'confirmed') && (
+                    {/* Status transitions require write permission */}
+                    {canWrite && (
                       <>
-                        {reg.status === 'pending' && <button onClick={() => updateStatus(reg.id, 'confirmed')} disabled={isUpdating} className="text-xs font-semibold bg-teal/15 hover:bg-teal/25 text-teal-dark px-3 py-1.5 rounded-full transition-colors">Confirm</button>}
-                        {reg.status === 'confirmed' && <button onClick={() => updateStatus(reg.id, 'cancelled')} disabled={isUpdating} className="text-xs font-semibold bg-coral/10 hover:bg-coral/20 text-coral-dark px-3 py-1.5 rounded-full transition-colors">Cancel</button>}
+                        {(reg.status === 'pending' || reg.status === 'confirmed') && (
+                          <>
+                            {reg.status === 'pending' && <button onClick={() => updateStatus(reg.id, 'confirmed')} disabled={isUpdating} className="text-xs font-semibold bg-teal/15 hover:bg-teal/25 text-teal-dark px-3 py-1.5 rounded-full transition-colors">Confirm</button>}
+                            {reg.status === 'confirmed' && <button onClick={() => updateStatus(reg.id, 'cancelled')} disabled={isUpdating} className="text-xs font-semibold bg-coral/10 hover:bg-coral/20 text-coral-dark px-3 py-1.5 rounded-full transition-colors">Cancel</button>}
+                          </>
+                        )}
+                        {reg.status === 'waitlisted' && <button onClick={() => updateStatus(reg.id, 'confirmed')} disabled={isUpdating} className="text-xs font-semibold bg-teal/15 hover:bg-teal/25 text-teal-dark px-3 py-1.5 rounded-full transition-colors">Confirm</button>}
                       </>
                     )}
-                    {reg.status === 'waitlisted' && <button onClick={() => updateStatus(reg.id, 'confirmed')} disabled={isUpdating} className="text-xs font-semibold bg-teal/15 hover:bg-teal/25 text-teal-dark px-3 py-1.5 rounded-full transition-colors">Confirm</button>}
-                    <button onClick={() => setOpenMenu(menuOpen ? null : reg.id)} className="text-text-muted hover:text-primary text-xl px-1">⋯</button>
+                    {(canWrite || canDelete) && (
+                      <button onClick={() => setOpenMenu(menuOpen ? null : reg.id)} className="text-text-muted hover:text-primary text-xl px-1">⋯</button>
+                    )}
                     {menuOpen && (
                       <div className="absolute bg-white border border-primary/10 shadow-lift rounded-lg p-2 w-40 z-10 mt-24">
-                        <button onClick={() => { updateStatus(reg.id, reg.status === 'cancelled' ? 'confirmed' : 'cancelled'); setOpenMenu(null); }} className="w-full text-left text-sm px-3 py-2 hover:bg-primary/5 rounded text-text-muted hover:text-primary">{reg.status === 'cancelled' ? 'Reactivate' : 'Cancel Registration'}</button>
-                        <button onClick={() => deleteRegistration(reg)} className="w-full text-left text-sm px-3 py-2 hover:bg-coral/10 rounded text-coral-dark">Delete</button>
+                        {canWrite && (
+                          <button onClick={() => { updateStatus(reg.id, reg.status === 'cancelled' ? 'confirmed' : 'cancelled'); setOpenMenu(null); }} className="w-full text-left text-sm px-3 py-2 hover:bg-primary/5 rounded text-text-muted hover:text-primary">{reg.status === 'cancelled' ? 'Reactivate' : 'Cancel Registration'}</button>
+                        )}
+                        {/* Delete requires delete permission */}
+                        {canDelete && (
+                          <button onClick={() => deleteRegistration(reg)} className="w-full text-left text-sm px-3 py-2 hover:bg-coral/10 rounded text-coral-dark">Delete</button>
+                        )}
                         <button onClick={() => setOpenMenu(null)} className="w-full text-left text-sm px-3 py-2 hover:bg-primary/5 rounded text-text-muted hover:text-primary">Close</button>
                       </div>
                     )}
@@ -1540,7 +1578,8 @@ function InlineRegistrations({ classRegs, history = [], danceClass, currentUser,
           })}
         </div>
       )}
-      {canAdd && (
+      {/* Add registration requires write permission */}
+      {canAdd && canWrite && (
         <div className="mt-4 pt-4 border-t border-primary/10">
           {!addingRegFor ? <button onClick={() => setAddingRegFor(danceClass.id)} className="text-xs font-semibold bg-primary/5 hover:bg-primary/10 text-primary px-4 py-2 rounded-full transition-colors">+ Add Registration</button> : (
             <form onSubmit={handleManualRegister} className="space-y-3 bg-white rounded-xl border border-primary/10 p-4">
@@ -1575,7 +1614,7 @@ function formatHistoryDetails(entry: RegistrationHistory): string {
   return '';
 }
 
-function ClassDetailView({ dc, sessions, classRegs, regCounts, history, currentUser, onUpdate, addingRegFor, setAddingRegFor }: { dc: DanceClass; sessions: ClassSession[]; classRegs: Registration[]; regCounts: { leads: number; follows: number; pending: number; confirmed: number; waitlisted: number; cancelled: number }; history: RegistrationHistory[]; currentUser: any; onUpdate: () => void; addingRegFor: string | null; setAddingRegFor: (v: string | null) => void; }) {
+function ClassDetailView({ dc, sessions, classRegs, regCounts, history, currentUser, onUpdate, addingRegFor, setAddingRegFor, canWrite, canDelete }: { dc: DanceClass; sessions: ClassSession[]; classRegs: Registration[]; regCounts: { leads: number; follows: number; pending: number; confirmed: number; waitlisted: number; cancelled: number }; history: RegistrationHistory[]; currentUser: any; onUpdate: () => void; addingRegFor: string | null; setAddingRegFor: (v: string | null) => void; canWrite: boolean; canDelete: boolean; }) {
   const fmt = (v: string | null | undefined) => v || '-';
   const fmtDate = (v: string | null | undefined) => { if (!v) return '-'; return new Date(v).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' }); };
   return (
@@ -1640,7 +1679,7 @@ function ClassDetailView({ dc, sessions, classRegs, regCounts, history, currentU
             {regCounts.cancelled > 0 && <span className="bg-coral/15 text-coral-dark px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">✕ {regCounts.cancelled} cancelled</span>}
           </div>
         </div>
-        <InlineRegistrations classRegs={classRegs} history={history} danceClass={dc} currentUser={currentUser} onUpdate={onUpdate} addingRegFor={addingRegFor} setAddingRegFor={setAddingRegFor} />
+        <InlineRegistrations classRegs={classRegs} history={history} danceClass={dc} currentUser={currentUser} onUpdate={onUpdate} addingRegFor={addingRegFor} setAddingRegFor={setAddingRegFor} canWrite={canWrite} canDelete={canDelete} />
       </div>
     </div>
   );

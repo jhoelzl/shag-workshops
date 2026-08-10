@@ -27,7 +27,7 @@ export default function AdminDashboard() {
   const [sessionsMap, setSessionsMap] = useState<Record<string, ClassSession[]>>({});
   const base = import.meta.env.BASE_URL?.replace(/\/$/, '') ?? '';
 
-  const { isSuperAdmin, allowedClassIds, canAccessClass, loading: permissionsLoading } = useAdminPermissions();
+  const { isSuperAdmin, allowedClassIds, canAccessClass, classPermissions, loading: permissionsLoading } = useAdminPermissions();
 
   function setTab(newTab: Tab) {
     const url = new URL(window.location.href);
@@ -262,7 +262,7 @@ export default function AdminDashboard() {
         )}
 
         {tab === 'classes' && (
-          <ClassEditor classes={classes} registrations={registrations} history={registrationHistory} currentUser={user} onUpdate={loadData} isSuperAdmin={isSuperAdmin} />
+          <ClassEditor classes={classes} registrations={registrations} history={registrationHistory} currentUser={user} onUpdate={loadData} isSuperAdmin={isSuperAdmin} classPermissions={classPermissions} />
         )}
 
         {tab === 'registrations' && (
@@ -273,6 +273,8 @@ export default function AdminDashboard() {
             sessionsMap={sessionsMap}
             currentUser={user}
             onUpdate={loadData}
+            isSuperAdmin={isSuperAdmin}
+            classPermissions={classPermissions}
           />
         )}
 
