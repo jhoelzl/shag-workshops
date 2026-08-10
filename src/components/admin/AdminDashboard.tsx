@@ -27,7 +27,7 @@ export default function AdminDashboard() {
   const [sessionsMap, setSessionsMap] = useState<Record<string, ClassSession[]>>({});
   const base = import.meta.env.BASE_URL?.replace(/\/$/, '') ?? '';
 
-  const { isSuperAdmin, allowedClassIds, canAccessClass, loading: permissionsLoading } = useAdminPermissions();
+  const { isSuperAdmin, allowedClassIds, canAccessClass, classPermissions, loading: permissionsLoading } = useAdminPermissions();
 
   function setTab(newTab: Tab) {
     const url = new URL(window.location.href);
