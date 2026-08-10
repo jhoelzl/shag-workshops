@@ -280,7 +280,24 @@ export interface Database {
         Relationships: [];
       };
     };
-    Functions: Record<string, never>;
+    Functions: {
+      is_super_admin: {
+        Args: { uid: string };
+        Returns: boolean;
+      };
+      can_access_class: {
+        Args: { uid: string; class_id: string };
+        Returns: boolean;
+      };
+      list_admin_users: {
+        Args: Record<string, never>;
+        Returns: { id: string; email: string; is_super_admin: boolean }[];
+      };
+      get_my_class_permissions: {
+        Args: Record<string, never>;
+        Returns: { dance_class_id: string }[];
+      };
+    };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;
   };
