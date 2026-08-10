@@ -418,6 +418,7 @@ function OverviewTab({
                       <div className="text-sm font-medium text-primary truncate">{r.name}</div>
                       <div className="text-xs text-text-muted truncate">{r.className}</div>
                     </div>
+                    <RoleChip role={r.role} />
                     <div className="text-[10px] text-text-muted/70 tabular-nums">{new Date(r.created_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })}</div>
                   </div>
                 ))}
