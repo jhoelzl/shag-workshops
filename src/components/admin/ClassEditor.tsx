@@ -1513,7 +1513,7 @@ function InlineRegistrations({ classRegs, history = [], danceClass, currentUser,
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
                             <span className={`text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded flex-shrink-0 ${HISTORY_EVENT_TONE[entry.event_type]}`}>{formatHistoryEventLabel(entry)}</span>
-                            <span className="text-[10px] text-text-muted">{new Date(entry.created_at).toLocaleString(undefined, { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' })}</span>
+                            <span className="text-[10px] text-text-muted">{new Date(entry.created_at).toLocaleString(undefined, { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit', second:'2-digit' })}</span>
                           </div>
                           {formatHistoryDetails(entry) && <p className="text-xs text-text-muted mt-0.5">{formatHistoryDetails(entry)}</p>}
                         </div>
