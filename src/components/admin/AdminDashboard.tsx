@@ -252,7 +252,7 @@ export default function AdminDashboard() {
       </header>
 
       {/* Content */}
-      <div className="max-w-6xl mx-auto px-5 sm:px-6 py-8">
+      <div className="max-w-6xl mx-auto px-5 sm:px-6 py-8 overflow-x-hidden">
         {tab === 'overview' && (
           <OverviewTab
             classes={classes}
@@ -419,9 +419,9 @@ function OverviewTab({
       </div>
 
       {/* Main Content Grid */}
-      <div className="grid gap-5 lg:grid-cols-3">
+      <div className="grid gap-5 lg:grid-cols-3 min-w-0">
         {/* Left Column: Open Classes */}
-        <div className="lg:col-span-2 space-y-4">
+        <div className="lg:col-span-2 space-y-4 min-w-0">
           <div className="flex items-center justify-between">
             <h3 className="font-display text-lg font-bold text-primary">Classes Open for Registration</h3>
             {openClasses.length === 0 && (
@@ -437,7 +437,7 @@ function OverviewTab({
               </button>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-3 min-w-0">
               {openClasses.map((c) => (
                 <ClassCard key={c.id} c={c} onClick={() => onNavigate('classes')} />
               ))}
@@ -446,7 +446,7 @@ function OverviewTab({
         </div>
 
         {/* Right Column: Activity */}
-        <div className="space-y-4">
+        <div className="space-y-4 min-w-0">
           {/* Recent Activity */}
           <div className="bg-white rounded-xl border border-primary/10 shadow-soft p-4">
             <div className="flex items-center justify-between mb-3">
@@ -572,20 +572,20 @@ function ClassCard({ c, onClick }: { c: DanceClass & { leads: number; follows: n
         </div>
         <span className="text-xs font-medium text-coral py-1 px-2 bg-coral/5 rounded-full flex-shrink-0">Manage</span>
       </div>
-      <div className="grid grid-cols-2 gap-2 sm:gap-3 mt-3 min-w-0">
-        <div className="min-w-0">
+      <div className="flex gap-2 sm:gap-3 mt-3 min-w-0">
+        <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between text-[10px] sm:text-[11px] text-text-muted mb-1">
-            <span>Leads</span>
-            <span className={`tabular-nums font-medium ml-1 ${leadFull ? 'text-coral' : ''}`}>{c.leads}/{c.max_leads}</span>
+            <span className="flex-shrink-0">Leads</span>
+            <span className={`tabular-nums font-medium ${leadFull ? 'text-coral' : ''}`}>{c.leads}/{c.max_leads}</span>
           </div>
           <div className="bg-bg-warm rounded-full h-1.5 overflow-hidden">
             <div className={`h-full rounded-full transition-all ${leadFull ? 'bg-coral' : 'bg-primary'}`} style={{ width: `${leadPct}%` }} />
           </div>
         </div>
-        <div className="min-w-0">
+        <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between text-[10px] sm:text-[11px] text-text-muted mb-1">
-            <span>Follows</span>
-            <span className={`tabular-nums font-medium ml-1 ${followFull ? 'text-coral' : ''}`}>{c.follows}/{c.max_follows}</span>
+            <span className="flex-shrink-0">Follows</span>
+            <span className={`tabular-nums font-medium ${followFull ? 'text-coral' : ''}`}>{c.follows}/{c.max_follows}</span>
           </div>
           <div className="bg-bg-warm rounded-full h-1.5 overflow-hidden">
             <div className={`h-full rounded-full transition-all ${followFull ? 'bg-coral' : 'bg-coral dark'}`} style={{ width: `${followPct}%` }} />
