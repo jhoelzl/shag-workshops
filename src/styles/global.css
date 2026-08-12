@@ -257,3 +257,12 @@ h1, h2, h3, h4 {
 .archive-item {
   animation: archive-fade-up 0.6s ease-out both;
 }
+
+/* Hide scrollbar utility */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}

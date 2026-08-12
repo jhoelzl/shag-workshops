@@ -243,9 +243,9 @@ export default function AdminPermissionsManager({ classes }: Props) {
                 }`}
               >
                 {/* Header - User info */}
-                <div className="flex items-center justify-between p-4">
-                  <div className="flex items-center gap-3">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
                       admin.is_super_admin ? 'bg-coral/10' : 'bg-amber-100'
                     }`}>
                       {admin.is_super_admin ? (
@@ -258,8 +258,8 @@ export default function AdminPermissionsManager({ classes }: Props) {
                         </svg>
                       )}
                     </div>
-                    <div>
-                      <p className="font-medium text-primary">{admin.email}</p>
+                    <div className="min-w-0">
+                      <p className="font-medium text-primary truncate">{admin.email}</p>
                       <p className={`text-xs font-medium ${admin.is_super_admin ? 'text-coral' : 'text-amber-600'}`}>
                         {admin.is_super_admin
                           ? 'Super Admin'
@@ -269,9 +269,9 @@ export default function AdminPermissionsManager({ classes }: Props) {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-3">
+                  <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                     {/* Super Admin Toggle */}
-                    <label className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border cursor-pointer transition-colors ${
+                    <label className={`flex items-center gap-2 px-2 sm:px-3 py-1.5 rounded-lg border cursor-pointer transition-colors flex-shrink-0 ${
                       admin.is_super_admin
                         ? 'bg-coral/10 border-coral/30'
                         : 'bg-bg-warm/50 border-primary/10 hover:border-primary/30'
@@ -283,7 +283,7 @@ export default function AdminPermissionsManager({ classes }: Props) {
                         disabled={isCurrentUser || promotingUser === admin.id}
                         className="w-4 h-4 accent-coral"
                       />
-                      <span className={`text-xs font-medium ${admin.is_super_admin ? 'text-coral' : 'text-text-muted'}`}>
+                      <span className={`text-xs font-medium whitespace-nowrap ${admin.is_super_admin ? 'text-coral' : 'text-text-muted'}`}>
                         Super Admin
                       </span>
                       {promotingUser === admin.id && (
@@ -295,11 +295,11 @@ export default function AdminPermissionsManager({ classes }: Props) {
                     {!admin.is_super_admin && (
                       <button
                         onClick={() => setExpandedUser(isExpanded ? null : admin.id)}
-                        className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-primary bg-primary/5 hover:bg-primary/10 rounded-lg transition-colors"
+                        className="flex items-center gap-1 px-2 sm:px-3 py-1.5 text-xs font-medium text-primary bg-primary/5 hover:bg-primary/10 rounded-lg transition-colors flex-shrink-0"
                       >
-                        {isExpanded ? 'Collapse' : 'Assign Classes'}
+                        <span className="whitespace-nowrap">{isExpanded ? 'Collapse' : 'Assign Classes'}</span>
                         <svg
-                          className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                          className={`w-4 h-4 transition-transform flex-shrink-0 ${isExpanded ? 'rotate-180' : ''}`}
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
@@ -310,7 +310,7 @@ export default function AdminPermissionsManager({ classes }: Props) {
                     )}
 
                     {isCurrentUser && (
-                      <span className="text-xs text-text-muted bg-primary/5 px-2 py-1 rounded">You</span>
+                      <span className="text-xs text-text-muted bg-primary/5 px-2 py-1 rounded flex-shrink-0">You</span>
                     )}
                   </div>
                 </div>
