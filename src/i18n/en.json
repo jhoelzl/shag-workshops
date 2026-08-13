@@ -15,6 +15,7 @@
   },
   "workshops": {
     "title": "Workshops",
+    "preview_title": "Preview Workshops",
     "level": "Level",
     "sessions": "Sessions",
     "session": "Session",

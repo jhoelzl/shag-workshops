@@ -333,7 +333,8 @@ export default function WorkshopPage({ locale, initialClasses }: Props) {
     );
   }
 
-  if (classes.length === 0 && ongoingClasses.length === 0) {
+  // Show "no workshops" message only when there are no classes at all (including preview)
+  if (classes.length === 0 && previewClasses.length === 0 && ongoingClasses.length === 0) {
     return <p className="text-text-muted text-center py-12">{i18n.home.no_workshops}</p>;
   }
 
@@ -369,8 +370,8 @@ export default function WorkshopPage({ locale, initialClasses }: Props) {
       </div>
     )}
 
-    <div className="grid grid-cols-1 gap-8 lg:grid-cols-5">
-      {filteredClasses.length === 0 && filteredOngoing.length === 0 && (
+    <div className={`grid grid-cols-1 gap-8 ${openClasses.length > 0 ? 'lg:grid-cols-5' : ''}`}>
+      {filteredClasses.length === 0 && filteredPreview.length === 0 && filteredOngoing.length === 0 && (
         <div className="flex flex-col items-center justify-center gap-4 rounded-3xl border border-accent/20 bg-gradient-to-br from-bg-warm via-accent/[0.07] to-coral/[0.08] shadow-soft px-6 py-14 text-center lg:col-span-5">
           <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-accent/15 text-accent-dark">
             <svg className="h-7 w-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -387,7 +388,7 @@ export default function WorkshopPage({ locale, initialClasses }: Props) {
         </div>
       )}
       {/* Class list */}
-      <div className="min-w-0 lg:col-span-3 space-y-4">
+      <div className={`min-w-0 space-y-4 ${openClasses.length > 0 ? 'lg:col-span-3' : ''}`}>
         {filteredClasses.map((dc) => {
           const title = locale === 'de' ? dc.title_de : dc.title_en;
           const description = locale === 'de' ? dc.description_de : dc.description_en;
