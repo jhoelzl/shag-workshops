@@ -89,6 +89,29 @@ const initialClasses = publicClasses
     return firstDateTimeA.localeCompare(firstDateTimeB);
   });
 
+// Determine if we only have preview workshops (no open/upcoming workshops)
+const hasOpenWorkshops = initialClasses.some((dc) => {
+  const now = new Date();
+  const sessions = dc.sessions || [];
+  if (sessions.length === 0) return false;
+  const firstSession = new Date(sessions[0].session_date + 'T' + sessions[0].start_time);
+  const lastSession = new Date(sessions[sessions.length - 1].session_date + 'T' + sessions[sessions.length - 1].end_time);
+  const isOngoing = firstSession <= now && lastSession >= now;
+  const isUpcoming = firstSession > now;
+  const regOpen = dc.registration_opens_at ? new Date(dc.registration_opens_at) <= now : true;
+  return (isUpcoming || isOngoing) && !dc.is_preview && regOpen;
+});
+
+const hasUpcomingWorkshops = initialClasses.some((dc) => {
+  const now = new Date();
+  const sessions = dc.sessions || [];
+  if (sessions.length === 0) return false;
+  const firstSession = new Date(sessions[0].session_date + 'T' + sessions[0].start_time);
+  const isUpcoming = firstSession > now;
+  const regNotOpenYet = dc.registration_opens_at ? new Date(dc.registration_opens_at) > now : false;
+  return isUpcoming && !dc.is_preview && regNotOpenYet;
+});
+
 const eventJsonLd = publicClasses.flatMap((danceClass: DanceClass) => {
   const sessions = sessionsByClass.get(danceClass.id) || [];
   return sessions.map((session) => {

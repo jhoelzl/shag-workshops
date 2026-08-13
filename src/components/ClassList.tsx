@@ -359,7 +359,7 @@ export default function ClassList({ locale }: { locale: Locale }) {
   return (
     <div>
       {classes.length > 0 ? (
-        <div className="grid gap-6 lg:grid-cols-2">
+        <div className={`grid gap-6 ${classes.length === 1 ? 'grid-cols-1' : 'lg:grid-cols-2'}`}>
           {classes.map(renderClassCard)}
         </div>
       ) : (
