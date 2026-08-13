@@ -16,16 +16,23 @@ const { data: publicClassesData } = await supabase
 
 const publicClasses = publicClassesData ?? [];
 
+type Session = {
+  dance_class_id: string;
+  session_date: string;
+  start_time: string;
+  end_time: string;
+};
+
 const { data: classSessionsData } = await supabase
   .from('class_sessions')
   .select('dance_class_id, session_date, start_time, end_time')
   .in('dance_class_id', publicClasses.map((c) => c.id));
 
-const sessionsByClass = (classSessionsData ?? []).reduce((acc, session) => {
+const sessionsByClass = (classSessionsData ?? []).reduce((acc: Map<string, Session[]>, session: Session) => {
   if (!acc.has(session.dance_class_id)) acc.set(session.dance_class_id, []);
   acc.get(session.dance_class_id)!.push(session);
   return acc;
-}, new Map<string, typeof classSessionsData[number]>());
+}, new Map<string, Session[]>());
 
 const now = new Date();
 const hasOpenWorkshops = publicClasses.some((dc) => {
@@ -38,8 +45,6 @@ const hasOpenWorkshops = publicClasses.some((dc) => {
   const isUpcoming = firstSession > now;
   return isUpcoming || isOngoing;
 });
-
-const onlyPreviewWorkshops = !hasOpenWorkshops && publicClasses.some((dc) => dc.is_preview);
 ---
 
 <BaseLayout title="Collegiate Shag in Salzburg" locale={locale}>

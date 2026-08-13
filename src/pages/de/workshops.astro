@@ -112,8 +112,6 @@ const hasUpcomingWorkshops = initialClasses.some((dc) => {
   return isUpcoming && !dc.is_preview && regNotOpenYet;
 });
 
-const onlyPreviewWorkshops = !hasOpenWorkshops && !hasUpcomingWorkshops && initialClasses.some((dc) => dc.is_preview);
-
 const eventJsonLd = publicClasses.flatMap((danceClass: DanceClass) => {
   const sessions = sessionsByClass.get(danceClass.id) || [];
   return sessions.map((session) => {
