@@ -11,6 +11,10 @@ permissions:
   contents: write
   pull-requests: write
 
+concurrency:
+  group: dependabot-serial-update
+  cancel-in-progress: false
+
 jobs:
   update-next:
     if: github.event.pull_request.merged == true && github.event.pull_request.user.login == 'dependabot[bot]'
