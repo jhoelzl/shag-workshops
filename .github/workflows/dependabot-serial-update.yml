@@ -41,4 +41,4 @@ jobs:
           echo "Updating PR #$NEXT_PR with latest main"
           gh api --method PUT \
             "repos/$GITHUB_REPOSITORY/pulls/$NEXT_PR/update-branch" \
-            --silent || echo "PR #$NEXT_PR already up to date or update failed (non-fatal)."
+            --silent
