@@ -1,9 +1,12 @@
 name: Dependabot auto-merge
 
+# "Allow auto-merge" is not enabled for this repo, so instead of scheduling a
+# GitHub auto-merge (which requires that setting), we merge directly once the
+# PR Check workflow has finished successfully for the PR.
 on:
-  pull_request_target:
-    branches:
-      - main
+  workflow_run:
+    workflows: ["PR Check"]
+    types: [completed]
 
 permissions:
   contents: write
@@ -11,11 +14,20 @@ permissions:
 
 jobs:
   auto-merge:
-    if: github.actor == 'dependabot[bot]'
+    if: >
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.pull_requests[0] != null
     runs-on: ubuntu-latest
     steps:
-      - name: Enable auto-merge for Dependabot PR
-        run: gh pr merge --auto --squash "$PR_URL"
+      - name: Merge Dependabot PR
         env:
-          PR_URL: ${{ github.event.pull_request.html_url }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.workflow_run.pull_requests[0].number }}
+        run: |
+          AUTHOR=$(gh pr view "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --json author --jq '.author.login')
+          if [ "$AUTHOR" = "dependabot[bot]" ]; then
+            gh pr merge --squash "$PR_NUMBER" --repo "$GITHUB_REPOSITORY"
+          else
+            echo "PR #$PR_NUMBER author is $AUTHOR, not dependabot[bot]; skipping merge."
+          fi
