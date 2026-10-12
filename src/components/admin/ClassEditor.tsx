@@ -241,10 +241,11 @@ export default function ClassEditor({ classes, registrations, history, currentUs
   }, [classes, classSessionsMap, filterLevel, filterDance, statusFilter, searchQuery]);
 
   function duplicateClass(dc: DanceClass) {
-    const existing = classSessionsMap[dc.id] || [];
+    const today = new Date().toISOString().split('T')[0];
+    const existing = (classSessionsMap[dc.id] || []).filter((s) => s.session_date >= today);
     setUrlParam('edit', 'new');
     setUrlParam('view', null);
-    setEditing({ ...dc, id: undefined, title_de: `${dc.title_de} (Kopie)`, title_en: `${dc.title_en} (Copy)`, is_public: false });
+    setEditing({ ...dc, id: undefined, title_de: `${dc.title_de} (Kopie)`, title_en: `${dc.title_en} (Copy)`, is_public: false, registration_opens_at: null, registration_closes_at: null });
     setSessions(existing.map((s) => ({ session_date: s.session_date, start_time: s.start_time.slice(0, 5), end_time: s.end_time.slice(0, 5), note: s.note || '' })));
   }
 
