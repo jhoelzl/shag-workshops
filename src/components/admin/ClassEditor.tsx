@@ -1,7 +1,7 @@
 import { Fragment, useState, useEffect, useMemo, useRef } from 'react';
 import { supabase } from '../../lib/supabase';
 import type { DanceClass, ClassSession, Registration, RegistrationHistory, Database } from '../../lib/database.types';
-import { getClassState, type ClassState } from '../../lib/classState';
+import { getClassState, getJourneyStage, getNextHint, JOURNEY_STAGES, type ClassState, type JourneyStage } from '../../lib/classState';
 import type { ClassPermission } from '../../lib/useAdminPermissions';
 
 interface Props {
@@ -114,7 +114,7 @@ export default function ClassEditor({ classes, registrations, history, currentUs
   const urlInitDone = useRef(false);
   const [filterLevel, setFilterLevel] = useState<string>('all');
   const [filterDance, setFilterDance] = useState<string>('all');
-  const [statusFilter, setStatusFilter] = useState<ClassState | 'preview' | 'draft' | 'all'>(isSuperAdmin ? 'open' : 'all');
+  const [statusFilter, setStatusFilter] = useState<JourneyStage | 'all'>(isSuperAdmin ? 'open' : 'all');
   const [searchQuery, setSearchQuery] = useState('');
   const [addingRegFor, setAddingRegFor] = useState<string | null>(null);
 
@@ -197,23 +197,16 @@ export default function ClassEditor({ classes, registrations, history, currentUs
   const availableLevels = useMemo(() => Array.from(new Set(classes.map((c) => c.level).filter(Boolean))).sort(), [classes]);
   const availableDances = useMemo(() => Array.from(new Set(classes.map((c) => c.dance).filter(Boolean))).sort(), [classes]);
 
+  const stageCounts = useMemo(() => {
+    const counts: Record<JourneyStage, number> = { draft: 0, preview: 0, upcoming: 0, open: 0, ongoing: 0, archived: 0 };
+    classes.forEach((c) => { counts[getJourneyStage(c, classSessionsMap[c.id] || [])]++; });
+    return counts;
+  }, [classes, classSessionsMap]);
+
   // Filter classes
   const filteredClasses = useMemo(() => {
     return classes.filter((dc) => {
-      const state = getClassState(classSessionsMap[dc.id] || [], dc.registration_opens_at, dc.registration_closes_at);
-      if (statusFilter === 'draft') {
-        if (dc.is_public) return false;
-      } else if (statusFilter === 'preview') {
-        return dc.is_preview && dc.is_public;
-      } else if (statusFilter === 'all') {
-        // When "All" is selected, show everything including previews
-        // Show all classes, only apply level/dance/search filters
-      } else {
-        // Hide preview classes in specific state views
-        if (dc.is_preview || !dc.is_public) return false;
-        // Status filter from top buttons
-        if (state !== statusFilter) return false;
-      }
+      if (statusFilter !== 'all' && getJourneyStage(dc, classSessionsMap[dc.id] || []) !== statusFilter) return false;
       if (filterLevel !== 'all' && dc.level !== filterLevel) return false;
       if (filterDance !== 'all' && dc.dance !== filterDance) return false;
       if (searchQuery) {
@@ -395,16 +388,13 @@ export default function ClassEditor({ classes, registrations, history, currentUs
       </div>
       {!editing && (
         <>
-        {/* Stats Row */}
-        <div className="grid grid-cols-3 sm:grid-cols-7 gap-2 mb-4">
-          <StatBtn count={classes.filter(c => !c.is_public).length} label="Draft" active={statusFilter === 'draft'} onClick={() => setStatusFilter(s => s === 'draft' ? 'all' : 'draft')} color="slate" />
-          <StatBtn count={classes.filter(c => c.is_public && c.is_preview).length} label="Preview" active={statusFilter === 'preview'} onClick={() => setStatusFilter(s => s === 'preview' ? 'all' : 'preview')} color="amber" />
-          <StatBtn count={classes.filter(c => c.is_public && !c.is_preview && getClassState(classSessionsMap[c.id] || [], c.registration_opens_at, c.registration_closes_at) === 'upcoming').length} label="Upcoming" active={statusFilter === 'upcoming'} onClick={() => setStatusFilter(s => s === 'upcoming' ? 'all' : 'upcoming')} />
-          <StatBtn count={classes.filter(c => c.is_public && !c.is_preview && getClassState(classSessionsMap[c.id] || [], c.registration_opens_at, c.registration_closes_at) === 'open').length} label="Open" active={statusFilter === 'open'} onClick={() => setStatusFilter(s => s === 'open' ? 'all' : 'open')} />
-          <StatBtn count={classes.filter(c => c.is_public && !c.is_preview && getClassState(classSessionsMap[c.id] || [], c.registration_opens_at, c.registration_closes_at) === 'ongoing').length} label="Ongoing" active={statusFilter === 'ongoing'} onClick={() => setStatusFilter(s => s === 'ongoing' ? 'all' : 'ongoing')} />
-          <StatBtn count={classes.filter(c => c.is_public && !c.is_preview && getClassState(classSessionsMap[c.id] || [], c.registration_opens_at, c.registration_closes_at) === 'archived').length} label="Archived" active={statusFilter === 'archived'} onClick={() => setStatusFilter(s => s === 'archived' ? 'all' : 'archived')} />
-          <StatBtn count={classes.length} label="All" active={statusFilter === 'all'} onClick={() => setStatusFilter('all')} color="slate" />
-        </div>
+        {/* Journey Stepper */}
+        <JourneyStepper
+          counts={stageCounts}
+          total={classes.length}
+          active={statusFilter}
+          onChange={setStatusFilter}
+        />
 
         {/* Single Filter Bar */}
         <div className="bg-white rounded-xl border border-primary/10 shadow-soft p-3 sm:p-4 mb-4">
@@ -480,26 +470,18 @@ export default function ClassEditor({ classes, registrations, history, currentUs
                   <div className={`h-1 w-full ${!dc.is_public ? 'bg-slate-300' : dc.is_preview ? 'bg-amber-400' : state === 'open' ? 'bg-teal' : state === 'ongoing' ? 'bg-blue-500' : state === 'upcoming' ? 'bg-accent' : 'bg-slate-300'}`} />
                   <div className="p-4 cursor-pointer" onClick={() => { const next = isViewing ? null : dc.id; setUrlParam('view', next); setViewClassId(next); }}>
                     <div className="flex items-start gap-4">
+                      <DateTile sessions={classSessions} muted={state === 'archived'} />
                       {/* Content column */}
                       <div className="flex-1 min-w-0">
                         {/* Status row - above title */}
                         <div className="flex items-center gap-2 mb-1.5">
-                          {!dc.is_public ? (
-                            <span title="Not visible on the public site" className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border border-dashed bg-slate-50 text-slate-500 border-slate-300">
-                              <span className="text-[8px]">✎</span>
-                              Draft · not public
-                            </span>
-                          ) : dc.is_preview ? (
-                            <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border bg-amber-50 text-amber-700 border-amber-200">
-                              <span className="text-[8px]">◈</span>
-                              Preview
-                            </span>
-                          ) : (
-                            <StatusBadge state={state} />
-                          )}
+                          <StageChip stage={getJourneyStage(dc, classSessions)} />
+                          {!dc.is_public && <span className="text-[10px] text-text-muted">not public</span>}
                         </div>
                         {/* Title row */}
-                        <h3 className={`font-display font-bold text-base truncate ${state === 'archived' ? 'text-text-muted' : 'text-primary'} mb-2`}>{dc.title_en || dc.title_de}</h3>
+                        <h3 className={`font-display font-bold text-base truncate ${state === 'archived' ? 'text-text-muted' : 'text-primary'} mb-1`}>{dc.title_en || dc.title_de}</h3>
+                        <p className="text-sm font-semibold text-primary mb-0.5">{getClassDateSummary(dc.id)}</p>
+                        <p className="text-xs text-text-muted mb-2">{getNextHint(getJourneyStage(dc, classSessions), dc, classSessions)}</p>
                         {/* Meta row */}
                         <div className="flex flex-wrap items-center gap-2 text-sm text-text-muted">
                           {dc.level && (
@@ -520,10 +502,6 @@ export default function ClassEditor({ classes, registrations, history, currentUs
                               {dc.teachers}
                             </span>
                           )}
-                          <span className="inline-flex items-center gap-1.5 text-xs">
-                            <svg className="w-3.5 h-3.5 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                            {getClassDateSummary(dc.id)}
-                          </span>
                           {dc.location && (
                             <span className="inline-flex items-center gap-1.5 text-xs">
                               <svg className="w-3.5 h-3.5 text-coral" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" /></svg>
@@ -987,21 +965,102 @@ const TAB_CONFIG: { key: TabKey; label: string; icon: string }[] = [
 ];
 
 // Simple stat button (clickable)
-function StatBtn({ count, label, active, onClick, color = 'primary' }: { count: number; label: string; active: boolean; onClick: () => void; color?: 'primary' | 'amber' | 'slate' }) {
-  const styles = {
-    primary: { active: 'bg-primary text-white', inactive: 'bg-slate-50 hover:bg-bg-warm text-primary' },
-    amber: { active: 'bg-amber-500 text-white', inactive: 'bg-amber-50 hover:bg-amber-100 text-amber-700' },
-    slate: { active: 'bg-slate-600 text-white', inactive: 'bg-slate-100 hover:bg-slate-200 text-slate-700' },
-  };
-  const s = styles[color];
+const STAGE_META: Record<JourneyStage, { label: string; active: string; idle: string }> = {
+  draft: { label: 'Draft', active: 'bg-slate-600 text-white', idle: 'bg-slate-100 text-slate-700 hover:bg-slate-200' },
+  preview: { label: 'Preview', active: 'bg-amber-500 text-white', idle: 'bg-amber-50 text-amber-700 hover:bg-amber-100' },
+  upcoming: { label: 'Upcoming', active: 'bg-primary text-white', idle: 'bg-slate-50 text-primary hover:bg-bg-warm' },
+  open: { label: 'Open', active: 'bg-green-600 text-white', idle: 'bg-green-50 text-green-700 hover:bg-green-100' },
+  ongoing: { label: 'Ongoing', active: 'bg-blue-600 text-white', idle: 'bg-blue-50 text-blue-700 hover:bg-blue-100' },
+  archived: { label: 'Archived', active: 'bg-slate-500 text-white', idle: 'bg-slate-100 text-slate-600 hover:bg-slate-200' },
+};
+
+const STAGE_GROUPS: { label: string; stages: JourneyStage[] }[] = [
+  { label: 'Draft / Preview', stages: ['draft', 'preview'] },
+  { label: 'Public', stages: ['upcoming', 'open', 'ongoing'] },
+  { label: 'Done', stages: ['archived'] },
+];
+
+function DateTile({ sessions, muted }: { sessions: ClassSession[]; muted?: boolean }) {
+  if (sessions.length === 0) {
+    return (
+      <div className="shrink-0 w-14 rounded-xl border border-dashed border-primary/20 text-center py-2 text-[10px] text-text-muted">No date</div>
+    );
+  }
+  const d = new Date([...sessions].sort((a, b) => a.session_date.localeCompare(b.session_date))[0].session_date);
+  const weekday = d.toLocaleDateString('en-GB', { weekday: 'short' });
+  const month = d.toLocaleDateString('en-GB', { month: 'short' });
   return (
-    <button
-      onClick={onClick}
-      className={`text-center py-2 px-1 rounded-xl transition-all ${active ? `${s.active} shadow-md` : s.inactive}`}
+    <div className={`shrink-0 w-14 rounded-xl overflow-hidden border border-primary/10 text-center bg-white ${muted ? 'opacity-70' : ''}`}>
+      <div className="bg-primary text-white text-[10px] font-semibold uppercase tracking-wide py-0.5">{weekday}</div>
+      <div className="text-xl font-display font-bold text-primary leading-tight pt-0.5">{d.getDate()}</div>
+      <div className="text-[10px] font-medium uppercase text-text-muted">{month}</div>
+      <div className="text-[10px] text-text-muted pb-0.5">{d.getFullYear()}</div>
+    </div>
+  );
+}
+
+function StageChip({ stage }: { stage: JourneyStage }) {
+  const m = STAGE_META[stage];
+  return (
+    <span
+      style={{ clipPath: 'polygon(0 0, calc(100% - 10px) 0, 100% 50%, calc(100% - 10px) 100%, 0 100%)' }}
+      className={`inline-flex items-center gap-1.5 pl-2.5 pr-4 py-1 text-[11px] font-bold uppercase tracking-wider ${m.active}`}
     >
-      <div className={`text-xl font-display font-bold ${active ? 'text-white' : ''}`}>{count}</div>
-      <div className={`text-[10px] font-medium ${active ? 'text-white/80' : ''}`}>{label}</div>
-    </button>
+      {m.label}
+    </span>
+  );
+}
+
+function JourneyStepper({ counts, total, active, onChange }: {
+  counts: Record<JourneyStage, number>;
+  total: number;
+  active: JourneyStage | 'all';
+  onChange: (v: JourneyStage | 'all') => void;
+}) {
+  return (
+    <div className="bg-white rounded-xl border border-primary/10 shadow-soft p-3 sm:p-4 mb-4">
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-xs font-semibold text-primary/60 uppercase tracking-wide">Class journey</span>
+        <button
+          onClick={() => onChange('all')}
+          className={`text-xs font-medium px-2 py-1 rounded-lg ${active === 'all' ? 'bg-primary text-white' : 'text-primary hover:bg-bg-warm'}`}
+        >
+          Show all ({total})
+        </button>
+      </div>
+      <div className="overflow-x-auto">
+        <div className="min-w-[560px]">
+          <div className="flex">
+            {JOURNEY_STAGES.map((st, i) => {
+              const m = STAGE_META[st];
+              const isActive = active === st;
+              const first = i === 0;
+              const last = i === JOURNEY_STAGES.length - 1;
+              const clip = `polygon(0 0, ${last ? '100% 0, 100% 100%' : 'calc(100% - 14px) 0, 100% 50%, calc(100% - 14px) 100%'}, 0 100%${first ? '' : ', 14px 50%'})`;
+              return (
+                <button
+                  key={st}
+                  onClick={() => onChange(isActive ? 'all' : st)}
+                  aria-pressed={isActive}
+                  style={{ clipPath: clip }}
+                  className={`flex-1 py-2 text-center transition-all ${first ? 'pl-2' : 'pl-5'} ${last ? 'pr-2' : 'pr-5'} ${i > 0 ? '-ml-[6px]' : ''} ${isActive ? m.active : `${m.idle} hover:brightness-95`}`}
+                >
+                  <div className="text-lg font-display font-bold leading-tight">{counts[st]}</div>
+                  <div className="text-[10px] font-medium">{m.label}</div>
+                </button>
+              );
+            })}
+          </div>
+          <div className="flex mt-1">
+            {STAGE_GROUPS.map((g) => (
+              <div key={g.label} style={{ flex: g.stages.length }} className="text-[10px] text-center text-primary/50 border-t border-primary/15 pt-0.5 mx-1">
+                {g.label}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
