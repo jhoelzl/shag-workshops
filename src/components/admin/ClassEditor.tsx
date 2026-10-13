@@ -114,7 +114,7 @@ export default function ClassEditor({ classes, registrations, history, currentUs
   const urlInitDone = useRef(false);
   const [filterLevel, setFilterLevel] = useState<string>('all');
   const [filterDance, setFilterDance] = useState<string>('all');
-  const [statusFilter, setStatusFilter] = useState<ClassState | 'preview' | 'draft' | 'all'>('open');
+  const [statusFilter, setStatusFilter] = useState<ClassState | 'preview' | 'draft' | 'all'>(isSuperAdmin ? 'open' : 'all');
   const [searchQuery, setSearchQuery] = useState('');
   const [addingRegFor, setAddingRegFor] = useState<string | null>(null);
 
