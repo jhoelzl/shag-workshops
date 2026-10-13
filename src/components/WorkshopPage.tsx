@@ -213,14 +213,14 @@ export default function WorkshopPage({ locale, initialClasses }: Props) {
   const previewClasses = useMemo(
     () => allClasses.filter((dc) => {
       const state = getClassState(dc.sessions || [], dc.registration_opens_at, dc.registration_closes_at);
-      return (state === 'upcoming' || state === 'open') && dc.is_preview;
+      return state !== 'archived' && dc.is_preview;
     }),
     [allClasses]
   );
   const ongoingClasses = useMemo(
     () => allClasses.filter((dc) => {
       const state = getClassState(dc.sessions || [], dc.registration_opens_at, dc.registration_closes_at);
-      return state === 'ongoing';
+      return state === 'ongoing' && !dc.is_preview;
     }),
     [allClasses]
   );

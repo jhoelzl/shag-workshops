@@ -1072,8 +1072,7 @@ function ClassForm({
           <h3 className="font-display text-xl font-bold text-primary">{title}</h3>
         </div>
         <div className="flex items-center gap-3">
-          {editing.is_preview && <Badge variant="amber">Preview Mode</Badge>}
-          {editing.is_public ? <Badge variant="success">Published</Badge> : <Badge variant="neutral">Draft</Badge>}
+          {!editing.is_public ? <Badge variant="neutral">✎ Draft</Badge> : editing.is_preview ? <Badge variant="amber">◈ Preview</Badge> : <StatusBadge state={getClassState(sessions as unknown as ClassSession[], editing.registration_opens_at, editing.registration_closes_at)} />}
           {!editing.id && <span className="text-xs text-accent-dark bg-accent/10 px-2 py-0.5 rounded-full font-medium">New Class</span>}
         </div>
       </div>
@@ -1108,6 +1107,29 @@ function ClassForm({
         {/* Info Tab */}
         {activeTab === 'info' && (
           <div className="space-y-6">
+            <div className="rounded-xl border border-primary/10 bg-white p-4">
+              <div className="flex flex-wrap items-center gap-3 mb-3">
+                <span className="text-xs uppercase tracking-wider text-text-muted font-semibold">Class status</span>
+                {!editing.is_public ? <Badge variant="neutral">✎ Draft</Badge> : editing.is_preview ? <Badge variant="amber">◈ Preview</Badge> : <StatusBadge state={getClassState(sessions as unknown as ClassSession[], editing.registration_opens_at, editing.registration_closes_at)} />}
+              </div>
+              <div className="grid gap-3 sm:grid-cols-3">
+                {([
+                  { key: 'draft', label: '✎ Draft', desc: 'Not visible on the website', pub: false, prev: false },
+                  { key: 'preview', label: '◈ Preview', desc: 'Visible with preview text, no registration', pub: true, prev: true },
+                  { key: 'published', label: '● Published', desc: 'Live on the website. Upcoming / Open / Ongoing / Archived follow automatically from dates.', pub: true, prev: false },
+                ] as const).map((o) => {
+                  const current = !editing.is_public ? 'draft' : editing.is_preview ? 'preview' : 'published';
+                  const active = current === o.key;
+                  return (
+                    <button key={o.key} type="button" onClick={() => setEditing({ ...editing, is_public: o.pub, is_preview: o.prev })}
+                      className={`text-left rounded-lg border-2 p-3 transition ${active ? 'border-accent bg-accent/10' : 'border-primary/10 hover:border-primary/30'}`}>
+                      <div className="font-semibold text-sm text-primary">{o.label}</div>
+                      <div className="text-xs text-text-muted mt-1">{o.desc}</div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
             <SectionCard title="Class Titles" icon="🏷️">
               <div className="grid gap-4 sm:grid-cols-2">
                 <Input label="Title (DE)" value={editing.title_de ?? ''} onChange={(v) => setEditing({ ...editing, title_de: v })} required placeholder="e.g. Collegiate Shag Beginner" />
@@ -1208,9 +1230,7 @@ function ClassForm({
             </SectionCard>
             <SectionCard title="Visibility & Behavior" icon="👁️">
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                <Toggle label="Published" description="Visible on the public website" checked={editing.is_public ?? false} onChange={(v) => setEditing({ ...editing, is_public: v })} />
                 <Toggle label="Auto-confirm" description="Instantly confirm registrations without manual review. Participants receive only the confirmation email (no separate 'registration received' email)." checked={editing.auto_confirm ?? false} onChange={(v) => setEditing({ ...editing, auto_confirm: v })} />
-                <Toggle label="Preview Mode" description="Show preview text instead of session dates" checked={editing.is_preview ?? false} onChange={(v) => setEditing({ ...editing, is_preview: v })} />
               </div>
             </SectionCard>
             <SectionCard title="Notification Settings" icon="📧">
@@ -1643,8 +1663,7 @@ function ClassDetailView({ dc, sessions, classRegs, regCounts, history, currentU
         <div><span className="text-text-muted text-xs uppercase tracking-wider">Max Leads</span><p>{dc.max_leads}</p></div>
         <div><span className="text-text-muted text-xs uppercase tracking-wider">Max Follows</span><p>{dc.max_follows}</p></div>
         <div><span className="text-text-muted text-xs uppercase tracking-wider">Price (EUR)</span><p>{dc.price_eur != null ? `${dc.price_eur} €` : '-'}</p></div>
-        <div><span className="text-text-muted text-xs uppercase tracking-wider">Public</span><p>{dc.is_public ? 'Yes' : 'No'}</p></div>
-        <div><span className="text-text-muted text-xs uppercase tracking-wider">Preview Mode</span><p>{dc.is_preview ? 'Yes' : 'No'}</p></div>
+        <div><span className="text-text-muted text-xs uppercase tracking-wider">Status</span><p>{!dc.is_public ? 'Draft' : dc.is_preview ? 'Preview' : 'Published'}</p></div>
         <div><span className="text-text-muted text-xs uppercase tracking-wider">Registration opens</span><p>{fmtDate(dc.registration_opens_at)}</p></div>
         <div><span className="text-text-muted text-xs uppercase tracking-wider">Registration closes</span><p>{fmtDate(dc.registration_closes_at)}</p></div>
         <div className="md:col-span-2"><span className="text-text-muted text-xs uppercase tracking-wider">Additional Notification Email</span><p>{dc.notification_email || '—'}</p></div>

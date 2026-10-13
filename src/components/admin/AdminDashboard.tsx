@@ -169,7 +169,7 @@ export default function AdminDashboard() {
 
   const openClassIds = new Set(
     classes
-      .filter((c) => getClassState(sessionsMap[c.id] || [], c.registration_opens_at, c.registration_closes_at) === 'open')
+      .filter((c) => c.is_public && !c.is_preview && getClassState(sessionsMap[c.id] || [], c.registration_opens_at, c.registration_closes_at) === 'open')
       .map((c) => c.id),
   );
 
@@ -331,7 +331,7 @@ function OverviewTab({
   // Active classes with registration data (excluding preview mode)
   const activeClasses = classes.filter(c => !archivedClassIds.has(c.id) && !c.is_preview);
   const openClasses = activeClasses
-    .filter((c) => getClassState(sessionsMap[c.id] || [], c.registration_opens_at, c.registration_closes_at) === 'open')
+    .filter((c) => c.is_public && getClassState(sessionsMap[c.id] || [], c.registration_opens_at, c.registration_closes_at) === 'open')
     .map((c) => {
       const regs = registrations.filter((r) => r.dance_class_id === c.id && ['pending', 'confirmed'].includes(r.status));
       const leads = regs.filter((r) => r.role === 'lead').length;
