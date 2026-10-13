@@ -74,7 +74,7 @@ export function getNextHint(
     case 'draft':
       return 'Next: publish as preview to show it to students';
     case 'preview':
-      return 'Next: switch to public to make it Upcoming';
+      return 'Next: publish to show the full class details on the website';
     case 'upcoming':
       return cls.registration_opens_at
         ? `Next: registration opens ${fmtDate(cls.registration_opens_at)}`

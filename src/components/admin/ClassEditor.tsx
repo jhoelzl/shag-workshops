@@ -975,7 +975,7 @@ const STAGE_META: Record<JourneyStage, { label: string; active: string; idle: st
 };
 
 const STAGE_GROUPS: { label: string; stages: JourneyStage[] }[] = [
-  { label: 'Not public', stages: ['draft', 'preview'] },
+  { label: 'Draft / Preview', stages: ['draft', 'preview'] },
   { label: 'Public', stages: ['upcoming', 'open', 'ongoing'] },
   { label: 'Done', stages: ['archived'] },
 ];

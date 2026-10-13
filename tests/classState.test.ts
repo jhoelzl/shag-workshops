@@ -80,8 +80,8 @@ describe('getJourneyStage', () => {
 describe('getNextHint', () => {
   const cls = { is_public: true, is_preview: false, registration_opens_at: null, registration_closes_at: null } as never;
   it('covers draft and preview', () => {
-    expect(getNextHint('draft', cls, [])).toMatch(/^Next:/);
-    expect(getNextHint('preview', cls, [])).toMatch(/^Next:/);
+    expect(getNextHint('draft', cls, [])).toBe('Next: publish as preview to show it to students');
+    expect(getNextHint('preview', cls, [])).toBe('Next: publish to show the full class details on the website');
   });
   it('falls back without dates', () => {
     expect(getNextHint('upcoming', cls, [])).toMatch(/set a registration/);
