@@ -114,7 +114,7 @@ export default function ClassEditor({ classes, registrations, history, currentUs
   const urlInitDone = useRef(false);
   const [filterLevel, setFilterLevel] = useState<string>('all');
   const [filterDance, setFilterDance] = useState<string>('all');
-  const [statusFilter, setStatusFilter] = useState<ClassState | 'preview' | 'all'>('open');
+  const [statusFilter, setStatusFilter] = useState<ClassState | 'preview' | 'draft' | 'all'>('open');
   const [searchQuery, setSearchQuery] = useState('');
   const [addingRegFor, setAddingRegFor] = useState<string | null>(null);
 
@@ -201,16 +201,16 @@ export default function ClassEditor({ classes, registrations, history, currentUs
   const filteredClasses = useMemo(() => {
     return classes.filter((dc) => {
       const state = getClassState(classSessionsMap[dc.id] || [], dc.registration_opens_at, dc.registration_closes_at);
-      // Preview filter - show only preview classes
-      if (statusFilter === 'preview') {
-        return dc.is_preview;
-      }
-      // When "All" is selected, show everything including previews
-      if (statusFilter === 'all') {
+      if (statusFilter === 'draft') {
+        if (dc.is_public) return false;
+      } else if (statusFilter === 'preview') {
+        return dc.is_preview && dc.is_public;
+      } else if (statusFilter === 'all') {
+        // When "All" is selected, show everything including previews
         // Show all classes, only apply level/dance/search filters
       } else {
         // Hide preview classes in specific state views
-        if (dc.is_preview) return false;
+        if (dc.is_preview || !dc.is_public) return false;
         // Status filter from top buttons
         if (state !== statusFilter) return false;
       }
@@ -391,12 +391,13 @@ export default function ClassEditor({ classes, registrations, history, currentUs
       {!editing && (
         <>
         {/* Stats Row */}
-        <div className="grid grid-cols-6 gap-2 mb-4">
-          <StatBtn count={classes.filter(c => !c.is_preview && getClassState(classSessionsMap[c.id] || [], c.registration_opens_at, c.registration_closes_at) === 'open').length} label="Open" active={statusFilter === 'open'} onClick={() => setStatusFilter(s => s === 'open' ? 'all' : 'open')} />
-          <StatBtn count={classes.filter(c => c.is_preview).length} label="Preview" active={statusFilter === 'preview'} onClick={() => setStatusFilter(s => s === 'preview' ? 'all' : 'preview')} color="amber" />
-          <StatBtn count={classes.filter(c => !c.is_preview && getClassState(classSessionsMap[c.id] || [], c.registration_opens_at, c.registration_closes_at) === 'upcoming').length} label="Upcoming" active={statusFilter === 'upcoming'} onClick={() => setStatusFilter(s => s === 'upcoming' ? 'all' : 'upcoming')} />
-          <StatBtn count={classes.filter(c => !c.is_preview && getClassState(classSessionsMap[c.id] || [], c.registration_opens_at, c.registration_closes_at) === 'ongoing').length} label="Ongoing" active={statusFilter === 'ongoing'} onClick={() => setStatusFilter(s => s === 'ongoing' ? 'all' : 'ongoing')} />
-          <StatBtn count={classes.filter(c => !c.is_preview && getClassState(classSessionsMap[c.id] || [], c.registration_opens_at, c.registration_closes_at) === 'archived').length} label="Archived" active={statusFilter === 'archived'} onClick={() => setStatusFilter(s => s === 'archived' ? 'all' : 'archived')} />
+        <div className="grid grid-cols-3 sm:grid-cols-7 gap-2 mb-4">
+          <StatBtn count={classes.filter(c => !c.is_public).length} label="Draft" active={statusFilter === 'draft'} onClick={() => setStatusFilter(s => s === 'draft' ? 'all' : 'draft')} color="slate" />
+          <StatBtn count={classes.filter(c => c.is_public && c.is_preview).length} label="Preview" active={statusFilter === 'preview'} onClick={() => setStatusFilter(s => s === 'preview' ? 'all' : 'preview')} color="amber" />
+          <StatBtn count={classes.filter(c => c.is_public && !c.is_preview && getClassState(classSessionsMap[c.id] || [], c.registration_opens_at, c.registration_closes_at) === 'upcoming').length} label="Upcoming" active={statusFilter === 'upcoming'} onClick={() => setStatusFilter(s => s === 'upcoming' ? 'all' : 'upcoming')} />
+          <StatBtn count={classes.filter(c => c.is_public && !c.is_preview && getClassState(classSessionsMap[c.id] || [], c.registration_opens_at, c.registration_closes_at) === 'open').length} label="Open" active={statusFilter === 'open'} onClick={() => setStatusFilter(s => s === 'open' ? 'all' : 'open')} />
+          <StatBtn count={classes.filter(c => c.is_public && !c.is_preview && getClassState(classSessionsMap[c.id] || [], c.registration_opens_at, c.registration_closes_at) === 'ongoing').length} label="Ongoing" active={statusFilter === 'ongoing'} onClick={() => setStatusFilter(s => s === 'ongoing' ? 'all' : 'ongoing')} />
+          <StatBtn count={classes.filter(c => c.is_public && !c.is_preview && getClassState(classSessionsMap[c.id] || [], c.registration_opens_at, c.registration_closes_at) === 'archived').length} label="Archived" active={statusFilter === 'archived'} onClick={() => setStatusFilter(s => s === 'archived' ? 'all' : 'archived')} />
           <StatBtn count={classes.length} label="All" active={statusFilter === 'all'} onClick={() => setStatusFilter('all')} color="slate" />
         </div>
 
@@ -469,16 +470,21 @@ export default function ClassEditor({ classes, registrations, history, currentUs
               {isEditingThis(dc.id) ? (
                 <ClassForm editing={editing!} setEditing={setEditing} sessions={sessions} setSessions={setSessions} addSession={addSession} removeSession={removeSession} updateSession={updateSession} generateWeeklyDates={generateWeeklyDates} handleSave={handleSave} saving={saving} onCancel={() => { setUrlParam('edit', null); setEditing(null); }} title={`Edit: ${dc.title_en || dc.title_de}`} />
               ) : (
-                <div className={`group bg-surface/80 backdrop-blur rounded-2xl border shadow-soft transition-all overflow-hidden ${editing ? 'opacity-40 pointer-events-none' : 'border-primary/5 hover:shadow-lift hover:-translate-y-0.5'} ${state === 'archived' ? 'opacity-75' : ''}`}>
+                <div className={`group bg-surface/80 backdrop-blur rounded-2xl border shadow-soft transition-all overflow-hidden ${editing ? 'opacity-40 pointer-events-none' : 'border-primary/5 hover:shadow-lift hover:-translate-y-0.5'} ${state === 'archived' || !dc.is_public ? 'opacity-75' : ''}`}>
                   {/* Status stripe - amber for preview classes */}
-                  <div className={`h-1 w-full ${dc.is_preview ? 'bg-amber-400' : state === 'open' ? 'bg-teal' : state === 'ongoing' ? 'bg-blue-500' : state === 'upcoming' ? 'bg-accent' : 'bg-slate-300'}`} />
+                  <div className={`h-1 w-full ${!dc.is_public ? 'bg-slate-300' : dc.is_preview ? 'bg-amber-400' : state === 'open' ? 'bg-teal' : state === 'ongoing' ? 'bg-blue-500' : state === 'upcoming' ? 'bg-accent' : 'bg-slate-300'}`} />
                   <div className="p-4 cursor-pointer" onClick={() => { const next = isViewing ? null : dc.id; setUrlParam('view', next); setViewClassId(next); }}>
                     <div className="flex items-start gap-4">
                       {/* Content column */}
                       <div className="flex-1 min-w-0">
                         {/* Status row - above title */}
                         <div className="flex items-center gap-2 mb-1.5">
-                          {dc.is_preview ? (
+                          {!dc.is_public ? (
+                            <span title="Not visible on the public site" className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border border-dashed bg-slate-50 text-slate-500 border-slate-300">
+                              <span className="text-[8px]">✎</span>
+                              Draft · not public
+                            </span>
+                          ) : dc.is_preview ? (
                             <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border bg-amber-50 text-amber-700 border-amber-200">
                               <span className="text-[8px]">◈</span>
                               Preview
@@ -486,7 +492,6 @@ export default function ClassEditor({ classes, registrations, history, currentUs
                           ) : (
                             <StatusBadge state={state} />
                           )}
-                          {!dc.is_public && <span className="text-[10px] font-semibold uppercase tracking-wider bg-primary/8 text-primary/60 px-2 py-0.5 rounded-full">Draft</span>}
                         </div>
                         {/* Title row */}
                         <h3 className={`font-display font-bold text-base truncate ${state === 'archived' ? 'text-text-muted' : 'text-primary'} mb-2`}>{dc.title_en || dc.title_de}</h3>
