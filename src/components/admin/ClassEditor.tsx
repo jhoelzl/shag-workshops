@@ -470,7 +470,7 @@ export default function ClassEditor({ classes, registrations, history, currentUs
                   <div className={`h-1 w-full ${!dc.is_public ? 'bg-slate-300' : dc.is_preview ? 'bg-amber-400' : state === 'open' ? 'bg-teal' : state === 'ongoing' ? 'bg-blue-500' : state === 'upcoming' ? 'bg-accent' : 'bg-slate-300'}`} />
                   <div className="p-4 cursor-pointer" onClick={() => { const next = isViewing ? null : dc.id; setUrlParam('view', next); setViewClassId(next); }}>
                     <div className="flex items-start gap-4">
-                      <DateTile sessions={classSessions} muted={state === 'archived'} />
+                      <DateTile sessions={classSessions} />
                       {/* Content column */}
                       <div className="flex-1 min-w-0">
                         {/* Status row - above title */}
@@ -980,7 +980,7 @@ const STAGE_GROUPS: { label: string; stages: JourneyStage[] }[] = [
   { label: 'Done', stages: ['archived'] },
 ];
 
-function DateTile({ sessions, muted }: { sessions: ClassSession[]; muted?: boolean }) {
+function DateTile({ sessions }: { sessions: ClassSession[] }) {
   if (sessions.length === 0) {
     return (
       <div className="shrink-0 w-14 rounded-xl border border-dashed border-primary/20 text-center py-2 text-[10px] text-text-muted">No date</div>
@@ -990,11 +990,11 @@ function DateTile({ sessions, muted }: { sessions: ClassSession[]; muted?: boole
   const weekday = d.toLocaleDateString('en-GB', { weekday: 'short' });
   const month = d.toLocaleDateString('en-GB', { month: 'short' });
   return (
-    <div className={`shrink-0 w-16 rounded-2xl bg-primary/[0.04] py-2 text-center font-sans ${muted ? 'opacity-60' : ''}`}>
+    <div className="shrink-0 w-16 rounded-2xl bg-primary/[0.04] py-2 text-center font-sans">
       <div className="text-[10px] font-medium uppercase tracking-[0.12em] text-text-muted">{weekday}</div>
       <div className="text-3xl font-semibold tracking-tight text-primary leading-none my-0.5 tabular-nums">{d.getDate()}</div>
-      <div className="text-[11px] font-medium uppercase tracking-[0.12em] text-coral-dark">{month}</div>
-      <div className="text-[10px] text-text-muted/70 tabular-nums">{d.getFullYear()}</div>
+      <div className="text-[11px] font-medium uppercase tracking-[0.12em] text-primary">{month}</div>
+      <div className="text-[10px] text-primary tabular-nums">{d.getFullYear()}</div>
     </div>
   );
 }
