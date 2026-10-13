@@ -470,26 +470,17 @@ export default function ClassEditor({ classes, registrations, history, currentUs
                   <div className={`h-1 w-full ${!dc.is_public ? 'bg-slate-300' : dc.is_preview ? 'bg-amber-400' : state === 'open' ? 'bg-teal' : state === 'ongoing' ? 'bg-blue-500' : state === 'upcoming' ? 'bg-accent' : 'bg-slate-300'}`} />
                   <div className="p-4 cursor-pointer" onClick={() => { const next = isViewing ? null : dc.id; setUrlParam('view', next); setViewClassId(next); }}>
                     <div className="flex items-start gap-4">
+                      <DateTile sessions={classSessions} muted={state === 'archived'} />
                       {/* Content column */}
                       <div className="flex-1 min-w-0">
                         {/* Status row - above title */}
                         <div className="flex items-center gap-2 mb-1.5">
-                          {!dc.is_public ? (
-                            <span title="Not visible on the public site" className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border border-dashed bg-slate-50 text-slate-500 border-slate-300">
-                              <span className="text-[8px]">✎</span>
-                              Draft · not public
-                            </span>
-                          ) : dc.is_preview ? (
-                            <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border bg-amber-50 text-amber-700 border-amber-200">
-                              <span className="text-[8px]">◈</span>
-                              Preview
-                            </span>
-                          ) : (
-                            <StatusBadge state={state} />
-                          )}
+                          <StageChip stage={getJourneyStage(dc, classSessions)} />
+                          {!dc.is_public && <span className="text-[10px] text-text-muted">not public</span>}
                         </div>
                         {/* Title row */}
                         <h3 className={`font-display font-bold text-base truncate ${state === 'archived' ? 'text-text-muted' : 'text-primary'} mb-1`}>{dc.title_en || dc.title_de}</h3>
+                        <p className="text-sm font-semibold text-primary mb-0.5">{getClassDateSummary(dc.id)}</p>
                         <p className="text-xs text-text-muted mb-2">{getNextHint(getJourneyStage(dc, classSessions), dc, classSessions)}</p>
                         {/* Meta row */}
                         <div className="flex flex-wrap items-center gap-2 text-sm text-text-muted">
@@ -511,10 +502,6 @@ export default function ClassEditor({ classes, registrations, history, currentUs
                               {dc.teachers}
                             </span>
                           )}
-                          <span className="inline-flex items-center gap-1.5 text-xs">
-                            <svg className="w-3.5 h-3.5 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                            {getClassDateSummary(dc.id)}
-                          </span>
                           {dc.location && (
                             <span className="inline-flex items-center gap-1.5 text-xs">
                               <svg className="w-3.5 h-3.5 text-coral" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" /></svg>
@@ -992,6 +979,37 @@ const STAGE_GROUPS: { label: string; stages: JourneyStage[] }[] = [
   { label: 'Public', stages: ['upcoming', 'open', 'ongoing'] },
   { label: 'Done', stages: ['archived'] },
 ];
+
+function DateTile({ sessions, muted }: { sessions: ClassSession[]; muted?: boolean }) {
+  if (sessions.length === 0) {
+    return (
+      <div className="shrink-0 w-14 rounded-xl border border-dashed border-primary/20 text-center py-2 text-[10px] text-text-muted">No date</div>
+    );
+  }
+  const d = new Date([...sessions].sort((a, b) => a.session_date.localeCompare(b.session_date))[0].session_date);
+  const weekday = d.toLocaleDateString('en-GB', { weekday: 'short' });
+  const month = d.toLocaleDateString('en-GB', { month: 'short' });
+  return (
+    <div className={`shrink-0 w-14 rounded-xl overflow-hidden border border-primary/10 text-center bg-white ${muted ? 'opacity-70' : ''}`}>
+      <div className="bg-primary text-white text-[10px] font-semibold uppercase tracking-wide py-0.5">{weekday}</div>
+      <div className="text-xl font-display font-bold text-primary leading-tight pt-0.5">{d.getDate()}</div>
+      <div className="text-[10px] font-medium uppercase text-text-muted">{month}</div>
+      <div className="text-[10px] text-text-muted pb-0.5">{d.getFullYear()}</div>
+    </div>
+  );
+}
+
+function StageChip({ stage }: { stage: JourneyStage }) {
+  const m = STAGE_META[stage];
+  return (
+    <span
+      style={{ clipPath: 'polygon(0 0, calc(100% - 10px) 0, 100% 50%, calc(100% - 10px) 100%, 0 100%)' }}
+      className={`inline-flex items-center gap-1.5 pl-2.5 pr-4 py-1 text-[11px] font-bold uppercase tracking-wider ${m.active}`}
+    >
+      {m.label}
+    </span>
+  );
+}
 
 function JourneyStepper({ counts, total, active, onChange }: {
   counts: Record<JourneyStage, number>;
