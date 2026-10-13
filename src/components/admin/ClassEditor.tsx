@@ -313,10 +313,12 @@ export default function ClassEditor({ classes, registrations, history, currentUs
     };
     let classId = editing.id;
     if (classId) {
-      await supabase.from('dance_classes').update({ ...basePayload, title_de: editing.title_de ?? '', title_en: editing.title_en ?? '' }).eq('id', classId);
+      const { error } = await supabase.from('dance_classes').update({ ...basePayload, title_de: editing.title_de ?? '', title_en: editing.title_en ?? '' }).eq('id', classId);
+      if (error) { alert(`Could not save class: ${error.message}`); setSaving(false); return; }
     } else {
-      const { data } = await supabase.from('dance_classes').insert({ ...basePayload, title_de: editing.title_de ?? '', title_en: editing.title_en ?? '', max_leads: editing.max_leads ?? 10, max_follows: editing.max_follows ?? 10 }).select('id').single();
-      classId = data?.id;
+      const { data, error } = await supabase.from('dance_classes').insert({ ...basePayload, is_public: isSuperAdmin ? basePayload.is_public : false, title_de: editing.title_de ?? '', title_en: editing.title_en ?? '', max_leads: editing.max_leads ?? 10, max_follows: editing.max_follows ?? 10 }).select('id').single();
+      if (error || !data) { alert(`Could not create class: ${error?.message ?? 'unknown error'}`); setSaving(false); return; }
+      classId = data.id;
     }
     if (classId) {
       const originalSessions = classSessionsMap[classId] || [];
@@ -325,7 +327,10 @@ export default function ClassEditor({ classes, registrations, history, currentUs
         await supabase.from('class_sessions').delete().eq('dance_class_id', classId);
         if (sessions.length > 0) {
           const payload = sessions.filter((s) => s.session_date && s.start_time && s.end_time).map((s) => ({ dance_class_id: classId!, session_date: s.session_date, start_time: s.start_time, end_time: s.end_time, note: s.note || null }));
-          if (payload.length > 0) await supabase.from('class_sessions').insert(payload);
+          if (payload.length > 0) {
+            const { error: sessErr } = await supabase.from('class_sessions').insert(payload);
+            if (sessErr) { alert(`Class saved, but dates failed: ${sessErr.message}`); }
+          }
         }
       }
     }
