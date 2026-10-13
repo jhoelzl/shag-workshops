@@ -470,7 +470,7 @@ export default function ClassEditor({ classes, registrations, history, currentUs
                   <div className={`h-1 w-full ${!dc.is_public ? 'bg-slate-300' : dc.is_preview ? 'bg-amber-400' : state === 'open' ? 'bg-teal' : state === 'ongoing' ? 'bg-blue-500' : state === 'upcoming' ? 'bg-accent' : 'bg-slate-300'}`} />
                   <div className="p-4 cursor-pointer" onClick={() => { const next = isViewing ? null : dc.id; setUrlParam('view', next); setViewClassId(next); }}>
                     <div className="flex items-start gap-4">
-                      <DateTile sessions={classSessions} muted={state === 'archived'} />
+                      <DateTile sessions={classSessions} />
                       {/* Content column */}
                       <div className="flex-1 min-w-0">
                         {/* Status row - above title */}
@@ -480,7 +480,7 @@ export default function ClassEditor({ classes, registrations, history, currentUs
                         </div>
                         {/* Title row */}
                         <h3 className={`font-display font-bold text-base truncate ${state === 'archived' ? 'text-text-muted' : 'text-primary'} mb-1`}>{dc.title_en || dc.title_de}</h3>
-                        <p className="text-sm font-semibold text-primary mb-0.5">{getClassDateSummary(dc.id)}</p>
+                        {classSessions.length > 1 && <p className="text-xs text-text-muted mb-0.5">{getClassDateSummary(dc.id)}</p>}
                         <p className="text-xs text-text-muted mb-2">{getNextHint(getJourneyStage(dc, classSessions), dc, classSessions)}</p>
                         {/* Meta row */}
                         <div className="flex flex-wrap items-center gap-2 text-sm text-text-muted">
@@ -980,7 +980,7 @@ const STAGE_GROUPS: { label: string; stages: JourneyStage[] }[] = [
   { label: 'Done', stages: ['archived'] },
 ];
 
-function DateTile({ sessions, muted }: { sessions: ClassSession[]; muted?: boolean }) {
+function DateTile({ sessions }: { sessions: ClassSession[] }) {
   if (sessions.length === 0) {
     return (
       <div className="shrink-0 w-14 rounded-xl border border-dashed border-primary/20 text-center py-2 text-[10px] text-text-muted">No date</div>
@@ -990,11 +990,11 @@ function DateTile({ sessions, muted }: { sessions: ClassSession[]; muted?: boole
   const weekday = d.toLocaleDateString('en-GB', { weekday: 'short' });
   const month = d.toLocaleDateString('en-GB', { month: 'short' });
   return (
-    <div className={`shrink-0 w-14 rounded-xl overflow-hidden border border-primary/10 text-center bg-white ${muted ? 'opacity-70' : ''}`}>
-      <div className="bg-primary text-white text-[10px] font-semibold uppercase tracking-wide py-0.5">{weekday}</div>
-      <div className="text-xl font-display font-bold text-primary leading-tight pt-0.5">{d.getDate()}</div>
-      <div className="text-[10px] font-medium uppercase text-text-muted">{month}</div>
-      <div className="text-[10px] text-text-muted pb-0.5">{d.getFullYear()}</div>
+    <div className="shrink-0 w-16 rounded-2xl bg-primary/[0.04] py-2 text-center font-sans">
+      <div className="text-[10px] font-medium uppercase tracking-[0.12em] text-text-muted">{weekday}</div>
+      <div className="text-3xl font-semibold tracking-tight text-primary leading-none my-0.5 tabular-nums">{d.getDate()}</div>
+      <div className="text-[11px] font-medium uppercase tracking-[0.12em] text-primary">{month}</div>
+      <div className="text-[10px] text-primary tabular-nums">{d.getFullYear()}</div>
     </div>
   );
 }
