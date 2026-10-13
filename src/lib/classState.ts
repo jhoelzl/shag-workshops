@@ -37,3 +37,55 @@ export function getClassState(
 
   return 'upcoming';
 }
+
+export type JourneyStage = 'draft' | 'preview' | 'upcoming' | 'open' | 'ongoing' | 'archived';
+
+export const JOURNEY_STAGES: JourneyStage[] = ['draft', 'preview', 'upcoming', 'open', 'ongoing', 'archived'];
+
+/** Full admin-facing lifecycle stage: draft → preview → upcoming → open → ongoing → archived. */
+export function getJourneyStage(
+  cls: {
+    is_public: boolean;
+    is_preview?: boolean | null;
+    registration_opens_at?: string | null;
+    registration_closes_at?: string | null;
+  },
+  sessions: ClassSession[],
+): JourneyStage {
+  if (!cls.is_public) return 'draft';
+  if (cls.is_preview) return 'preview';
+  return getClassState(sessions, cls.registration_opens_at, cls.registration_closes_at);
+}
+
+function fmtDate(d: string | null | undefined): string {
+  if (!d) return '';
+  return new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+}
+
+/** Short "what happens next" hint for a class in the given stage. */
+export function getNextHint(
+  stage: JourneyStage,
+  cls: { registration_opens_at?: string | null; registration_closes_at?: string | null },
+  sessions: ClassSession[],
+): string {
+  const dates = sessions.map((s) => s.session_date).sort();
+  const last = dates[dates.length - 1];
+  switch (stage) {
+    case 'draft':
+      return 'Next: publish as preview to show it to students';
+    case 'preview':
+      return 'Next: switch to public to make it Upcoming';
+    case 'upcoming':
+      return cls.registration_opens_at
+        ? `Next: registration opens ${fmtDate(cls.registration_opens_at)}`
+        : 'Next: set a registration opening date';
+    case 'open':
+      return cls.registration_closes_at
+        ? `Next: registration closes ${fmtDate(cls.registration_closes_at)}`
+        : 'Next: registration stays open until you close it';
+    case 'ongoing':
+      return last ? `Next: archived after last session (${fmtDate(last)})` : 'Next: archived after last session';
+    case 'archived':
+      return last ? `Finished ${fmtDate(last)}` : 'Finished';
+  }
+}

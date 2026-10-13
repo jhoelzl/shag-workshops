@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { getClassState } from '../src/lib/classState';
+import { getClassState, getJourneyStage, getNextHint } from '../src/lib/classState';
 import type { ClassSession } from '../src/lib/database.types';
 
 function makeSession(date: string): ClassSession {
@@ -62,5 +62,29 @@ describe('getClassState', () => {
   it('returns "upcoming" when no sessions exist', () => {
     vi.setSystemTime(new Date('2025-06-15T12:00:00Z'));
     expect(getClassState([], null, null)).toBe('upcoming');
+  });
+});
+
+describe('getJourneyStage', () => {
+  it('returns draft for non-public classes', () => {
+    expect(getJourneyStage({ is_public: false, is_preview: true }, [])).toBe('draft');
+  });
+  it('returns preview for public preview classes', () => {
+    expect(getJourneyStage({ is_public: true, is_preview: true }, [])).toBe('preview');
+  });
+  it('falls back to date-derived state otherwise', () => {
+    expect(getJourneyStage({ is_public: true, is_preview: false }, [])).toBe('upcoming');
+  });
+});
+
+describe('getNextHint', () => {
+  const cls = { is_public: true, is_preview: false, registration_opens_at: null, registration_closes_at: null } as never;
+  it('covers draft and preview', () => {
+    expect(getNextHint('draft', cls, [])).toMatch(/^Next:/);
+    expect(getNextHint('preview', cls, [])).toMatch(/^Next:/);
+  });
+  it('falls back without dates', () => {
+    expect(getNextHint('upcoming', cls, [])).toMatch(/set a registration/);
+    expect(getNextHint('archived', cls, [])).toBe('Finished');
   });
 });
