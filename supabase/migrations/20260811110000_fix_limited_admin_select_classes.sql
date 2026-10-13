@@ -12,5 +12,6 @@ CREATE POLICY "Admin can view assigned classes"
       SELECT 1 FROM public.class_admin_permissions cap
       WHERE cap.user_id = auth.uid()
         AND cap.dance_class_id = dance_classes.id
+        AND cap.can_read = true
     )
   );
