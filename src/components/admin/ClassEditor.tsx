@@ -202,13 +202,11 @@ export default function ClassEditor({ classes, registrations, history, currentUs
     return classes.filter((dc) => {
       const state = getClassState(classSessionsMap[dc.id] || [], dc.registration_opens_at, dc.registration_closes_at);
       if (statusFilter === 'draft') {
-        return !dc.is_public;
-      }
-      if (statusFilter === 'preview') {
+        if (dc.is_public) return false;
+      } else if (statusFilter === 'preview') {
         return dc.is_preview && dc.is_public;
-      }
-      // When "All" is selected, show everything including previews
-      if (statusFilter === 'all') {
+      } else if (statusFilter === 'all') {
+        // When "All" is selected, show everything including previews
         // Show all classes, only apply level/dance/search filters
       } else {
         // Hide preview classes in specific state views
