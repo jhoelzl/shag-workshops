@@ -169,7 +169,7 @@ export default function AdminDashboard() {
 
   const openClassIds = new Set(
     classes
-      .filter((c) => c.is_public && getClassState(sessionsMap[c.id] || [], c.registration_opens_at, c.registration_closes_at) === 'open')
+      .filter((c) => c.is_public && !c.is_preview && getClassState(sessionsMap[c.id] || [], c.registration_opens_at, c.registration_closes_at) === 'open')
       .map((c) => c.id),
   );
 
