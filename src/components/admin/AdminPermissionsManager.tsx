@@ -18,6 +18,27 @@ export default function AdminPermissionsManager({ classes }: Props) {
   const [saving, setSaving] = useState<Record<string, boolean>>({});
   const [expandedUser, setExpandedUser] = useState<string | null>(null);
   const [promotingUser, setPromotingUser] = useState<string | null>(null);
+  const [classDates, setClassDates] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    supabase
+      .from('class_sessions')
+      .select('dance_class_id, session_date')
+      .order('session_date', { ascending: true })
+      .then(({ data }) => {
+        const fmt = (d: string) =>
+          new Date(d).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        const byClass: Record<string, string[]> = {};
+        (data ?? []).forEach((r: any) => (byClass[r.dance_class_id] ||= []).push(r.session_date));
+        const out: Record<string, string> = {};
+        Object.entries(byClass).forEach(([id, ds]) => {
+          const a = fmt(ds[0]);
+          const b = fmt(ds[ds.length - 1]);
+          out[id] = a === b ? a : `${a} – ${b}`;
+        });
+        setClassDates(out);
+      });
+  }, []);
 
   const {
     grantPermission,
@@ -359,7 +380,7 @@ export default function AdminPermissionsManager({ classes }: Props) {
                                       {dc.title_de}
                                     </p>
                                     <p className="text-xs text-text-muted truncate">
-                                      {dc.level} {dc.dance && `• ${dc.dance}`}
+                                      {dc.level} {dc.dance && `• ${dc.dance}`}{classDates[dc.id] && ` • ${classDates[dc.id]}`}
                                     </p>
                                   </div>
                                   {dc.is_public ? (
