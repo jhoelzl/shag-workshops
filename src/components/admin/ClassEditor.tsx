@@ -513,8 +513,8 @@ export default function ClassEditor({ classes, registrations, history, currentUs
                           )}
                         </div>
                         {/* Capacity & Registrations row */}
-                        <div className="flex items-center gap-6 mt-4">
-                          <div className="flex-1 flex items-center gap-6">
+                        <div className="flex flex-wrap items-center gap-6 mt-4">
+                          <div className="flex-1 flex flex-wrap items-center gap-6">
                             <CapacityBar label="Leads" current={counts.leads} max={dc.max_leads} />
                             <CapacityBar label="Follows" current={counts.follows} max={dc.max_follows} />
                             {dc.auto_confirm && (
