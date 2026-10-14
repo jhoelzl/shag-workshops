@@ -309,9 +309,10 @@ export default function ClassEditor({ classes, registrations, history, currentUs
       const { error } = await supabase.from('dance_classes').update({ ...basePayload, title_de: editing.title_de ?? '', title_en: editing.title_en ?? '' }).eq('id', classId);
       if (error) { alert(`Could not save class: ${error.message}`); setSaving(false); return; }
     } else {
-      const { data, error } = await supabase.from('dance_classes').insert({ ...basePayload, is_public: isSuperAdmin ? basePayload.is_public : false, title_de: editing.title_de ?? '', title_en: editing.title_en ?? '', max_leads: editing.max_leads ?? 10, max_follows: editing.max_follows ?? 10 }).select('id').single();
-      if (error || !data) { alert(`Could not create class: ${error?.message ?? 'unknown error'}`); setSaving(false); return; }
-      classId = data.id;
+      const newId = crypto.randomUUID();
+      const { error } = await supabase.from('dance_classes').insert({ id: newId, ...basePayload, is_public: isSuperAdmin ? basePayload.is_public : false, title_de: editing.title_de ?? '', title_en: editing.title_en ?? '', max_leads: editing.max_leads ?? 10, max_follows: editing.max_follows ?? 10 });
+      if (error) { alert(`Could not create class: ${error?.message ?? 'unknown error'}`); setSaving(false); return; }
+      classId = newId;
     }
     if (classId) {
       const originalSessions = classSessionsMap[classId] || [];
