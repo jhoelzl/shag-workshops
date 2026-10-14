@@ -11,6 +11,7 @@ interface Props {
   currentUser: any;
   onUpdate: () => void;
   isSuperAdmin: boolean;
+  canCreateClasses?: boolean;
   classPermissions: Record<string, ClassPermission>;
 }
 
@@ -98,8 +99,9 @@ function setUrlParam(key: string, value: string | null) {
   window.history.pushState(null, '', url.toString());
 }
 
-export default function ClassEditor({ classes, registrations, history, currentUser, onUpdate, isSuperAdmin, classPermissions }: Props) {
+export default function ClassEditor({ classes, registrations, history, currentUser, onUpdate, isSuperAdmin, canCreateClasses = false, classPermissions }: Props) {
   const [editing, setEditing] = useState<Partial<DanceClass> | null>(null);
+  const canCreate = isSuperAdmin || canCreateClasses;
 
   // Helper to check permissions for a specific class
   const canRead = (classId: string) => isSuperAdmin || (classPermissions[classId]?.read ?? false);
@@ -309,9 +311,10 @@ export default function ClassEditor({ classes, registrations, history, currentUs
       const { error } = await supabase.from('dance_classes').update({ ...basePayload, title_de: editing.title_de ?? '', title_en: editing.title_en ?? '' }).eq('id', classId);
       if (error) { alert(`Could not save class: ${error.message}`); setSaving(false); return; }
     } else {
-      const { data, error } = await supabase.from('dance_classes').insert({ ...basePayload, is_public: isSuperAdmin ? basePayload.is_public : false, title_de: editing.title_de ?? '', title_en: editing.title_en ?? '', max_leads: editing.max_leads ?? 10, max_follows: editing.max_follows ?? 10 }).select('id').single();
-      if (error || !data) { alert(`Could not create class: ${error?.message ?? 'unknown error'}`); setSaving(false); return; }
-      classId = data.id;
+      const newId = crypto.randomUUID();
+      const { error } = await supabase.from('dance_classes').insert({ id: newId, ...basePayload, is_public: isSuperAdmin ? basePayload.is_public : false, title_de: editing.title_de ?? '', title_en: editing.title_en ?? '', max_leads: editing.max_leads ?? 10, max_follows: editing.max_follows ?? 10 });
+      if (error) { alert(`Could not create class: ${error?.message ?? 'unknown error'}`); setSaving(false); return; }
+      classId = newId;
     }
     if (classId) {
       const originalSessions = classSessionsMap[classId] || [];
@@ -377,12 +380,12 @@ export default function ClassEditor({ classes, registrations, history, currentUs
           <p className="eyebrow text-coral mb-1">Catalog</p>
           <h2 className="font-display text-3xl font-bold tracking-tight text-primary">Dance Classes</h2>
           <p className="text-sm text-text-muted mt-1">
-            {isSuperAdmin
+            {canCreate
               ? 'Create and manage workshops, sessions, and registrations.'
               : 'View classes and manage registrations for your assigned workshops.'}
           </p>
         </div>
-        {isSuperAdmin && !isCreatingNew && (
+        {canCreate && !isCreatingNew && (
           <button onClick={() => startEditing()} className="bg-gradient-to-br from-coral to-coral-dark hover:brightness-105 text-white font-semibold px-5 py-2.5 rounded-full transition-all text-sm shadow-[0_4px_14px_-4px_rgba(231,111,81,0.5)]">+ New Class</button>
         )}
       </div>
@@ -585,6 +588,7 @@ export default function ClassEditor({ classes, registrations, history, currentUs
                           {/* Edit requires write permission, Delete requires delete permission */}
                           {canWrite(dc.id) && (
                             <>
+{canCreate && (
                               <button
                                 onClick={() => duplicateClass(dc)}
                                 title="Duplicate Class"
@@ -592,7 +596,7 @@ export default function ClassEditor({ classes, registrations, history, currentUs
                               >
                                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" /></svg>
                                 Copy
-                              </button>
+                              </button> )}
                               <button
                                 onClick={() => startEditing(dc)}
                                 title="Edit Class"
@@ -622,6 +626,7 @@ export default function ClassEditor({ classes, registrations, history, currentUs
                           isSuperAdmin={isSuperAdmin}
                           canWrite={canWrite(dc.id)}
                           canDelete={canDelete(dc.id)}
+                          canCreate={canCreate}
                           onView={() => { window.open(`${import.meta.env.BASE_URL?.replace(/\/$/, '') || ''}${state === 'archived' ? '/de/archiv/' : '/de/workshops/'}?class=${dc.id}`, '_blank'); }}
                           onExport={() => exportWorkshopRegistrationsAsCsv(dc, classRegs)}
                           onDuplicate={() => duplicateClass(dc)}
@@ -664,7 +669,7 @@ export default function ClassEditor({ classes, registrations, history, currentUs
                   Clear all filters
                 </button>
               )}
-              {isSuperAdmin && (
+              {canCreate && (
                 <button
                   onClick={() => startEditing()}
                   className="flex items-center gap-2 bg-gradient-to-r from-coral to-coral-dark text-white font-medium px-5 py-2.5 rounded-lg transition-all text-sm shadow-[0_4px_14px_-4px_rgba(231,111,81,0.5)] hover:brightness-105"
@@ -1387,7 +1392,7 @@ function ClassForm({
   );
 }
 
-function ClassActionsMenu({ dc, state, classRegs, isSuperAdmin, canWrite, canDelete, onView, onExport, onDuplicate, onEdit, onDelete }: { dc: DanceClass; state: ClassState; classRegs: Registration[]; isSuperAdmin: boolean; canWrite: boolean; canDelete: boolean; onView: () => void; onExport: () => void; onDuplicate: () => void; onEdit: () => void; onDelete: () => void; }) {
+function ClassActionsMenu({ dc, state, classRegs, isSuperAdmin, canWrite, canDelete, canCreate, onView, onExport, onDuplicate, onEdit, onDelete }: { dc: DanceClass; state: ClassState; classRegs: Registration[]; isSuperAdmin: boolean; canWrite: boolean; canDelete: boolean; canCreate: boolean; onView: () => void; onExport: () => void; onDuplicate: () => void; onEdit: () => void; onDelete: () => void; }) {
   const [open, setOpen] = useState(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
 
@@ -1443,13 +1448,14 @@ function ClassActionsMenu({ dc, state, classRegs, isSuperAdmin, canWrite, canDel
                 <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                 Edit class
               </button>
+{canCreate && (
               <button
                 onClick={(e) => { e.stopPropagation(); onDuplicate(); setOpen(false); }}
                 className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-medium text-text-muted hover:text-primary hover:bg-bg-warm/50 transition-colors"
               >
                 <svg className="w-4 h-4 text-accent-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" /></svg>
                 Duplicate
-              </button>
+              </button> )}
             </>
           )}
           {canDelete && (

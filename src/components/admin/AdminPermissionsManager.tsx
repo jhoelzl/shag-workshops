@@ -45,6 +45,7 @@ export default function AdminPermissionsManager({ classes }: Props) {
     revokePermission,
     updatePermissions,
     setSuperAdmin,
+    setCanCreateClasses,
     getUserPermissions,
   } = useAdminUserManagement();
 
@@ -147,6 +148,16 @@ export default function AdminPermissionsManager({ classes }: Props) {
       alert(err instanceof Error ? err.message : 'Failed to update permission');
     } finally {
       setSaving(prev => ({ ...prev, [`${userId}-${classId}-${permType}`]: false }));
+    }
+  }
+
+  async function toggleCanCreate(user: UserWithPermissions) {
+    const next = !user.can_create_classes;
+    try {
+      await setCanCreateClasses(user.id, next);
+      setUsers(prev => prev.map(u => u.id === user.id ? { ...u, can_create_classes: next } : u));
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to update permission');
     }
   }
 
@@ -339,6 +350,14 @@ export default function AdminPermissionsManager({ classes }: Props) {
                 {/* Expanded - Class assignment grid with granular permissions */}
                 {!admin.is_super_admin && isExpanded && (
                   <div className="border-t border-primary/5 px-4 pb-4">
+                    <label className="flex items-center gap-2 pt-4 text-sm text-primary cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={!!admin.can_create_classes}
+                        onChange={() => toggleCanCreate(admin)}
+                      />
+                      Can create new classes (manual create + copy)
+                    </label>
                     <div className="pt-4 mb-3">
                       <p className="text-sm font-medium text-primary mb-1">Assign Classes & Permissions</p>
                       <p className="text-xs text-text-muted">

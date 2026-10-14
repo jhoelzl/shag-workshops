@@ -300,7 +300,15 @@ export interface Database {
       };
       list_admin_users: {
         Args: Record<string, never>;
-        Returns: { id: string; email: string; is_super_admin: boolean }[];
+        Returns: { id: string; email: string; is_super_admin: boolean; can_create_classes: boolean }[];
+      };
+      can_create_classes: {
+        Args: { uid: string };
+        Returns: boolean;
+      };
+      set_can_create_classes: {
+        Args: { target_user_id: string; allowed: boolean };
+        Returns: undefined;
       };
       get_my_class_permissions: {
         Args: Record<string, never>;
@@ -335,4 +343,5 @@ export type AdminUser = {
   id: string;
   email: string;
   is_super_admin: boolean;
+  can_create_classes: boolean;
 };
