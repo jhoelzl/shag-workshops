@@ -4,6 +4,7 @@ import type { AdminUser } from './database.types';
 
 export type AdminPermission = {
   isSuperAdmin: boolean;
+  canCreateClasses: boolean;
   allowedClassIds: Set<string>;
   classPermissions: Record<string, { read: boolean; write: boolean; delete: boolean }>;
   loading: boolean;
@@ -19,6 +20,7 @@ export type ClassPermission = {
 export function useAdminPermissions() {
   const [permissions, setPermissions] = useState<AdminPermission>({
     isSuperAdmin: false,
+    canCreateClasses: false,
     allowedClassIds: new Set(),
     classPermissions: {},
     loading: true,
@@ -34,6 +36,7 @@ export function useAdminPermissions() {
       if (!user) {
         setPermissions({
           isSuperAdmin: false,
+          canCreateClasses: false,
           allowedClassIds: new Set(),
           classPermissions: {},
           loading: false,
@@ -63,6 +66,7 @@ export function useAdminPermissions() {
 
         setPermissions({
           isSuperAdmin: true,
+          canCreateClasses: true,
           allowedClassIds: new Set(allClasses?.map(c => c.id) || []),
           classPermissions: classMap,
           loading: false,
@@ -86,8 +90,12 @@ export function useAdminPermissions() {
           };
         });
 
+        const { data: canCreate } = await supabase
+          .rpc('can_create_classes', { uid: user.id });
+
         setPermissions({
           isSuperAdmin: false,
+          canCreateClasses: canCreate === true,
           allowedClassIds: new Set(allowedClasses?.map(p => p.dance_class_id) || []),
           classPermissions: classMap,
           loading: false,
@@ -256,6 +264,15 @@ export function useAdminUserManagement() {
     if (error) throw error;
   }, []);
 
+  const setCanCreateClasses = useCallback(async (userId: string, allowed: boolean) => {
+    const { error } = await supabase.rpc('set_can_create_classes', {
+      target_user_id: userId,
+      allowed,
+    });
+
+    if (error) throw error;
+  }, []);
+
   return {
     admins,
     loading,
@@ -267,5 +284,6 @@ export function useAdminUserManagement() {
     updatePermissions,
     getUserPermissions,
     setSuperAdmin,
+    setCanCreateClasses,
   };
 }
