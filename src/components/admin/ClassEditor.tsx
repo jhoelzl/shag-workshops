@@ -1394,25 +1394,28 @@ function ClassForm({
 
 function ClassActionsMenu({ dc, state, classRegs, isSuperAdmin, canWrite, canDelete, canCreate, onView, onExport, onDuplicate, onEdit, onDelete }: { dc: DanceClass; state: ClassState; classRegs: Registration[]; isSuperAdmin: boolean; canWrite: boolean; canDelete: boolean; canCreate: boolean; onView: () => void; onExport: () => void; onDuplicate: () => void; onEdit: () => void; onDelete: () => void; }) {
   const [open, setOpen] = useState(false);
-  const buttonRef = useRef<HTMLButtonElement>(null);
+  const buttonRef = useRef<HTMLDivElement>(null);
 
   // Close on click outside
   useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
+    function handleClickOutside(e: Event) {
       if (buttonRef.current && !buttonRef.current.contains(e.target as Node)) {
         setOpen(false);
       }
     }
     if (open) {
       document.addEventListener('mousedown', handleClickOutside);
-      return () => document.removeEventListener('mousedown', handleClickOutside);
+      document.addEventListener('touchstart', handleClickOutside);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+        document.removeEventListener('touchstart', handleClickOutside);
+      };
     }
   }, [open]);
 
   return (
-    <div className="sm:hidden relative">
+    <div className="sm:hidden relative" ref={buttonRef}>
       <button
-        ref={buttonRef}
         onClick={(e) => { e.stopPropagation(); setOpen(!open); }}
         className={`flex items-center gap-1 text-xs font-semibold px-2.5 py-1.5 rounded-full transition-colors ${open ? 'bg-primary text-white' : 'bg-primary/5 hover:bg-primary/10 text-primary'}`}
       >
