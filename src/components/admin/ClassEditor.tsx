@@ -472,14 +472,14 @@ export default function ClassEditor({ classes, registrations, history, currentUs
                   {/* Status stripe - amber for preview classes */}
                   <div className={`h-1 w-full ${!dc.is_public ? 'bg-slate-300' : dc.is_preview ? 'bg-amber-400' : state === 'open' ? 'bg-teal' : state === 'ongoing' ? 'bg-blue-500' : state === 'upcoming' ? 'bg-accent' : 'bg-slate-300'}`} />
                   <div className="p-4 cursor-pointer" onClick={() => { const next = isViewing ? null : dc.id; setUrlParam('view', next); setViewClassId(next); }}>
-                    <div className="flex items-start gap-4">
+                    <div className="flex flex-wrap sm:flex-nowrap items-start gap-x-2 gap-y-3 sm:gap-4">
                       <DateTile sessions={classSessions} />
                       {/* Content column */}
-                      <div className="flex-1 min-w-0">
+                      <div className="order-last basis-full sm:order-none sm:basis-auto flex-1 min-w-0">
                         {/* Status row - above title */}
                         <div className="flex items-center gap-2 mb-1.5">
                           <StageChip stage={getJourneyStage(dc, classSessions)} />
-                          {!dc.is_public && <span className="text-[10px] text-text-muted">not public</span>}
+                          {!dc.is_public && <span className="text-[10px] text-text-muted whitespace-nowrap">not public</span>}
                         </div>
                         {/* Title row */}
                         <h3 className={`font-display font-bold text-base truncate ${state === 'archived' ? 'text-text-muted' : 'text-primary'} mb-1`}>{dc.title_en || dc.title_de}</h3>
@@ -513,8 +513,8 @@ export default function ClassEditor({ classes, registrations, history, currentUs
                           )}
                         </div>
                         {/* Capacity & Registrations row */}
-                        <div className="flex flex-wrap items-center gap-6 mt-4">
-                          <div className="flex-1 flex flex-wrap items-center gap-6">
+                        <div className="flex flex-wrap items-center gap-3 sm:gap-6 mt-4">
+                          <div className="flex-1 basis-full sm:basis-auto flex flex-wrap items-center gap-3 sm:gap-6">
                             <CapacityBar label="Leads" current={counts.leads} max={dc.max_leads} />
                             <CapacityBar label="Follows" current={counts.follows} max={dc.max_follows} />
                             {dc.auto_confirm && (
@@ -550,7 +550,7 @@ export default function ClassEditor({ classes, registrations, history, currentUs
                         </div>
                       </div>
                       {/* Actions - Desktop: show on hover, Mobile: show burger menu */}
-                      <div className="flex items-center gap-1.5 shrink-0" onClick={(e) => e.stopPropagation()}>
+                      <div className="ml-auto sm:ml-0 flex items-center gap-1.5 shrink-0" onClick={(e) => e.stopPropagation()}>
                         {/* Always visible registration count */}
                         <button
                           onClick={() => setExpandedClassId(isExpanded ? null : dc.id)}
