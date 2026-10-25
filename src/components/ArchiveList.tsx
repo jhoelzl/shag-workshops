@@ -14,6 +14,9 @@ const texts = {
     sessions: 'Termine',
     instructor: () => 'Kursleiter',
     dtLocale: 'de-AT',
+    errorTitle: 'Archiv konnte nicht geladen werden',
+    errorText: 'Bitte versuche es erneut.',
+    retry: 'Erneut versuchen',
   },
   en: {
     emptyTitle: 'No Workshops in Archive Yet',
@@ -22,70 +25,84 @@ const texts = {
     sessions: 'sessions',
     instructor: (teachers: string) => (teachers.includes('&') || teachers.includes('and') ? 'Instructors' : 'Instructor'),
     dtLocale: 'en-AT',
+    errorTitle: 'Could not load the archive',
+    errorText: 'Please try again.',
+    retry: 'Try again',
   },
 };
 
 export default function ArchiveList({ locale }: { locale: Locale }) {
   const [classes, setClasses] = useState<ArchivedClass[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
   const tx = texts[locale];
 
   const getDateRange = (sessions: ClassSession[]) => {
     if (sessions.length === 0) return '';
     const first = new Date(sessions[0].session_date);
     const last = new Date(sessions[sessions.length - 1].session_date);
-    const firstStr = first.toLocaleDateString(tx.dtLocale, { month: 'short', year: 'numeric' });
-    const lastStr = last.toLocaleDateString(tx.dtLocale, { month: 'short', year: 'numeric' });
+    const firstStr = first.toLocaleDateString(tx.dtLocale, { month: 'short', year: 'numeric', timeZone: 'Europe/Vienna' });
+    const lastStr = last.toLocaleDateString(tx.dtLocale, { month: 'short', year: 'numeric', timeZone: 'Europe/Vienna' });
     if (firstStr === lastStr) {
-      return first.toLocaleDateString(tx.dtLocale, { month: 'long', year: 'numeric' });
+      return first.toLocaleDateString(tx.dtLocale, { month: 'long', year: 'numeric', timeZone: 'Europe/Vienna' });
     }
     return `${firstStr} – ${lastStr}`;
   };
 
   useEffect(() => {
     async function load() {
-      const { data: classData } = await supabase
-        .from('dance_classes')
-        .select('*, image_url, image_overlay_alpha, headline_color')
-        .eq('is_public', true);
+      setLoading(true);
+      setError(false);
+      try {
+        const { data: classData, error: classError } = await supabase
+          .from('dance_classes')
+          .select('*, image_url, image_overlay_alpha, headline_color')
+          .eq('is_public', true);
+        if (classError) throw classError;
 
-      const publicClasses = classData ?? [];
-      if (publicClasses.length === 0) {
+        const publicClasses = classData ?? [];
+        if (publicClasses.length === 0) {
+          setClasses([]);
+          return;
+        }
+
+        const { data: sessionData, error: sessionError } = await supabase
+          .from('class_sessions')
+          .select('*')
+          .in('dance_class_id', publicClasses.map((c) => c.id))
+          .order('session_date', { ascending: true })
+          .order('start_time', { ascending: true });
+        if (sessionError) throw sessionError;
+
+        const byClass = new Map<string, ClassSession[]>();
+        for (const s of sessionData ?? []) {
+          if (!byClass.has(s.dance_class_id)) byClass.set(s.dance_class_id, []);
+          byClass.get(s.dance_class_id)!.push(s);
+        }
+
+        const now = new Date();
+        const archived = publicClasses
+          .map((dc) => ({ ...dc, sessions: byClass.get(dc.id) ?? [] }))
+          .filter((dc) => {
+            if (dc.sessions.length === 0) return false;
+            return new Date(dc.sessions[dc.sessions.length - 1].session_date) < now;
+          })
+          .sort((a, b) => {
+            const lastA = a.sessions[a.sessions.length - 1];
+            const lastB = b.sessions[b.sessions.length - 1];
+            return new Date(lastB.session_date).getTime() - new Date(lastA.session_date).getTime();
+          });
+
+        setClasses(archived);
+      } catch {
+        setError(true);
+      } finally {
         setLoading(false);
-        return;
       }
-
-      const { data: sessionData } = await supabase
-        .from('class_sessions')
-        .select('*')
-        .in('dance_class_id', publicClasses.map((c) => c.id))
-        .order('session_date', { ascending: true })
-        .order('start_time', { ascending: true });
-
-      const byClass = new Map<string, ClassSession[]>();
-      for (const s of sessionData ?? []) {
-        if (!byClass.has(s.dance_class_id)) byClass.set(s.dance_class_id, []);
-        byClass.get(s.dance_class_id)!.push(s);
-      }
-
-      const now = new Date();
-      const archived = publicClasses
-        .map((dc) => ({ ...dc, sessions: byClass.get(dc.id) ?? [] }))
-        .filter((dc) => {
-          if (dc.sessions.length === 0) return false;
-          return new Date(dc.sessions[dc.sessions.length - 1].session_date) < now;
-        })
-        .sort((a, b) => {
-          const lastA = a.sessions[a.sessions.length - 1];
-          const lastB = b.sessions[b.sessions.length - 1];
-          return new Date(lastB.session_date).getTime() - new Date(lastA.session_date).getTime();
-        });
-
-      setClasses(archived);
-      setLoading(false);
     }
     load();
-  }, []);
+  }, [retryCount]);
 
   // Highlight and scroll to the class referenced by ?class=
   useEffect(() => {
@@ -104,6 +121,22 @@ export default function ArchiveList({ locale }: { locale: Locale }) {
 
   if (loading) {
     return <div className="py-14 text-center text-text-muted">…</div>;
+  }
+
+  if (error) {
+    return (
+      <div role="alert" className="flex flex-col items-center justify-center gap-4 rounded-3xl border border-accent/20 bg-gradient-to-br from-bg-warm via-accent/[0.07] to-coral/[0.08] shadow-soft px-6 py-14 text-center">
+        <p className="font-display text-xl font-bold text-primary">{tx.errorTitle}</p>
+        <p className="max-w-sm text-sm text-text-muted">{tx.errorText}</p>
+        <button
+          type="button"
+          className="rounded-full bg-primary px-5 py-2 text-sm font-bold text-white transition-colors hover:bg-primary/90"
+          onClick={() => setRetryCount((count) => count + 1)}
+        >
+          {tx.retry}
+        </button>
+      </div>
+    );
   }
 
   if (classes.length === 0) {
