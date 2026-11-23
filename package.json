@@ -25,7 +25,7 @@
     "@astrojs/react": "^5.0.7",
     "@supabase/supabase-js": "^2.119.2",
     "@tailwindcss/vite": "^4.3.3",
-    "astro": "^7.4.11",
+    "astro": "^7.4.13",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "tailwindcss": "^4.3.4"
